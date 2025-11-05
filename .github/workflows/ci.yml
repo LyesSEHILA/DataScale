@@ -46,3 +46,4 @@ jobs:
           args: >
             -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }}
             -Dsonar.projectKey=LyesSEHILA_DataScale
+            -Dsonar.java.binaries=build/classes/java/main
