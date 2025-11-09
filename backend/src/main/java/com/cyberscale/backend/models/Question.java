@@ -15,19 +15,24 @@ public class Question {
     
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
-    private final int id;
-    private final String text;
-    private final categorieQuestion categorie;
-    private final difficultyQuestion difficulty;
+    private Long id;
+    private String text;
+    private categorieQuestion categorie;
+    private difficultyQuestion difficulty;
 
-    public Question(int id, String text, categorieQuestion categorie, difficultyQuestion difficulty) {
+
+    public Question() {}
+
+    public Question(Long id, String text, categorieQuestion categorie, difficultyQuestion difficulty) {
         this.id = id;
         this.text = text;
         this.categorie = categorie;
         this.difficulty = difficulty;
     }
+
+    // Getters
     
-    public int getId() {
+    public Long getId() {
         return id;
     }
     public String getText() {
@@ -39,4 +44,22 @@ public class Question {
     public difficultyQuestion getDifficulty() {
         return difficulty;
     }
+
+    // Setters
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public void setText(String text) {
+        this.text = text;
+    }
+
+    public void setCategorie(categorieQuestion categorie) {
+        this.categorie = categorie;
+    }
+
+    public void setDifficulty(difficultyQuestion difficulty) {
+        this.difficulty = difficulty;
+    }    
 }

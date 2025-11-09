@@ -17,38 +17,44 @@ import jakarta.persistence.Table;
 public class QuizSession {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
-    private final int id;
-    private final String prenom;
-    private final int age;
-    private int selfEvalTheory;
-    private int selfEvalTechnique;
-    private double finalScoreTheory;
-    private double finalScoreTechnique;
+    private Long id;
+    private String prenom;
+    private Long age;
+    private Long selfEvalTheory;
+    private Long selfEvalTechnique;
+    private Double finalScoreTheory;
+    private Double finalScoreTechnique;
     
-    private List<Question> questions;
+    /**private List<Question> questions;
     private List<AnswerOption> reponses;
-    private Map<Question,Answer> QuestionsReponses;
+    private Map<Question,Answer> QuestionsReponses;*/
 
     private LocalDateTime createdAt;
 
-    public QuizSession(int id, String prenom, int age, List<Question> questions, List<AnswerOption> reponses, Map<Question, Answer> QuestionsReponses) {
+
+    public QuizSession() {this.createdAt = LocalDateTime.now();}
+
+    public QuizSession(Long id, String prenom, Long age, List<Question> questions, List<AnswerOption> reponses, Map<Question, Answer> QuestionsReponses) {
         this.id = id;
         this.prenom = prenom;
         this.age = age;
-        this.selfEvalTheory = 0;
-        this.selfEvalTechnique = 0;
+        this.selfEvalTheory = 0L;
+        this.selfEvalTechnique = 0L;
         this.finalScoreTheory = 0.0;
         this.finalScoreTechnique = 0.0;
 
-        this.questions = new ArrayList<>(questions);
+        /**this.questions = new ArrayList<>(questions);
         this.reponses = null;
-        this.QuestionsReponses = new HashMap<>(QuestionsReponses);
+        this.QuestionsReponses = new HashMap<>(QuestionsReponses);*/
 
         this.createdAt = LocalDateTime.now();
 
     }
+
+
+    // Getters
     
-    public int getId() {
+    public Long getId() {
         return id;
     }
     
@@ -56,44 +62,44 @@ public class QuizSession {
         return prenom;
     }
     
-    public int getAge() {
+    public Long getAge() {
         return age;
     }
     
-    public int getSelfEvalTheory() {
+    public Long getSelfEvalTheory() {
         return selfEvalTheory;
     }
     
-    public int getSelfEvalTechnique() {
+    public Long getSelfEvalTechnique() {
         return selfEvalTechnique;
     }
     
-    public double getFinalScoreTheory() {
+    public Double getFinalScoreTheory() {
         return finalScoreTheory;
     }
     
-    public double getFinalScoreTechnique() {
+    public Double getFinalScoreTechnique() {
         return finalScoreTechnique;
     }
 
 
-    public void setSelfEvalTheory(int val) {
+    public void setSelfEvalTheory(Long val) {
         this.selfEvalTheory = val;
     }
 
-    public void setSelfEvalTechnique(int val) {
+    public void setSelfEvalTechnique(Long val) {
         this.selfEvalTechnique = val;
     }
 
-    public void setFinalScoreTheory(double val) {
+    public void setFinalScoreTheory(Double val) {
         this.finalScoreTheory = val;
     }
 
-    public void setFinalScoreTechnique(double val) {
+    public void setFinalScoreTechnique(Double val) {
         this.finalScoreTechnique = val;
     }
 
-    public List<Question> getQuestions() {
+    /**public List<Question> getQuestions() {
         return questions;
     }
 
@@ -107,6 +113,36 @@ public class QuizSession {
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
+    }*/
+
+
+    // Setters
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
+    public void setPrenom(String prenom) {
+        this.prenom = prenom;
+    }
+
+    public void setAge(Long age) {
+        this.age = age;
+    }
+
+    /**public void setQuestions(List<Question> questions) {
+        this.questions = questions;
+    }
+
+    public void setReponses(List<AnswerOption> reponses) {
+        this.reponses = reponses;
+    }
+
+    public void setQuestionsReponses(Map<Question, Answer> questionsReponses) {
+        QuestionsReponses = questionsReponses;
+    }*/
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
 }
