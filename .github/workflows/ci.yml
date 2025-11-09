@@ -30,20 +30,22 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x backend/gradlew
 
-      # 4. Lancer le build et les tests du backend
-      - name: Build and Test with Gradle
-        run: ./gradlew build
-        working-directory: ./backend 
+      # 4. Lancer le build, les tests ET générer le rapport de couverture
+      - name: Build, Test and Generate Coverage Report
+        run: ./gradlew build jacocoTestReport
+        working-directory: ./backend
 
       # 5. Lancer l'analyse SonarCloud
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}    
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
-          projectBaseDir: backend 
+          projectBaseDir: backend
           args: >
             -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }}
             -Dsonar.projectKey=LyesSEHILA_DataScale
             -Dsonar.java.binaries=build/classes/java/main
+            -Dsonar.coverage.jacoco.xmlReportPaths=build/reports/jacoco/test/jacocoTest.xml
+            -Dsonar.coverage.exclusions=src/main/java/com/cyberscale/backend/models/**,src/main/java/com/cyberscale/backend/dto/**
