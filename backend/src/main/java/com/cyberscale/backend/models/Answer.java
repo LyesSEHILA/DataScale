@@ -12,19 +12,36 @@ import jakarta.persistence.Table;
 public class Answer {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
-    private final int id;
-    private final String text;
+    private  Long id;
+    private String text;
 
-    public Answer(int id, String text) {
+    public Answer() {}
+
+
+    public Answer(long id, String text) {
         this.id = id;
         this.text = text;
     }
 
-    public int getId() {
+
+    // Getters
+
+    public Long getId() {
         return id;
     }
 
     public String getText() {
         return text;
+    }
+
+    // Setters
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+
+    public void setText(String text) {
+        this.text = text;
     }
 }

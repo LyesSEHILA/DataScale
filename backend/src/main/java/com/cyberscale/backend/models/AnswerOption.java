@@ -11,30 +11,49 @@ import jakarta.persistence.Table;
 public class AnswerOption {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
-    private final int id;
-    private final String text;
-    private boolean isCorrect;
+    private Long id;
+    private String text;
+    private Boolean isCorrect;
 
+    public AnswerOption() {}
 
-    public AnswerOption(int id, String text, boolean isCorrect) {
+    public AnswerOption(Long id, String text, boolean isCorrect) {
         this.id = id;
         this.text = text;
         this.isCorrect = false;
     }
-    
-    public int getId() {
+
+    // Getters
+
+    public Long getId() {
         return id;
     }
-    
+
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+
     public String getText() {
         return text;
     }
-   
-    public boolean isCorrect() {
+
+    // Setters
+
+
+    public void setText(String text) {
+        this.text = text;
+    }
+
+
+    public Boolean getIsCorrect() {
         return isCorrect;
     }
 
-    public void setIsCorrect(String reponse) {
-        this.isCorrect = this.text.equals(reponse);
+
+    public void setIsCorrect(Boolean isCorrect) {
+        this.isCorrect = isCorrect;
     }
+    
 }
