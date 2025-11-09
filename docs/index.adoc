@@ -4,7 +4,6 @@
 :sectnums:
 :source-highlighter: highlight.js
 :icons: font
-:imagesdir: ./images
 
 [abstract]
 Documentation technique et fonctionnelle du projet CyberScale.
@@ -58,9 +57,7 @@ L'objectif de CyberScale n'est pas seulement de "noter" l'utilisateur. Il s'agit
 == 2. Architecture et Technologies
 
 === 2.1. Architecture Système
-
-(Nous insérerons le diagramme PlantUML ici)
-// Exemple : plantuml::uml/system_architecture.puml[format=png]
+plantuml::uml/system_architecture.puml[format=png]
 
 === 2.2. Technologies et Méthodologies
 
