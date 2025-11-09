@@ -17,7 +17,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0  # Nécessaire pour l'analyse SonarCloud
+          fetch-depth: 0  
 
       # 2. Installer Java (JDK 17)
       - name: Set up JDK 17
@@ -31,8 +31,9 @@ jobs:
         run: chmod +x backend/gradlew
 
       # 4. Lancer le build et les tests du backend
-      - name: Build and Test with Gradle
-        run: ./gradlew build
+      - name: Build, Test and Generate Coverage Report
+        # NOUVEAU: On ajoute 'jacocoTestReport' pour créer le rapport
+        run: ./gradlew build jacocoTestReport
         working-directory: ./backend 
 
       # 5. Lancer l'analyse SonarCloud
@@ -47,3 +48,7 @@ jobs:
             -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }}
             -Dsonar.projectKey=LyesSEHILA_DataScale
             -Dsonar.java.binaries=build/classes/java/main
+            # NOUVEAU: Dit à Sonar où trouver le rapport de couverture
+            -Dsonar.coverage.jacoco.xmlReportPaths=build/reports/jacoco/test/jacocoTest.xml
+            # NOUVEAU: Dit à Sonar d'ignorer les classes de données (Models/DTO)
+            -Dsonar.coverage.exclusions=src/main/java/com/cyberscale/backend/models/**,src/main/java/com/cyberscale/backend/dto/**
