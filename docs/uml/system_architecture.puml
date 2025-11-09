@@ -1,0 +1,24 @@
+@startuml
+!theme plain
+
+title Architecure Système CyberScale
+
+skinparam componentStyle uml2
+
+actor "Utilisateur" 
+
+package "Navigateur Client" {
+    [Frontend (JS/HTML)]
+}
+
+package "Serveur (Backend)" {
+    [API REST (Spring Boot)]
+    [Base de Données (PostgreSQL)]
+}
+
+Utilisateur --> [Frontend (JS/HTML)]
+
+[Frontend (JS/HTML)] --> [API REST (Spring Boot)] : HTTP JSON (Requêtes)
+[API REST (Spring Boot)] --> [Base de Données (PostgreSQL)] : JPA (Requêtes)
+
+@enduml
