@@ -44,8 +44,8 @@ jobs:
         with:
           projectBaseDir: backend
           args: >
-            -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }}
-            -Dsonar.projectKey=LyesSEHILA_DataScale
-            -Dsonar.java.binaries=build/classes/java/main
-            -Dsonar.coverage.jacoco.xmlReportPaths=build/reports/jacoco/test/jacocoTest.xml
-            -Dsonar.coverage.exclusions=src/main/java/com/cyberscale/backend/models/**,src/main/java/com/cyberscale/backend/dto/**
+              -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }}
+              -Dsonar.projectKey=LyesSEHILA_DataScale
+              -Dsonar.java.binaries=build/classes/java/main
+              -Dsonar.coverage.jacoco.xmlReportPaths=build/reports/jacoco/test/jacocoTest.xml
+              -Dsonar.coverage.exclusions=backend/src/main/java/com/cyberscale/backend/models/**,backend/src/main/java/com/cyberscale/backend/dto/**
