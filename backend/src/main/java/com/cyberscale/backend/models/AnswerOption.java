@@ -17,12 +17,16 @@ public class AnswerOption {
     private String text;
     private Boolean isCorrect;
 
+    @ManyToOne
+    @joinColumn(name="question_id")
+    private Question question; 
+
     public AnswerOption() {}
 
     public AnswerOption(Long id, String text, boolean isCorrect) {
         this.id = id;
         this.text = text;
-        this.isCorrect = false;
+        this.isCorrect = isCorrect;
     }
 
     // Getters
@@ -57,5 +61,15 @@ public class AnswerOption {
     public void setIsCorrect(Boolean isCorrect) {
         this.isCorrect = isCorrect;
     }
+
+    public Question getQuestion() {
+        return question;
+    }
+
+    public void setQuestion(Question question) {
+        this.question = question;
+    }
+
+
     
 }
