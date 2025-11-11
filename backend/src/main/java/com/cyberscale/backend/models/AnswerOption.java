@@ -5,6 +5,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.JoinColumn; 
 
 
 
@@ -17,12 +19,16 @@ public class AnswerOption {
     private String text;
     private Boolean isCorrect;
 
+    @ManyToOne
+    @JoinColumn(name = "question_id")
+    private Question question; 
+
     public AnswerOption() {}
 
     public AnswerOption(Long id, String text, boolean isCorrect) {
         this.id = id;
         this.text = text;
-        this.isCorrect = false;
+        this.isCorrect = isCorrect;
     }
 
     // Getters
@@ -57,5 +63,15 @@ public class AnswerOption {
     public void setIsCorrect(Boolean isCorrect) {
         this.isCorrect = isCorrect;
     }
+
+    public Question getQuestion() {
+        return question;
+    }
+
+    public void setQuestion(Question question) {
+        this.question = question;
+    }
+
+
     
 }
