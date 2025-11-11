@@ -19,11 +19,11 @@ jobs:
         with:
           fetch-depth: 0  # Nécessaire pour l'analyse SonarCloud
 
-      # 2. Installer Java (JDK 17)
-      - name: Set up JDK 17
+      # 2. Installer Java (JDK 21)
+      - name: Set up JDK 21
         uses: actions/setup-java@v3
         with:
-          java-version: '17'
+          java-version: '21'
           distribution: 'temurin'
 
       # 3. Donner la permission d'exécution au wrapper Gradle
