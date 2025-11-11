@@ -5,6 +5,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.JoinColumn; 
 
 
 
@@ -18,7 +20,7 @@ public class AnswerOption {
     private Boolean isCorrect;
 
     @ManyToOne
-    @joinColumn(name="question_id")
+    @JoinColumn(name = "question_id")
     private Question question; 
 
     public AnswerOption() {}
