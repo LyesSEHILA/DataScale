@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberScale - Vos Résultats</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <!-- Tâche 5.1: Liaison vers results.css -->
+    <link rel="stylesheet" href="css/results.css">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <!-- Tâche 5.1 (Action 3): Chargement de Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="background-pattern-container">
+        <div class="main-content-wrapper">
+            <div class="container-card">
+                
+                <header class="text-center pb-6 mb-6 border-b border-gray-100">
+                    <span class="inline-block text-emerald-600 mb-2">
+                        <i data-lucide="award" style="width: 40px; height: 40px;"></i>
+                    </span>
+                    <h1 class="text-3xl font-extrabold text-gray-800">Vos Résultats</h1>
+                    <p class="text-gray-500 text-sm mt-1">Analyse de votre profil CyberScale</p>
+                </header>
+
+                <main id="resultsArea">
+                    
+                    <!-- Titre du profil (rempli par JS) -->
+                    <div class="text-center p-4">
+                        <h2 id="resultsTitle" class="text-2xl font-bold text-gray-800 mb-2">
+                            Calcul des résultats en cours...
+                        </h2>
+                        <p id="profileDescription" class="text-gray-600 max-w-lg mx-auto">Veuillez patienter pendant que nous analysons vos réponses.</p>
+                    </div>
+                    
+                    <!-- Tâche 5.1 (Action 3): Canvas pour le graphique Scatter -->
+                    <div class="w-full max-w-lg mx-auto my-8 h-64 md:h-80 relative">
+                        <canvas id="resultsChart"></canvas>
+                    </div>
+
+                    <!-- Tâche 5.2 (Action 2): Conteneur pour les recommandations -->
+                    <div id="recommendationsList" class="mt-10">
+                        <!-- Le contenu sera injecté par js/results.js -->
+                    </div>
+
+                </main>
+
+                <footer class="mt-10 pt-6 border-t border-gray-100 text-center">
+                    <a href="index.html"
+                       class="py-3 px-6 rounded-xl shadow-lg font-bold text-lg text-white bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-600 hover:to-emerald-800">
+                       Recommencer un nouveau test
+                    </a>
+                </footer>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+    </script>
+    <script src="js/results.js"></script>
+</body>
+</html>
