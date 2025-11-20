@@ -1,0 +1,115 @@
+:root {
+    --color-primary: #10B981; /* Tailwind Emeraude 600 */
+    --color-primary-dark: #047857; /* Tailwind Emeraude 700 */
+}
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #f0fdf4; 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    padding: 20px;
+}
+
+/* Maintient le motif de fond du F1 pour la cohérence */
+.background-pattern-container {
+    width: 100%;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); 
+    background-image: 
+        repeating-linear-gradient(0deg, rgba(16, 185, 129, 0.05) 0, rgba(16, 185, 129, 0.05) 1px, transparent 1px, transparent 50px),
+        repeating-linear-gradient(90deg, rgba(16, 185, 129, 0.05) 0, rgba(16, 185, 129, 0.05) 1px, transparent 1px, transparent 50px);
+    background-size: 50px 50px; 
+    display: flex; 
+    justify-content: center;
+    align-items: center;
+}
+
+.container-card {
+    width: 100%;
+    max-width: 720px; 
+    background-color: #ffffff; 
+    padding: 3rem;
+    border-radius: 1.5rem; 
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 10px rgba(0, 0, 0, 0.05);
+    position: relative;
+    overflow: hidden;
+    z-index: 10;
+}
+/* Coin supérieur décoratif */
+.container-card::before {
+    content: '';
+    position: absolute;
+    top: -150px;
+    right: -150px;
+    width: 300px;
+    height: 300px;
+    background: rgba(16, 185, 129, 0.08); 
+    border-radius: 50%;
+    z-index: 0;
+}
+
+/* Styles spécifiques aux options de réponse */
+.quiz-option {
+    /* Cache l'input radio natif */
+    display: none;
+}
+
+/* Style de la carte (Label) par défaut */
+.quiz-option-label {
+    display: block;
+    width: 100%;
+    padding: 1.25rem;
+    border-radius: 0.75rem;
+    border: 2px solid #E5E7EB; /* Gris clair */
+    background-color: #F9FAFB; /* Gris très très clair */
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    font-weight: 500;
+    color: #374151; /* Gris foncé pour le texte */
+    position: relative;
+    padding-left: 3rem; /* Espace pour le marqueur radio personnalisé */
+}
+
+/* Effet au survol */
+.quiz-option-label:hover {
+    background-color: #ECFDF5; /* Vert très clair */
+    border-color: #6EE7B7; /* Vert encore plus clair */
+}
+
+/* Marqueur radio personnalisé (le petit cercle) */
+.quiz-option-label::before {
+    content: '';
+    position: absolute;
+    left: 1.25rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid #9CA3AF; /* Gris moyen */
+    border-radius: 50%;
+    background-color: #ffffff;
+    transition: all 0.2s ease-in-out;
+}
+
+/* L'état "Coché" - Stylé par l'input:checked */
+.quiz-option:checked + .quiz-option-label {
+    border-color: var(--color-primary); /* Bordure verte */
+    background-color: #ECFDF5; /* Fond vert très clair */
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.2); /* Anneau vert */
+}
+
+/* Le point intérieur du radio bouton coché */
+.quiz-option:checked + .quiz-option-label::after {
+    content: '';
+    position: absolute;
+    left: 1.4rem; /* Légèrement décalé par rapport à :before */
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0.7rem;
+    height: 0.7rem;
+    background-color: var(--color-primary); /* Point vert */
+    border-radius: 50%;
+}

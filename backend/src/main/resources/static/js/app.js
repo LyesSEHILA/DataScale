@@ -79,14 +79,10 @@ const handleSubmit = async (e) => {
         }
 
         // Construit un objet data
-        // -----------------------------------------------------------------
-        // CORRECTION DE L'ERREUR 400 :
-        // Les noms des champs doivent correspondre au DTO Java (OnboardingRequest.java)
-        // -----------------------------------------------------------------
         const data = {
             age: parseInt(age),
-            selfEvalTheory: parseInt(theory),
-            selfEvalTechnique: parseInt(technical) // CORRIGÉ: de "selfEvalTechnical" à "selfEvalTechnique"
+            theory: parseInt(theory), // Clé corrigée
+            technical: parseInt(technical) // Clé corrigée
         };
         
         // Utilise fetch pour appeler l'API du Backend (en method: 'POST')
@@ -102,7 +98,6 @@ const handleSubmit = async (e) => {
         const session = await response.json();
 
         // Validation de la réponse
-        // L'objet session (QuizSession) contient un champ 'id'
         if (!session.id) {
             throw new Error("Le backend n'a pas retourné d'ID de session valide.");
         }
@@ -114,11 +109,11 @@ const handleSubmit = async (e) => {
         displayStatus(`Quiz démarré avec succès! ID de session : ${session.id}. Redirection en cours...`, false);
         console.log(`ID de Session sauvé: ${session.id}`);
 
-        // Redirection vers le début du quiz (F2) - Décommenter pour un usage réel
+        // Tâche 4.1, Action 4: Redirection vers la page du quiz
         setTimeout(() => {
-            // window.location.href = `/quiz-start?sessionId=${session.id}`;
-            console.log("Simuler la redirection vers /quiz-start");
-        }, 1500);
+            // La ligne ci-dessous est maintenant active et redirige vers quiz.html
+            window.location.href = 'quiz.html';
+        }, 1500); // Laisse 1.5s à l'utilisateur pour lire le message de succès
 
     } catch (error) {
         // Gérer les erreurs de la requête ou de la validation
