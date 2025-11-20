@@ -1,10 +1,9 @@
 :root {
-    --color-primary: #10B981; /* Tailwind Emeraude 600 */
-    --color-primary-dark: #047857; /* Tailwind Emeraude 700 */
+    --color-primary: #10B981; 
+    --color-primary-dark: #047857; 
 }
 body {
     font-family: 'Inter', sans-serif;
-    /* Retrait du fond dégradé pour le mettre sur le conteneur pattern */
     background-color: #f0fdf4; 
     display: flex;
     justify-content: center;
@@ -14,41 +13,33 @@ body {
     padding: 20px;
 }
 
-/* NOUVEAU CONTENEUR POUR LE MOTIF DE FOND */
 .background-pattern-container {
     width: 100%;
     min-height: 100vh;
-    /* Dégradé de fond général */
     background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); 
     
-    /* AJOUT DU MOTIF DE GRILLE BINAIRE EN CSS (pour look cyber) */
     background-image: 
         repeating-linear-gradient(0deg, rgba(16, 185, 129, 0.05) 0, rgba(16, 185, 129, 0.05) 1px, transparent 1px, transparent 50px),
         repeating-linear-gradient(90deg, rgba(16, 185, 129, 0.05) 0, rgba(16, 185, 129, 0.05) 1px, transparent 1px, transparent 50px);
-    background-size: 50px 50px; /* Taille des cellules de la grille */
+    background-size: 50px 50px;
 
-    display: flex; /* Garde la carte centrée */
+    display: flex; 
     justify-content: center;
     align-items: center;
 }
 
 .container-card {
     width: 100%;
-    /* Largeur augmentée pour le mode une colonne */
     max-width: 720px; 
-    /* Fond très légèrement blanc cassé pour contraster avec le fond vert clair */
     background-color: #ffffff; 
     padding: 3rem;
-    border-radius: 1.5rem; /* Coins très arrondis (moderne) */
-    /* Ombre plus présente et sophistiquée */
+    border-radius: 1.5rem; 
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 10px rgba(0, 0, 0, 0.05);
     
-    /* AJOUT UX: Coin supérieur avec un cercle semi-transparent */
     position: relative;
-    overflow: hidden; /* Important pour ne pas déborder */
-    z-index: 10; /* Assure que la carte est au-dessus du pattern */
+    overflow: hidden; 
+    z-index: 10; 
 }
-/* AJOUT: Cercle décoratif en haut à droite (conservé pour le relief) */
 .container-card::before {
     content: '';
     position: absolute;
@@ -56,60 +47,52 @@ body {
     right: -150px;
     width: 300px;
     height: 300px;
-    background: rgba(16, 185, 129, 0.08); /* Vert très clair et transparent, un peu plus prononcé */
+    background: rgba(16, 185, 129, 0.08); 
     border-radius: 50%;
-    z-index: 0; /* Assure que le contenu du formulaire est au-dessus */
+    z-index: 0; 
 }
 
-/* Styles des Labels et Champs de Saisie (le reste reste identique) */
 .input-label {
     display: flex;
     align-items: center;
     font-size: 0.95rem;
     font-weight: 700;
-    color: #1F2937; /* Gris foncé professionnel */
+    color: #1F2937; 
     margin-bottom: 0.5rem;
 }
 .form-group-age input {
-    /* Style pour l'input Age */
     transition: all 0.2s ease-in-out;
 }
 
-/* Style personnalisé des Sliders (Crucial pour le look Pro) */
 .slider-custom {
     -webkit-appearance: none;
     appearance: none;
     width: 100%;
-    height: 12px; /* Un peu plus épais */
+    height: 12px; 
     background: #E5E7EB;
     border-radius: 6px;
     outline: none;
     cursor: pointer;
-    overflow: hidden; /* Permet de contrôler le remplissage */
+    overflow: hidden; 
 }
 
-/* Remplissage de la piste (Track) pour indiquer la valeur */
 .slider-custom::-webkit-slider-runnable-track {
     -webkit-appearance: none;
     background: #E5E7EB;
     border-radius: 6px;
 }
 
-/* Le pouce (Thumb) du slider */
 .slider-custom::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 24px; /* Plus grand pour l'UX tactile */
+    width: 24px; 
     height: 24px;
     background: var(--color-primary);
     border-radius: 50%;
-    /* Utilise une ombre pour donner du relief */
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-    /* L'astuce pour remplir la piste côté gauche (couleur verte) */
     box-shadow: -200px 0 0 200px var(--color-primary), 0 0 5px rgba(0, 0, 0, 0.3);
 }
 
-/* Ajustement pour Firefox */
 .slider-custom::-moz-range-thumb {
     background: var(--color-primary);
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);

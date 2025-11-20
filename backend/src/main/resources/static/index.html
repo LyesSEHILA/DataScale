@@ -4,22 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CyberScale - Démarrage de l'Évaluation</title>
-    <!-- Chargement de Tailwind CSS pour un style épuré et responsive -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Utilisation de la police Inter (standard professionnel) -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
-    <!-- Icônes Lucide pour un look moderne -->
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 </head>
 <body>
 
-    <!-- AJOUT: Un conteneur pour le fond texturé -->
     <div class="background-pattern-container">
         <div class="main-content-wrapper">
             <div class="container-card">
-                
-                <!-- EN-TÊTE, MISSION ET EXPLICATIONS CLÉS -->
                 <header class="text-center pb-8 mb-8 border-b border-gray-100">
                     <span class="inline-block text-emerald-600 mb-4">
                         <i data-lucide="scale" style="width: 48px; height: 48px;"></i>
@@ -30,12 +24,10 @@
                     </p>
                 </header>
 
-                <!-- SECTION 1: MODÈLE D'ÉVALUATION (Explications détaillées) -->
                 <section class="mb-10">
                     <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Notre Modèle : Théorie vs. Technique</h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         
-                        <!-- Théorie Block -->
                         <div class="p-6 bg-emerald-50 rounded-xl shadow-md border-t-4 border-emerald-500">
                             <div class="flex items-center mb-3">
                                 <i data-lucide="book-open-check" class="w-6 h-6 text-emerald-600 mr-3"></i>
@@ -44,7 +36,6 @@
                             <p class="text-gray-600 text-sm">Votre compréhension des concepts fondamentaux, des cadres normatifs (ISO, NIST), des aspects légaux et de l'architecture de sécurité.</p>
                         </div>
 
-                        <!-- Technique Block -->
                         <div class="p-6 bg-emerald-50 rounded-xl shadow-md border-t-4 border-emerald-500">
                             <div class="flex items-center mb-3">
                                 <i data-lucide="terminal" class="w-6 h-6 text-emerald-600 mr-3"></i>
@@ -56,13 +47,11 @@
                 </section>
 
 
-                <!-- SECTION 2: FORMULAIRE D'AUTO-ÉVALUATION -->
                 <section class="pt-8 border-t border-gray-100">
                     <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Démarrer le Test Adaptatif</h2>
 
                     <form id="onboardingForm" class="space-y-6 max-w-lg mx-auto">
                         
-                        <!-- Information Clé sur l'Âge -->
                         <div class="form-group-age">
                             <label for="ageInput" class="input-label">
                                 <i data-lucide="calendar" class="w-4 h-4 mr-2"></i> Votre âge (requis pour l'analyse démographique)
@@ -71,7 +60,6 @@
                                 class="mt-1 block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-emerald-500 focus:border-emerald-500 text-lg">
                         </div>
 
-                        <!-- SLIDER GROUP: THÉORIQUE -->
                         <div class="form-group-slider pt-3">
                             <label for="theorySlider" class="input-label justify-between">
                                 <span class="flex items-center"><i data-lucide="book-open" class="w-4 h-4 mr-2"></i> Auto-évaluation Théorie</span>
@@ -85,7 +73,6 @@
                             </p>
                         </div>
 
-                        <!-- SLIDER GROUP: TECHNIQUE -->
                         <div class="form-group-slider pt-3">
                             <label for="techSlider" class="input-label justify-between">
                                 <span class="flex items-center"><i data-lucide="terminal" class="w-4 h-4 mr-2"></i> Auto-évaluation Technique</span>
@@ -99,7 +86,6 @@
                             </p>
                         </div>
 
-                        <!-- Bouton d'Action -->
                         <div>
                             <button type="submit" id="startButton"
                                     class="w-full py-4 px-4 rounded-xl shadow-lg font-bold text-xl text-white bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-600 hover:to-emerald-800 focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-emerald-500 mt-8 transition duration-150 ease-in-out transform hover:scale-[1.005] disabled:opacity-50 disabled:shadow-md"
@@ -108,32 +94,27 @@
                             </button>
                         </div>
 
-                        <!-- Zone de message pour les retours (Succès/Erreur) -->
                         <div id="statusMessage" class="text-center p-3 rounded-md hidden" role="alert"></div>
                     </form>
                 </section>
 
 
-                <!-- SECTION BAS DE PAGE : COMMENT ÇA MARCHE (Le "Footer" fonctionnel) -->
                 <footer class="mt-12 pt-8 border-t border-gray-100">
                     <h2 class="text-xl font-bold text-gray-800 mb-6 text-center">Votre Parcours Vers l'Expertise</h2>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
                         
-                        <!-- Étape 1 -->
                         <div>
                             <div class="mx-auto w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-3 font-extrabold text-lg shadow-md">1</div>
                             <h3 class="font-semibold text-gray-800">Profilage Initial</h3>
                             <p class="text-sm text-gray-500">Nous calibrons la difficulté du test en fonction de ces données.</p>
                         </div>
 
-                        <!-- Étape 2 -->
                         <div>
                             <div class="mx-auto w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-3 font-extrabold text-lg shadow-md">2</div>
                             <h3 class="font-semibold text-gray-800">Test Ciblé</h3>
                             <p class="text-sm text-gray-500">Le système adapte les questions en temps réel à vos réponses.</p>
                         </div>
 
-                        <!-- Étape 3 -->
                         <div>
                             <div class="mx-auto w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-3 font-extrabold text-lg shadow-md">3</div>
                             <h3 class="font-semibold text-gray-800">Plan d'Action</h3>
@@ -145,7 +126,6 @@
         </div>
     </div>
 
-    <!-- Script pour le chargement des icônes Lucide -->
     <script>
         lucide.createIcons();
     </script>
