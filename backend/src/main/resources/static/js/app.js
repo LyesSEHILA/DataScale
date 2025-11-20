@@ -6,13 +6,15 @@ const exponentialBackoffFetch = async (url, options, retries = 3) => {
     for (let i = 0; i < retries; i++) {
         try {
             const response = await fetch(url, options);
+            
+            // Le backend renvoie 201 CREATED, qui est 'ok' (status 200-299)
             if (!response.ok) {
                 // Si la réponse n'est pas OK mais n'est pas une erreur réseau
                 const errorBody = await response.text();
                 // Affiche une partie du corps de l'erreur pour le debug
                 throw new Error(`Erreur HTTP ${response.status}: ${errorBody.substring(0, 100)}...`);
             }
-            return response;
+            return response; // Succès (par ex. 201 Created)
         } catch (error) {
             console.error(`Tentative ${i + 1} échouée:`, error.message);
             if (i < retries - 1) {
@@ -66,7 +68,7 @@ const handleSubmit = async (e) => {
     displayStatus("Démarrage du test en cours...", false);
 
     try {
-        // Récupère les valeurs des champs (ageInput.value, ...)
+        // Récupère les valeurs des champs
         const age = ageInput.value;
         const theory = theorySlider.value;
         const technical = techSlider.value;
@@ -77,10 +79,14 @@ const handleSubmit = async (e) => {
         }
 
         // Construit un objet data
+        // -----------------------------------------------------------------
+        // CORRECTION DE L'ERREUR 400 :
+        // Les noms des champs doivent correspondre au DTO Java (OnboardingRequest.java)
+        // -----------------------------------------------------------------
         const data = {
             age: parseInt(age),
-            theory: parseInt(theory),
-            technical: parseInt(technical)
+            selfEvalTheory: parseInt(theory),
+            selfEvalTechnique: parseInt(technical) // CORRIGÉ: de "selfEvalTechnical" à "selfEvalTechnique"
         };
         
         // Utilise fetch pour appeler l'API du Backend (en method: 'POST')
@@ -92,9 +98,11 @@ const handleSubmit = async (e) => {
             body: JSON.stringify(data)
         });
 
+        // Le backend renvoie l'objet QuizSession complet
         const session = await response.json();
 
         // Validation de la réponse
+        // L'objet session (QuizSession) contient un champ 'id'
         if (!session.id) {
             throw new Error("Le backend n'a pas retourné d'ID de session valide.");
         }
@@ -116,7 +124,9 @@ const handleSubmit = async (e) => {
         // Gérer les erreurs de la requête ou de la validation
         console.error("Erreur de soumission:", error);
         displayStatus(`Erreur lors du démarrage du test. Détails : ${error.message}`, true);
-        startButton.disabled = false; // Réactiver le bouton en cas d'erreur
+    } finally {
+         // Réactiver le bouton (sauf si la redirection est immédiate)
+        startButton.disabled = false;
     }
 };
 
