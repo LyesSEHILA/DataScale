@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberScale - Quiz</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/quiz.css">
+</head>
+<body>
+    <div class="container quiz-container">
+        <header>
+            <div class="quiz-header">
+                <h1>Question <span id="questionNumber">1</span> <span class="total">/ 10</span></h1>
+                <div class="category-badge" id="questionCategory">...</div>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressBar"></div>
+            </div>
+        </header>
+
+        <main id="quizContent">
+            <h2 id="questionText">Chargement...</h2>
+            
+            <form id="answerForm">
+                <div id="optionsContainer" class="options-grid">
+                    </div>
+                
+                <button type="submit" id="nextButton" disabled>Valider & Suivant</button>
+            </form>
+        </main>
+    </div>
+
+    <script src="js/quiz.js"></script>
+</body>
+</html>
