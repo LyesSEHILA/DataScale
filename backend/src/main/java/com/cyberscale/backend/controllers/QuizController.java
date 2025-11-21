@@ -1,15 +1,25 @@
 package com.cyberscale.backend.controllers;
 
-import com.cyberscale.backend.dto.OnboardingRequest;
-import com.cyberscale.backend.models.Question;
-import com.cyberscale.backend.models.QuizSession;
-import com.cyberscale.backend.services.QuizService;
-import jakarta.validation.Valid;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import java.util.List;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.cyberscale.backend.dto.OnboardingRequest;
+import com.cyberscale.backend.dto.UserAnswerRequest;
+import com.cyberscale.backend.models.Question;
+import com.cyberscale.backend.models.QuizSession;
+import com.cyberscale.backend.services.QuizService;
+
+import jakarta.validation.Valid;
 
 @RestController // Dit à Spring que ceci est un Controller API
 @RequestMapping("/api/quiz") // Toutes les URL de ce fichier commenceront par /api/quiz
@@ -35,9 +45,17 @@ public class QuizController {
         return ResponseEntity.status(HttpStatus.CREATED).body(createdSession);
     }
 
+    @PostMapping("/answer")
+    public ResponseEntity<Void> submitAnswer(@Valid @RequestBody UserAnswerRequest request) {
+        quizService.saveUserAnswer(request);
+        return ResponseEntity.ok().build(); // Retourne 200 OK sans contenu
+    }
+
     @GetMapping("/questions")
     public ResponseEntity<List<Question>> getQuestions(@RequestParam Long sessionId) {
         List<Question> questions = quizService.getQuestionsForSession(sessionId);
         return ResponseEntity.ok(questions);
     }
+
+
 }

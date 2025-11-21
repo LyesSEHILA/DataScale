@@ -1,13 +1,14 @@
 package com.cyberscale.backend.controllers;
 
 import static org.hamcrest.Matchers.hasSize;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals; // <--- NOUVEAU
+import org.junit.jupiter.api.Test; // <--- NOUVEAU
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MockMvc; // <--- NOUVEAU
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -15,17 +16,21 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import org.springframework.transaction.annotation.Transactional;
 
 import com.cyberscale.backend.dto.OnboardingRequest;
+import com.cyberscale.backend.dto.UserAnswerRequest;
+import com.cyberscale.backend.models.AnswerOption;
 import com.cyberscale.backend.models.Question;
 import com.cyberscale.backend.models.QuizSession;
 import com.cyberscale.backend.repositories.AnswerOptionRepository;
 import com.cyberscale.backend.repositories.QuestionRepository;
 import com.cyberscale.backend.repositories.QuizSessionRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.cyberscale.backend.repositories.UserAnswerRepository;
+import com.fasterxml.jackson.databind.ObjectMapper; // <--- NOUVEAU
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
-@TestPropertySource(properties = "spring.sql.init.mode=never")
+// On force Spring à ne charger AUCUN fichier de données SQL pour les tests
+@TestPropertySource(properties = "spring.sql.init.data-locations=") 
 public class QuizControllerTest {
 
     @Autowired
@@ -41,7 +46,10 @@ public class QuizControllerTest {
     private QuestionRepository questionRepository;
 
     @Autowired
-    private AnswerOptionRepository answerOptionRepository; // <--- NOUVEAU : Pour nettoyer les réponses
+    private AnswerOptionRepository answerOptionRepository;
+
+    @Autowired
+    private UserAnswerRepository userAnswerRepository; // <--- NOUVEAU
 
     // --- TESTS F1 (Onboarding) ---
 
@@ -84,12 +92,12 @@ public class QuizControllerTest {
 
     @Test
     void testGetQuestions_ShouldReturnList_WhenSessionExists() throws Exception {
-        // 1. NETTOYAGE COMPLET (Ordre important : Enfants d'abord, Parents ensuite)
-        answerOptionRepository.deleteAll(); // On supprime les réponses d'abord !
-        questionRepository.deleteAll();     // Ensuite on peut supprimer les questions
+        // Nettoyage préventif (Enfants d'abord)
+        userAnswerRepository.deleteAll();
+        answerOptionRepository.deleteAll();
+        questionRepository.deleteAll();
         quizSessionRepository.deleteAll();
 
-        // 2. Préparation
         QuizSession session = new QuizSession();
         session.setAge(25L);
         session.setSelfEvalTheory(5L);
@@ -102,7 +110,6 @@ public class QuizControllerTest {
         q1.setDifficulty(Question.difficultyQuestion.EASY);
         questionRepository.save(q1);
 
-        // 3. Action & Vérification
         mockMvc.perform(get("/api/quiz/questions")
                 .param("sessionId", session.getId().toString())
                 .contentType(MediaType.APPLICATION_JSON))
@@ -122,28 +129,58 @@ public class QuizControllerTest {
 
     @Test
     void testGetQuestions_ShouldReturnHardQuestions_WhenUserIsAdvanced() throws Exception {
-        // 1. Préparation : On crée un utilisateur EXPERT (Scores > 5)
         QuizSession session = new QuizSession();
         session.setAge(30L);
-        session.setSelfEvalTheory(9L);    // Expert Théorie
-        session.setSelfEvalTechnique(9L); // Expert Technique
+        session.setSelfEvalTheory(9L);
+        session.setSelfEvalTechnique(9L);
         session = quizSessionRepository.save(session);
 
-        // On insère une question DIFFICILE pour vérifier qu'on la récupère bien
         Question qHard = new Question();
         qHard.setText("Expert Question");
         qHard.setCategorie(Question.categorieQuestion.THEORY);
         qHard.setDifficulty(Question.difficultyQuestion.HARD);
         questionRepository.save(qHard);
 
-        // 2. Action
         mockMvc.perform(get("/api/quiz/questions")
                 .param("sessionId", session.getId().toString())
                 .contentType(MediaType.APPLICATION_JSON))
-                // 3. Vérification
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].text").value("Expert Question"));
     }
-    
+
+    // --- NOUVEAU TEST F2 (Réponse / Answer) ---
+
+    @Test
+    void testSubmitAnswer_ShouldReturn200_AndSaveAnswer() throws Exception {
+        // 1. Préparation : Créer Session + Question + Option
+        QuizSession session = new QuizSession();
+        session.setAge(25L);
+        session = quizSessionRepository.save(session);
+
+        Question q1 = new Question();
+        q1.setText("Question ?");
+        q1.setCategorie(Question.categorieQuestion.THEORY);
+        q1.setDifficulty(Question.difficultyQuestion.EASY);
+        q1 = questionRepository.save(q1);
+
+        AnswerOption opt1 = new AnswerOption();
+        opt1.setText("Reponse A");
+        opt1.setIsCorrect(true);
+        opt1.setQuestion(q1); 
+        opt1 = answerOptionRepository.save(opt1);
+
+        // 2. Création de la requête
+        UserAnswerRequest request = new UserAnswerRequest(session.getId(), q1.getId(), opt1.getId());
+        String requestJson = objectMapper.writeValueAsString(request);
+
+        // 3. Appel de l'API
+        mockMvc.perform(post("/api/quiz/answer")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestJson))
+                .andExpect(status().isOk()); 
+
+        // 4. Vérification que c'est bien en base
+        assertEquals(1, userAnswerRepository.count()); 
+    }
 }
