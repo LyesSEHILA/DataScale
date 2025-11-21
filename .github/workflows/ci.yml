@@ -49,3 +49,4 @@ jobs:
               -Dsonar.java.binaries=build/classes/java/main
               -Dsonar.coverage.jacoco.xmlReportPaths=build/reports/jacoco/test/jacocoTest.xml
               -Dsonar.coverage.exclusions=src/main/java/com/cyberscale/backend/models/**,src/main/java/com/cyberscale/backend/dto/**,src/test/java/**
+              -Dsonar.cpd.exclusions=src/main/resources/data.sql
