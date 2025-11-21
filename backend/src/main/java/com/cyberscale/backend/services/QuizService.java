@@ -11,14 +11,17 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.cyberscale.backend.dto.OnboardingRequest;
+import com.cyberscale.backend.dto.ResultsResponse;
 import com.cyberscale.backend.dto.UserAnswerRequest;
 import com.cyberscale.backend.models.AnswerOption;
 import com.cyberscale.backend.models.Question;
 import com.cyberscale.backend.models.QuizSession;
+import com.cyberscale.backend.models.Recommendation;
 import com.cyberscale.backend.models.UserAnswer;
 import com.cyberscale.backend.repositories.AnswerOptionRepository;
 import com.cyberscale.backend.repositories.QuestionRepository;
 import com.cyberscale.backend.repositories.QuizSessionRepository; 
+import com.cyberscale.backend.repositories.RecommendationRepository;
 import com.cyberscale.backend.repositories.UserAnswerRepository;
 
 @Service
@@ -33,6 +36,8 @@ public class QuizService {
     private AnswerOptionRepository answerOptionRepository;
     @Autowired
     private UserAnswerRepository userAnswerRepository;
+    @Autowired
+    private RecommendationRepository recommendationRepository;
     
     /**
      * Crée et sauvegarde une nouvelle session de quiz basée sur la demande d'onboarding.
@@ -96,6 +101,63 @@ public class QuizService {
         // 2. Créer et sauvegarder l'entité
         UserAnswer userAnswer = new UserAnswer(session, question, selectedOption);
         userAnswerRepository.save(userAnswer);
+    }
+
+    public ResultsResponse calculateAndGetResults(Long sessionId) {
+        // 1. Récupérer la session
+        QuizSession session = quizSessionRepository.findById(sessionId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session introuvable"));
+
+        // 2. Récupérer toutes les réponses de l'utilisateur
+        List<UserAnswer> answers = userAnswerRepository.findBySessionId(sessionId);
+
+        /*if (answers.isEmpty()) {
+            // Pas de réponse ? Score 0.
+            return new ResultsResponse(0.0, 0.0, Collections.emptyList());
+        }*/
+
+        // 3. Calculer les scores (Théorie vs Technique)
+        int theoryTotal = 0;
+        int theoryCorrect = 0;
+        int techTotal = 0;
+        int techCorrect = 0;
+
+        for (UserAnswer answer : answers) {
+            Question q = answer.getQuestion();
+            boolean isCorrect = answer.getSelectedOption().getIsCorrect();
+
+            if (q.getCategorie() == Question.categorieQuestion.THEORY) {
+                theoryTotal++;
+                if (isCorrect) theoryCorrect++;
+            } else {
+                techTotal++;
+                if (isCorrect) techCorrect++;
+            }
+        }
+
+        // Règle de 3 pour avoir un score sur 10
+        Double finalScoreTheory = (theoryTotal == 0) ? 0.0 : ((double) theoryCorrect / theoryTotal) * 10.0;
+        Double finalScoreTechnique = (techTotal == 0) ? 0.0 : ((double) techCorrect / techTotal) * 10.0;
+
+        // 4. Sauvegarder les scores en BDD (Mise à jour de la session)
+        session.setFinalScoreTheory(finalScoreTheory);
+        session.setFinalScoreTechnique(finalScoreTechnique);
+        quizSessionRepository.save(session);
+
+        // 5. Sélectionner les recommandations (Logique F4 simple)
+        String targetProfile;
+        if (finalScoreTechnique < 5) {
+            targetProfile = "LOW_TECH";
+        } else if (finalScoreTheory < 5) {
+            targetProfile = "LOW_THEORY";
+        } else {
+            targetProfile = "HIGH_ALL";
+        }
+
+        List<Recommendation> recommendations = recommendationRepository.findByTargetProfile(targetProfile);
+
+        // 6. Retourner le tout
+        return new ResultsResponse(finalScoreTheory, finalScoreTechnique, recommendations);
     }
 
 }

@@ -338,3 +338,47 @@ INSERT INTO answers_option (id, text, is_correct, question_id)
 VALUES (79, 'Une méthode de partage de fichiers entre sites web.', false, 20);
 INSERT INTO answers_option (id, text, is_correct, question_id) 
 VALUES (80, 'Un type de certificat de sécurité pour les sites web.', false, 20);
+
+
+-- ===================================================
+-- DONNÉES DE RECOMMANDATION (F4)
+-- ===================================================
+
+-- On s'assure que les IDs commencent après nos insertions manuelles
+ALTER TABLE recommendation ALTER COLUMN id RESTART WITH 100;
+
+-- ---------------------------------------------------
+-- PROFIL: LOW_TECH (Manque de pratique)
+-- ---------------------------------------------------
+INSERT INTO recommendation (id, title, type, url, target_profile) 
+VALUES (1, 'TryHackMe: Pre-Security Path', 'EXERCICE', 'https://tryhackme.com/path/outline/presecurity', 'LOW_TECH');
+
+INSERT INTO recommendation (id, title, type, url, target_profile) 
+VALUES (2, 'Root-Me: Challenges Réseau', 'EXERCICE', 'https://www.root-me.org/fr/Challenges/Reseau/', 'LOW_TECH');
+
+INSERT INTO recommendation (id, title, type, url, target_profile) 
+VALUES (3, 'Livre: "Le Guide du Hackeur (Linux)"', 'LIVRE', 'https://www.amazon.fr/Hacking-Art-Exploitation-Jon-Erickson/dp/1593271441', 'LOW_TECH');
+
+-- ---------------------------------------------------
+-- PROFIL: LOW_THEORY (Manque de théorie/normes)
+-- ---------------------------------------------------
+INSERT INTO recommendation (id, title, type, url, target_profile) 
+VALUES (4, 'Certification: CompTIA Security+', 'CERTIFICATION', 'https://www.comptia.org/certifications/security', 'LOW_THEORY');
+
+INSERT INTO recommendation (id, title, type, url, target_profile) 
+VALUES (5, 'ANSSI: Guide d hygiène informatique', 'LIVRE', 'https://www.ssi.gouv.fr/guide/guide-dhygiene-informatique/', 'LOW_THEORY');
+
+INSERT INTO recommendation (id, title, type, url, target_profile) 
+VALUES (6, 'Cours: ISO 27001 Fundamentals', 'EXERCICE', 'https://www.udemy.com/topic/iso-27001/', 'LOW_THEORY');
+
+-- ---------------------------------------------------
+-- PROFIL: HIGH_ALL (Profil équilibré / Avancé)
+-- ---------------------------------------------------
+INSERT INTO recommendation (id, title, type, url, target_profile) 
+VALUES (7, 'Certification: OSCP (OffSec Certified Professional)', 'CERTIFICATION', 'https://www.offsec.com/courses/pen-200/', 'HIGH_ALL');
+
+INSERT INTO recommendation (id, title, type, url, target_profile) 
+VALUES (8, 'Livre: "Red Team Field Manual (RTFM)"', 'LIVRE', 'https://www.amazon.com/Rtfm-Red-Team-Field-Manual/dp/1494295504', 'HIGH_ALL');
+
+INSERT INTO recommendation (id, title, type, url, target_profile) 
+VALUES (9, 'Hack The Box: Pro Labs', 'EXERCICE', 'https://www.hackthebox.com/hacker/pro-labs', 'HIGH_ALL');
