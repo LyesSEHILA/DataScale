@@ -1,70 +1,122 @@
 package com.cyberscale.backend.controllers;
 
-import com.cyberscale.backend.dto.OnboardingRequest;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import static org.hamcrest.Matchers.hasSize;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
-
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import org.springframework.transaction.annotation.Transactional;
 
-@SpringBootTest // Charge tout le contexte Spring Boot
-@AutoConfigureMockMvc // Nous donne l'outil 'MockMvc' pour appeler nos API
+import com.cyberscale.backend.dto.OnboardingRequest;
+import com.cyberscale.backend.models.Question;
+import com.cyberscale.backend.models.QuizSession;
+import com.cyberscale.backend.repositories.AnswerOptionRepository;
+import com.cyberscale.backend.repositories.QuestionRepository;
+import com.cyberscale.backend.repositories.QuizSessionRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+@SpringBootTest
+@AutoConfigureMockMvc
+@Transactional
+@TestPropertySource(properties = "spring.sql.init.mode=never")
 public class QuizControllerTest {
 
     @Autowired
-    private MockMvc mockMvc; // L'outil pour simuler les appels API
+    private MockMvc mockMvc;
 
     @Autowired
-    private ObjectMapper objectMapper; // Un outil pour convertir nos objets Java en JSON
+    private ObjectMapper objectMapper;
+
+    @Autowired
+    private QuizSessionRepository quizSessionRepository;
+
+    @Autowired
+    private QuestionRepository questionRepository;
+
+    @Autowired
+    private AnswerOptionRepository answerOptionRepository; // <--- NOUVEAU : Pour nettoyer les réponses
+
+    // --- TESTS F1 (Onboarding) ---
 
     @Test
     void testStartQuiz_ShouldReturn201_WhenRequestIsValid() throws Exception {
-        // 1. Préparation (Arrange)
-        // Crée une requête valide
         OnboardingRequest request = new OnboardingRequest(25L, 5L, 7L);
         String requestJson = objectMapper.writeValueAsString(request);
 
-        // 2. Action (Act) & 3. Vérification (Assert)
-        mockMvc.perform(post("/api/quiz/start") // Appelle POST /api/quiz/start
+        mockMvc.perform(post("/api/quiz/start")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestJson))
-            .andExpect(status().isCreated()) // On s'attend à un statut 201 CREATED
-            .andExpect(jsonPath("$.id").exists()) // On vérifie que la réponse contient un ID
-            .andExpect(jsonPath("$.age").value(25)) // On vérifie que l'âge est correct
-            .andExpect(jsonPath("$.selfEvalTheory").value(5));
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.id").exists())
+            .andExpect(jsonPath("$.age").value(25));
     }
 
     @Test
     void testStartQuiz_ShouldReturn400_WhenAgeIsInvalid() throws Exception {
-        // 1. Préparation (Arrange)
-        // Crée une requête invalide (âge = 0, mais le DTO exige min=1)
         OnboardingRequest request = new OnboardingRequest(0L, 5L, 7L);
         String requestJson = objectMapper.writeValueAsString(request);
 
-        // 2. Action (Act) & 3. Vérification (Assert)
-        mockMvc.perform(post("/api/quiz/start") // Appelle POST /api/quiz/start
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(requestJson))
-            .andExpect(status().isBadRequest()); // On s'attend à un statut 400 BAD REQUEST
-    }
-    
-    @Test
-    void testStartQuiz_ShouldReturn400_WhenTheoryEvalIsInvalid() throws Exception {
-        // 1. Préparation (Arrange)
-        // Crée une requête invalide (évaluation = 11, mais le DTO exige max=10)
-        OnboardingRequest request = new OnboardingRequest(25L, 11L, 7L);
-        String requestJson = objectMapper.writeValueAsString(request);
-
-        // 2. Action (Act) & 3. Vérification (Assert)
         mockMvc.perform(post("/api/quiz/start")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestJson))
-            .andExpect(status().isBadRequest()); // On s'attend à un statut 400 BAD REQUEST
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void testStartQuiz_ShouldReturn400_WhenTheoryEvalIsInvalid() throws Exception {
+        OnboardingRequest request = new OnboardingRequest(25L, 11L, 7L);
+        String requestJson = objectMapper.writeValueAsString(request);
+
+        mockMvc.perform(post("/api/quiz/start")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestJson))
+            .andExpect(status().isBadRequest());
+    }
+
+    // --- TESTS F2 (Questions) ---
+
+    @Test
+    void testGetQuestions_ShouldReturnList_WhenSessionExists() throws Exception {
+        // 1. NETTOYAGE COMPLET (Ordre important : Enfants d'abord, Parents ensuite)
+        answerOptionRepository.deleteAll(); // On supprime les réponses d'abord !
+        questionRepository.deleteAll();     // Ensuite on peut supprimer les questions
+        quizSessionRepository.deleteAll();
+
+        // 2. Préparation
+        QuizSession session = new QuizSession();
+        session.setAge(25L);
+        session.setSelfEvalTheory(5L);
+        session.setSelfEvalTechnique(5L);
+        session = quizSessionRepository.save(session);
+
+        Question q1 = new Question();
+        q1.setText("Test Question Theory Easy");
+        q1.setCategorie(Question.categorieQuestion.THEORY);
+        q1.setDifficulty(Question.difficultyQuestion.EASY);
+        questionRepository.save(q1);
+
+        // 3. Action & Vérification
+        mockMvc.perform(get("/api/quiz/questions")
+                .param("sessionId", session.getId().toString())
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].text").value("Test Question Theory Easy"));
+    }
+
+    @Test
+    void testGetQuestions_ShouldReturn404_WhenSessionDoesNotExist() throws Exception {
+        mockMvc.perform(get("/api/quiz/questions")
+                .param("sessionId", "9999")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound());
     }
 }

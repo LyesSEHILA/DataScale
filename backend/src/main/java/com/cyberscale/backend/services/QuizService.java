@@ -6,7 +6,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.cyberscale.backend.dto.OnboardingRequest;
 import com.cyberscale.backend.models.Question;
@@ -40,8 +42,7 @@ public class QuizService {
     public List<Question> getQuestionsForSession(Long sessionId) {
         // 1. Récupérer la session
         QuizSession session = quizSessionRepository.findById(sessionId)
-                .orElseThrow(() -> new RuntimeException("Session non trouvée"));
-
+.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session non trouvée"));
         // 2. Déterminer le niveau
         boolean isTheoryAdvanced = session.getSelfEvalTheory() > 5;
         boolean isTechAdvanced = session.getSelfEvalTechnique() > 5;
