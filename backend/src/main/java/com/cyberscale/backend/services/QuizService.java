@@ -11,10 +11,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.cyberscale.backend.dto.OnboardingRequest;
+import com.cyberscale.backend.dto.UserAnswerRequest;
+import com.cyberscale.backend.models.AnswerOption;
 import com.cyberscale.backend.models.Question;
 import com.cyberscale.backend.models.QuizSession;
+import com.cyberscale.backend.models.UserAnswer;
+import com.cyberscale.backend.repositories.AnswerOptionRepository;
 import com.cyberscale.backend.repositories.QuestionRepository;
-import com.cyberscale.backend.repositories.QuizSessionRepository;
+import com.cyberscale.backend.repositories.QuizSessionRepository; 
+import com.cyberscale.backend.repositories.UserAnswerRepository;
 
 @Service
 public class QuizService {
@@ -24,6 +29,11 @@ public class QuizService {
     private QuizSessionRepository quizSessionRepository;
     @Autowired
     private QuestionRepository questionRepository;
+    @Autowired
+    private AnswerOptionRepository answerOptionRepository;
+    @Autowired
+    private UserAnswerRepository userAnswerRepository;
+    
     /**
      * Crée et sauvegarde une nouvelle session de quiz basée sur la demande d'onboarding.
      * C'est le DoD #4.
@@ -70,6 +80,22 @@ public class QuizService {
         // 5. Mélanger et Limiter
         Collections.shuffle(questions);
         return questions.stream().limit(10).collect(Collectors.toList());
+    }
+
+    public void saveUserAnswer(UserAnswerRequest request) {
+        // 1. Vérifier que tout existe
+        QuizSession session = quizSessionRepository.findById(request.sessionId())
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session introuvable"));
+
+        Question question = questionRepository.findById(request.questionId())
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Question introuvable"));
+
+        AnswerOption selectedOption = answerOptionRepository.findById(request.answerOptionId())
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Réponse introuvable"));
+
+        // 2. Créer et sauvegarder l'entité
+        UserAnswer userAnswer = new UserAnswer(session, question, selectedOption);
+        userAnswerRepository.save(userAnswer);
     }
 
 }
