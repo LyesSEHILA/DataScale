@@ -119,4 +119,31 @@ public class QuizControllerTest {
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound());
     }
+
+    @Test
+    void testGetQuestions_ShouldReturnHardQuestions_WhenUserIsAdvanced() throws Exception {
+        // 1. Préparation : On crée un utilisateur EXPERT (Scores > 5)
+        QuizSession session = new QuizSession();
+        session.setAge(30L);
+        session.setSelfEvalTheory(9L);    // Expert Théorie
+        session.setSelfEvalTechnique(9L); // Expert Technique
+        session = quizSessionRepository.save(session);
+
+        // On insère une question DIFFICILE pour vérifier qu'on la récupère bien
+        Question qHard = new Question();
+        qHard.setText("Expert Question");
+        qHard.setCategorie(Question.categorieQuestion.THEORY);
+        qHard.setDifficulty(Question.difficultyQuestion.HARD);
+        questionRepository.save(qHard);
+
+        // 2. Action
+        mockMvc.perform(get("/api/quiz/questions")
+                .param("sessionId", session.getId().toString())
+                .contentType(MediaType.APPLICATION_JSON))
+                // 3. Vérification
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].text").value("Expert Question"));
+    }
+    
 }
