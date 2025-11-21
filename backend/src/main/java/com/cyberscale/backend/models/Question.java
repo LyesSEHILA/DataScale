@@ -1,11 +1,16 @@
 package com.cyberscale.backend.models;
 
+import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
 
@@ -23,6 +28,9 @@ public class Question {
     private categorieQuestion categorie;
     @Enumerated(EnumType.STRING)
     private difficultyQuestion difficulty;
+    @OneToMany(mappedBy = "question")
+    @JsonManagedReference // Important pour éviter les boucles infinies en JSON
+    private List<AnswerOption> options;
 
 
     public Question() {}
@@ -66,4 +74,8 @@ public class Question {
     public void setDifficulty(difficultyQuestion difficulty) {
         this.difficulty = difficulty;
     }    
+
+    public List<AnswerOption> getOptions() { return options; }
+    public void setOptions(List<AnswerOption> options) { this.options = options; }
+    
 }

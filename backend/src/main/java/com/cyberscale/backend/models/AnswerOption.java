@@ -1,12 +1,14 @@
 package com.cyberscale.backend.models;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.JoinColumn; 
+import jakarta.persistence.Table; 
 
 
 
@@ -21,6 +23,7 @@ public class AnswerOption {
 
     @ManyToOne
     @JoinColumn(name = "question_id")
+    @JsonBackReference
     private Question question; 
 
     public AnswerOption() {}
