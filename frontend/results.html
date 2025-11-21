@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberScale - Résultats</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/results.css">
+</head>
+<body>
+    <div class="container results-container">
+        <header>
+            <h1>Vos Résultats 🎯</h1>
+            <p>Voici votre positionnement en cybersécurité</p>
+        </header>
+
+        <main>
+            <div class="chart-wrapper">
+                <canvas id="resultsChart"></canvas>
+            </div>
+
+            <div class="scores-summary">
+                <div class="score-card theory">
+                    <h3>Théorie</h3>
+                    <span id="scoreTheoryDisplay">-/10</span>
+                </div>
+                <div class="score-card tech">
+                    <h3>Technique</h3>
+                    <span id="scoreTechDisplay">-/10</span>
+                </div>
+            </div>
+
+            <section class="recommendations-section">
+                <h2>Nos Recommandations pour vous</h2>
+                <div id="recommendationsList" class="reco-grid">
+                    <p>Chargement des recommandations...</p>
+                </div>
+            </section>
+
+            <a href="index.html" class="restart-btn">Recommencer un test</a>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="js/results.js"></script>
+</body>
+</html>
