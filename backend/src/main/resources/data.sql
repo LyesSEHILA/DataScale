@@ -338,4 +338,3 @@ INSERT INTO answers_option (id, text, is_correct, question_id)
 VALUES (79, 'Une méthode de partage de fichiers entre sites web.', false, 20);
 INSERT INTO answers_option (id, text, is_correct, question_id) 
 VALUES (80, 'Un type de certificat de sécurité pour les sites web.', false, 20);
-
