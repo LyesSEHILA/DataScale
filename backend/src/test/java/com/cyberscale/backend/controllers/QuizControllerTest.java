@@ -1,14 +1,14 @@
 package com.cyberscale.backend.controllers;
 
 import static org.hamcrest.Matchers.hasSize;
-import static org.junit.jupiter.api.Assertions.assertEquals; // <--- NOUVEAU
-import org.junit.jupiter.api.Test; // <--- NOUVEAU
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.web.servlet.MockMvc; // <--- NOUVEAU
+import org.springframework.test.web.servlet.MockMvc;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -20,11 +20,14 @@ import com.cyberscale.backend.dto.UserAnswerRequest;
 import com.cyberscale.backend.models.AnswerOption;
 import com.cyberscale.backend.models.Question;
 import com.cyberscale.backend.models.QuizSession;
+import com.cyberscale.backend.models.Recommendation;
+import com.cyberscale.backend.models.UserAnswer;
 import com.cyberscale.backend.repositories.AnswerOptionRepository;
 import com.cyberscale.backend.repositories.QuestionRepository;
 import com.cyberscale.backend.repositories.QuizSessionRepository;
+import com.cyberscale.backend.repositories.RecommendationRepository;
 import com.cyberscale.backend.repositories.UserAnswerRepository;
-import com.fasterxml.jackson.databind.ObjectMapper; // <--- NOUVEAU
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -49,7 +52,10 @@ public class QuizControllerTest {
     private AnswerOptionRepository answerOptionRepository;
 
     @Autowired
-    private UserAnswerRepository userAnswerRepository; // <--- NOUVEAU
+    private UserAnswerRepository userAnswerRepository;
+
+    @Autowired
+    private RecommendationRepository recommendationRepository; // <--- NOUVEAU pour F4
 
     // --- TESTS F1 (Onboarding) ---
 
@@ -92,7 +98,7 @@ public class QuizControllerTest {
 
     @Test
     void testGetQuestions_ShouldReturnList_WhenSessionExists() throws Exception {
-        // Nettoyage préventif (Enfants d'abord)
+        // Nettoyage préventif
         userAnswerRepository.deleteAll();
         answerOptionRepository.deleteAll();
         questionRepository.deleteAll();
@@ -149,11 +155,10 @@ public class QuizControllerTest {
                 .andExpect(jsonPath("$[0].text").value("Expert Question"));
     }
 
-    // --- NOUVEAU TEST F2 (Réponse / Answer) ---
+    // --- TEST F2 (Submit Answer) ---
 
     @Test
     void testSubmitAnswer_ShouldReturn200_AndSaveAnswer() throws Exception {
-        // 1. Préparation : Créer Session + Question + Option
         QuizSession session = new QuizSession();
         session.setAge(25L);
         session = quizSessionRepository.save(session);
@@ -170,17 +175,86 @@ public class QuizControllerTest {
         opt1.setQuestion(q1); 
         opt1 = answerOptionRepository.save(opt1);
 
-        // 2. Création de la requête
         UserAnswerRequest request = new UserAnswerRequest(session.getId(), q1.getId(), opt1.getId());
         String requestJson = objectMapper.writeValueAsString(request);
 
-        // 3. Appel de l'API
         mockMvc.perform(post("/api/quiz/answer")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestJson))
                 .andExpect(status().isOk()); 
 
-        // 4. Vérification que c'est bien en base
         assertEquals(1, userAnswerRepository.count()); 
+    }
+
+    // --- NOUVEAUX TESTS F3/F4 (Résultats) ---
+
+    @Test
+    void testGetResults_ShouldReturnScoresAndRecos() throws Exception {
+        // 1. Préparation : Session
+        QuizSession session = new QuizSession();
+        session.setAge(25L);
+        session = quizSessionRepository.save(session);
+
+        // 2. Préparation : Question THÉORIE + Bonne Réponse
+        Question qTheory = new Question();
+        qTheory.setText("Théorie?");
+        qTheory.setCategorie(Question.categorieQuestion.THEORY);
+        qTheory.setDifficulty(Question.difficultyQuestion.EASY);
+        qTheory = questionRepository.save(qTheory);
+
+        AnswerOption optTheoryCorrect = new AnswerOption(null, "Vrai", true);
+        optTheoryCorrect.setQuestion(qTheory);
+        optTheoryCorrect = answerOptionRepository.save(optTheoryCorrect);
+
+        // 3. Préparation : Question TECHNIQUE + Mauvaise Réponse
+        Question qTech = new Question();
+        qTech.setText("Tech?");
+        qTech.setCategorie(Question.categorieQuestion.TECHNIQUE);
+        qTech.setDifficulty(Question.difficultyQuestion.EASY);
+        qTech = questionRepository.save(qTech);
+
+        AnswerOption optTechWrong = new AnswerOption(null, "Faux", false);
+        optTechWrong.setQuestion(qTech);
+        optTechWrong = answerOptionRepository.save(optTechWrong);
+
+        // 4. Enregistrement des réponses utilisateur
+        UserAnswer ans1 = new UserAnswer(session, qTheory, optTheoryCorrect);
+        userAnswerRepository.save(ans1);
+        
+        UserAnswer ans2 = new UserAnswer(session, qTech, optTechWrong);
+        userAnswerRepository.save(ans2);
+
+        // 5. Ajouter une recommandation en base pour vérifier qu'elle remonte
+        Recommendation reco = new Recommendation();
+        reco.setTitle("Livre Test");
+        reco.setTargetProfile("LOW_TECH"); // Car Tech score sera 0
+        recommendationRepository.save(reco);
+
+        // 6. Exécution : GET /results
+        mockMvc.perform(get("/api/quiz/results")
+                .param("sessionId", session.getId().toString())
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                // Théorie : 1/1 juste -> 10.0
+                .andExpect(jsonPath("$.scoreTheory").value(10.0)) 
+                // Technique : 0/1 juste -> 0.0
+                .andExpect(jsonPath("$.scoreTechnique").value(0.0))
+                // Vérifie qu'on a bien des recommandations
+                .andExpect(jsonPath("$.recommendations").isArray())
+                .andExpect(jsonPath("$.recommendations", hasSize(1)));
+    }
+
+    @Test
+    void testGetResults_ShouldReturnZeros_WhenNoAnswers() throws Exception {
+        QuizSession session = new QuizSession();
+        session.setAge(25L);
+        session = quizSessionRepository.save(session);
+
+        mockMvc.perform(get("/api/quiz/results")
+                .param("sessionId", session.getId().toString())
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.scoreTheory").value(0.0))
+                .andExpect(jsonPath("$.scoreTechnique").value(0.0));
     }
 }

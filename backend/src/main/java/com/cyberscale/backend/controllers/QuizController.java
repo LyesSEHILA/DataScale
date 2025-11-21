@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.cyberscale.backend.dto.OnboardingRequest;
+import com.cyberscale.backend.dto.ResultsResponse;
 import com.cyberscale.backend.dto.UserAnswerRequest;
 import com.cyberscale.backend.models.Question;
 import com.cyberscale.backend.models.QuizSession;
@@ -50,11 +51,17 @@ public class QuizController {
         quizService.saveUserAnswer(request);
         return ResponseEntity.ok().build(); // Retourne 200 OK sans contenu
     }
-
+    
     @GetMapping("/questions")
     public ResponseEntity<List<Question>> getQuestions(@RequestParam Long sessionId) {
         List<Question> questions = quizService.getQuestionsForSession(sessionId);
         return ResponseEntity.ok(questions);
+    }
+
+    @GetMapping("/results")
+    public ResponseEntity<ResultsResponse> getResults(@RequestParam Long sessionId) {
+        ResultsResponse results = quizService.calculateAndGetResults(sessionId);
+        return ResponseEntity.ok(results);
     }
 
 
