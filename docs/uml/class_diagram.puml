@@ -1,0 +1,76 @@
+@startuml
+!theme plain
+' Affiche les champs mais cache les méthodes (getters/setters inutiles ici)
+hide methods
+
+title Diagramme de Classe Métier (CyberScale v0.1)
+
+class QuizSession {
+  - Long id
+  - Integer age
+  - Integer selfEvalTheory
+  - Integer selfEvalTechnique
+  - Double finalScoreTheory
+  - Double finalScoreTechnique
+  - LocalDateTime createdAt
+}
+
+class Question {
+  - Long id
+  - String text
+  - CategorieQuestion categorie
+  - DifficultyQuestion difficulty
+}
+
+enum CategorieQuestion {
+  THEORY
+  TECHNIQUE
+}
+
+enum DifficultyQuestion {
+  EASY
+  MEDIUM
+  HARD
+}
+
+class AnswerOption {
+  - Long id
+  - String text
+  - Boolean isCorrect
+}
+
+class UserAnswer {
+  - Long id
+  - LocalDateTime answeredAt
+}
+
+class Recommendation {
+  - Long id
+  - String title
+  - String type
+  - String url
+  - String targetProfile
+}
+
+' --- Relations Fortes (Base de données) ---
+
+' Une question a plusieurs options
+Question "1" *-down- "2..*" AnswerOption : contient >
+
+' Une session contient plusieurs réponses utilisateur
+QuizSession "1" *-- "*" UserAnswer : contient >
+
+' Une réponse utilisateur pointe vers une Question et une Option
+UserAnswer "*" --> "1" Question : répond à >
+UserAnswer "*" --> "1" AnswerOption : choisit >
+
+' Les Enums
+Question +-- CategorieQuestion
+Question +-- DifficultyQuestion
+
+' --- Relations Logiques (Calculées) ---
+
+' Une session aboutit à des recommandations (Lien logique, non BDD)
+QuizSession "." ..> "*" Recommendation : génère (selon score) >
+
+@enduml
