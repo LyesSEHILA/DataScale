@@ -32,6 +32,8 @@ dependencies {
     testImplementation("io.cucumber:cucumber-spring:7.15.0")
     testImplementation("io.cucumber:cucumber-junit-platform-engine:7.15.0")
     testImplementation("org.junit.platform:junit-platform-suite:1.10.1")
+    testImplementation("org.seleniumhq.selenium:selenium-java:4.18.1")
+    testImplementation("io.github.bonigarcia:webdrivermanager:5.7.0")
 }
 
 // --- Configuration JaCoCo en Kotlin DSL ---
