@@ -1,97 +1,38 @@
-= Documentation Projet CyberScale
-:toc: left
-:toclevels: 3
-:sectnums:
-:source-highlighter: highlight.js
-:icons: font
-:imagesdir: ./images
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberScale - Évaluation</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>CyberScale 🛡️</h1>
+            <p>Évaluez vos compétences en cybersécurité</p>
+        </header>
 
-[abstract]
-Documentation technique et fonctionnelle du projet CyberScale.
+        <form id="onboardingForm">
+            <div class="form-group">
+                <label for="ageInput">Votre âge :</label>
+                <input type="number" id="ageInput" min="1" required>
+            </div>
 
-== 1. Présentation
+            <div class="form-group">
+                <label for="theorySlider">Niveau Théorique (1-10) : <span id="theoryValue">5</span></label>
+                <input type="range" id="theorySlider" min="1" max="10" value="5" oninput="document.getElementById('theoryValue').textContent = this.value">
+            </div>
 
-=== 1.1. L'Équipe
-* [Lyes SEHILA] - Lead DevOps & Architecte
-* [Hassan Jatta] - Lead Backend
-* [Abdoulaye] - Lead Frontend & UX/UI
+            <div class="form-group">
+                <label for="techSlider">Niveau Technique (1-10) : <span id="techValue">5</span></label>
+                <input type="range" id="techSlider" min="1" max="10" value="5" oninput="document.getElementById('techValue').textContent = this.value">
+            </div>
 
-=== 1.2. Thématique et Objectifs
+            <button type="submit" id="startButton">Commencer le Test</button>
+        </form>
+    </div>
 
-Fournir une plateforme d'auto-évaluation et de positionnement claire et actionnable pour les individus (étudiants, professionnels, ou curieux) souhaitant mesurer leurs compétences en cybersécurité.
-
-*.Concept Clé*
-
-Le cœur du projet repose sur la distinction entre deux axes de compétences fondamentaux :
-
-L'Axe Théorique (Abscisse / X)::
-Mesure la connaissance des concepts, des principes fondamentaux, des cadres de gouvernance (ex: ISO 27001), des lois et régulations (ex: RGPD), et des méthodologies (ex: MITRE ATT&CK).
-
-L'Axe Technique (Ordonnée / Y)::
-Mesure la maîtrise pratique des outils (ex: Nmap, Wireshark), des langages de script, des procédures d'exploitation (pentest) ou de défense (blue team), et des configurations sécurisées.
-
-*.Parcours Utilisateur (User Journey)*
-
-Le parcours de l'utilisateur est conçu pour être simple, engageant et adaptatif :
-
-. *Accueil & Pré-évaluation*
-** L'utilisateur arrive sur la plateforme.
-** Il doit renseigner son âge (utilisé pour des analyses démographiques futures).
-** Il procède à une auto-évaluation sur deux échelles de 1 à 10 : "Où situez-vous vos connaissances *théoriques* ?" et "Où situez-vous vos connaissances *techniques* ?".
-
-. *Test Adaptatif*
-** En se basant sur cette auto-évaluation, la plateforme génère un **quiz personnalisé**.
-** La difficulté, la pondération (plus de questions techniques ou théoriques) et le type de questions sont adaptés au profil déclaré par l'utilisateur.
-
-. *Résultats & Positionnement Visuel*
-** Une fois le test terminé, le système calcule deux scores finaux (Score Théorique, Score Technique) basés sur les bonnes réponses.
-** Le résultat est affiché visuellement : l'utilisateur apparaît comme **un point sur un nuage de points (graphique 2D)**. Il peut ainsi voir immédiatement son "profil" (ex: "Débutant", "Technicien spécialisé", "Théoricien confirmé", "Expert").
-
-. *Recommandations Ciblées*
-** En fonction de son positionnement sur la grille, la plateforme lui propose une liste de **suggestions personnalisées** pour l'aider à progresser.
-** Ces suggestions incluent des livres, des articles, des exercices pratiques (ex: labs, CTF) et des certifications pertinentes (ex: "Vous manquez de technique ? Essayez la certification OSCP." ou "Vos bases théoriques sont faibles ? Commencez par le Security+.").
-
-*.Objectif Final*
-
-L'objectif de CyberScale n'est pas seulement de "noter" l'utilisateur. Il s'agit de lui fournir une **"carte"** claire de ses forces et faiblesses actuelles, ainsi qu'une **"boussole"** (les recommandations) pour l'orienter efficacement dans son parcours d'apprentissage ou professionnel en cybersécurité.
-
-== 2. Architecture et Technologies
-
-=== 2.1. Architecture Système
-
-(Nous insérerons le diagramme PlantUML ici)
-// Exemple : plantuml::uml/system_architecture.puml[format=png]
-
-=== 2.2. Technologies et Méthodologies
-
-*Backend*:: Java 17, Spring Boot 3, Gradle
-*Frontend*:: JavaScript (ES6+), HTML5, CSS3
-*Base de Données*:: PostgreSQL (production), H2 (tests)
-*DevOps*:: GitHub, GitHub Actions (CI), SonarCloud (Qualité)
-*Méthodologie*:: Kanban, Approche DevOps (CI/CD), Git-flow (simplifié)
-
-=== 2.3. Diagramme de Classe Métier
-
-(Nous insérerons le diagramme de classe PlantUML ici)
-// Exemple : plantuml::uml/class_diagram.puml[format=png]
-
-== 3. Fonctionnalités (Features)
-
-(Cette section sera complétée à chaque feature)
-
-=== 3.1. F1: Onboarding & Auto-évaluation
-*Objectifs / Scénarios*:: Permettre à un nouvel utilisateur de démarrer le processus en fournissant son âge et son auto-évaluation (Théorie/Technique).
-*Wireframes*::
-
-=== 3.2. F2: Moteur de Quiz Adaptatif
-*Objectifs / Scénarios*:: Générer et présenter une série de questions pertinentes (difficulté, type) en fonction de l'auto-évaluation de l'utilisateur.
-*Wireframes*::
-
-=== 3.3. F3: Visualisation des Résultats (Nuage de Points)
-*Objectifs / Scénarios*:: Calculer les scores finaux et les afficher visuellement sur un graphique 2D (Théorie vs. Technique).
-*Wireframes*::
-
-=== 3.4. F4: Système de Recommandations
-*Objectifs / Scénarios*:: Proposer une liste de ressources ciblées (livres, certs, exercices) en fonction du quadrant où l'utilisateur a atterri.
-*Wireframes*::
-// (Inclus dans F3)
+    <script src="js/app.js"></script>
+</body>
+</html>

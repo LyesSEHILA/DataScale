@@ -1,0 +1,109 @@
+= Documentation Projet CyberScale
+:toc: left
+:toclevels: 3
+:sectnums:
+:source-highlighter: highlight.js
+:icons: font
+:imagesdir: ./wireframes
+:experimental:
+
+[abstract]
+Documentation technique et fonctionnelle du projet CyberScale, plateforme de positionnement en cybersécurité.
+
+== 1. Présentation
+
+=== 1.1. L'Équipe
+Projet réalisé dans le cadre du cursus DevOps par :
+
+* *Lyes SEHILA* - Lead DevOps & Architecte
+* *Hassan Jatta* - Lead Backend
+* *Abdoulaye* - Lead Frontend
+
+=== 1.2. Thématique et Objectifs
+
+CyberScale a pour mission de fournir une évaluation claire et actionnable des compétences en cybersécurité.
+
+*.Concept Clé : La Matrice de Compétences*
+Le projet repose sur la distinction entre deux axes fondamentaux :
+
+. *L'Axe Théorique (X)* : Connaissance des concepts, normes (ISO 27001), lois (RGPD), et méthodologies.
+. *L'Axe Technique (Y)* : Maîtrise des outils (Nmap, Wireshark), scripts, et procédures techniques.
+
+*.Parcours Utilisateur*
+. *Onboarding* : Saisie du profil et auto-évaluation.
+. *Test Adaptatif* : Quiz intelligent qui s'adapte au niveau déclaré.
+. *Résultats* : Visualisation sur un nuage de points (Scatter Plot).
+. *Orientation* : Recommandations de ressources ciblées.
+
+=== 1.3. Analyse de la Concurrence
+
+Le marché de l'évaluation en cybersécurité est dominé par deux types d'acteurs :
+
+* *Les plateformes de challenge (CTF/Labs)* : Des sites comme *RootMe*, *TryHackMe* ou *Hack The Box* sont excellents pour mesurer les compétences **techniques** pures. Cependant, ils n'évaluent que très peu les connaissances théoriques (gouvernance, normes, lois).
+
+* *Les Certifications* : Des examens comme *CompTIA Security+* ou *CISSP* évaluent très bien la **théorie**, mais leurs tests pratiques sont souvent limités ou très coûteux.
+
+**Notre Positionnement :**
+CyberScale se différencie en étant la seule plateforme d'auto-évaluation qui positionne explicitement l'utilisateur sur ces **deux axes** (Théorie vs. Technique). L'objectif n'est pas de remplacer les CTF ou les certifications, mais de servir d'**outil d'orientation** pour aider l'utilisateur à savoir *vers quoi* il doit se diriger.
+
+== 2. Architecture et Technologies
+
+=== 2.1. Architecture Système
+
+L'application suit une architecture découplée (Client-Serveur) standard.
+
+.Diagramme d'Architecture Système
+plantuml::uml/system_architecture.puml[format=png, align="center"]
+
+=== 2.2. Stack Technique
+
+[cols="1,3"]
+|===
+| Domaine | Technologies
+
+| *Backend*
+| Java 21, Spring Boot 3, Gradle, Spring Data JPA, H2 (Dev) / PostgreSQL (Prod)
+
+| *Frontend*
+| HTML5, CSS3, JavaScript (Vanilla), Chart.js (Visualisation)
+
+| *DevOps*
+| GitHub, GitHub Actions (CI/CD), SonarCloud (Qualité), Docker
+
+| *Tests*
+| JUnit 5, Mockito, MockMvc, Cucumber (BDD), Selenium (E2E)
+|===
+
+=== 2.3. Modèle de Données
+
+Le modèle métier reflète la structure du quiz et des résultats.
+
+.Diagramme de Classe Métier
+plantuml::uml/class_diagram.puml[format=png, align="center"]
+
+== 3. Fonctionnalités (Features)
+
+=== 3.1. F1: Onboarding & Auto-évaluation
+*Objectifs*:: Permettre à un nouvel utilisateur de démarrer le processus en fournissant son âge et son auto-évaluation (Théorie/Technique).
+*Scénario*:: L'utilisateur arrive sur la page d'accueil, remplit le formulaire et clique sur "Commencer". Une session unique est créée côté backend.
+
+.Wireframe F1 - Accueil
+image::F1_Onboarding.png[width=600, align="center"]
+
+=== 3.2. F2: Moteur de Quiz Adaptatif
+*Objectifs*:: Générer et présenter une série de questions pertinentes. La difficulté et la catégorie (Théorie/Technique) sont pondérées selon l'auto-évaluation.
+*Scénario*:: L'utilisateur voit une question, choisit une réponse, valide, et passe à la suivante automatiquement.
+
+.Wireframe F2 - Quiz
+image::F2_Quiz.png[width=600, align="center"]
+
+=== 3.3. F3: Visualisation des Résultats
+*Objectifs*:: Calculer les scores finaux et les afficher visuellement sur un graphique 2D.
+*Scénario*:: À la fin du quiz, l'utilisateur découvre son positionnement précis sur la matrice "Théorie vs Technique".
+
+.Wireframe F3 - Résultats
+image::F3_Results.png[width=600, align="center"]
+
+=== 3.4. F4: Système de Recommandations
+*Objectifs*:: Proposer une liste de ressources ciblées (livres, certs, exercices) en fonction du quadrant où l'utilisateur a atterri.
+*Scénario*:: Sous le graphique, des cartes cliquables proposent des contenus pour s'améliorer (ex: "Vos bases techniques sont faibles ? Essayez TryHackMe").
