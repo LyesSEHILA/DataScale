@@ -29,23 +29,15 @@ import com.cyberscale.backend.repositories.UserAnswerRepository;
 @Service
 public class QuizService {
 
-    @Autowired
-    private QuizSessionRepository quizSessionRepository;
-
-    @Autowired
-    private QuestionRepository questionRepository;
-
-    @Autowired
-    private AnswerOptionRepository answerOptionRepository;
-
-    @Autowired
-    private UserAnswerRepository userAnswerRepository;
-
-    @Autowired
-    private RecommendationRepository recommendationRepository;
+    // CONFLIT 1 RÉSOLU : Garder la liste complète et propre des injections
+    @Autowired private QuizSessionRepository quizSessionRepository;
+    @Autowired private QuestionRepository questionRepository;
+    @Autowired private AnswerOptionRepository answerOptionRepository;
+    @Autowired private UserAnswerRepository userAnswerRepository;
+    @Autowired private RecommendationRepository recommendationRepository;
 
     /**
-     * Crée et sauvegarde une nouvelle session de quiz basée sur la demande d'onboarding.
+     * F1 : Créer une session
      */
     public QuizSession createSession(OnboardingRequest request) {
         QuizSession newSession = new QuizSession();
@@ -56,26 +48,26 @@ public class QuizService {
     }
 
     /**
-     * Récupérer les questions adaptatives
+     * F2 : Récupérer les questions adaptatives (Version Refactorisée)
      */
     public List<Question> getQuestionsForSession(Long sessionId) {
         QuizSession session = quizSessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session introuvable"));
 
-        boolean isTheoryAdvanced = session.getSelfEvalTheory() > 5;
-        boolean isTechAdvanced = session.getSelfEvalTechnique() > 5;
-
         List<Question> questions = new ArrayList<>();
 
-        // Ajouter les questions selon le niveau d'auto-évaluation
+        // CONFLIT 2 RÉSOLU : Garder la version refactorisée (anti-duplication)
+        boolean isTheoryAdvanced = session.getSelfEvalTheory() > 5;
         addQuestionsByLevel(questions, categorieQuestion.THEORY, isTheoryAdvanced);
+
+        boolean isTechAdvanced = session.getSelfEvalTechnique() > 5;
         addQuestionsByLevel(questions, categorieQuestion.TECHNIQUE, isTechAdvanced);
 
         Collections.shuffle(questions);
         return questions.stream().limit(10).collect(Collectors.toList());
     }
 
-    // Méthode utilitaire pour éviter la duplication
+    // Méthode utilitaire pour éviter la duplication (rattrapée ici)
     private void addQuestionsByLevel(List<Question> questions, categorieQuestion category, boolean isAdvanced) {
         if (isAdvanced) {
             questions.addAll(questionRepository.findByCategorieAndDifficulty(category, difficultyQuestion.MEDIUM));
@@ -87,7 +79,7 @@ public class QuizService {
     }
 
     /**
-     * Sauvegarder la réponse de l'utilisateur
+     * F2 : Sauvegarder la réponse de l'utilisateur
      */
     public void saveUserAnswer(UserAnswerRequest request) {
         QuizSession session = quizSessionRepository.findById(request.sessionId())
@@ -97,17 +89,13 @@ public class QuizService {
         AnswerOption selectedOption = answerOptionRepository.findById(request.answerOptionId())
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Réponse introuvable"));
 
-        UserAnswer userAnswer = new UserAnswer();
-        userAnswer.setSession(session);
-        userAnswer.setQuestion(question);
-        userAnswer.setSelectedOption(selectedOption);
-        userAnswer.setAnsweredAt(java.time.LocalDateTime.now());
-
+        // CONFLIT 3 RÉSOLU : Garder la version avec le constructeur propre
+        UserAnswer userAnswer = new UserAnswer(session, question, selectedOption);
         userAnswerRepository.save(userAnswer);
     }
 
     /**
-     * Calculer les résultats et renvoyer les recommandations
+     * F3/F4 : Calculer les résultats et renvoyer les recommandations
      */
     public ResultsResponse calculateAndGetResults(Long sessionId) {
         QuizSession session = quizSessionRepository.findById(sessionId)
@@ -119,17 +107,14 @@ public class QuizService {
             return new ResultsResponse(0.0, 0.0, Collections.emptyList());
         }
 
-        int theoryTotal = 0;
-        int theoryCorrect = 0;
-        int techTotal = 0;
-        int techCorrect = 0;
+        int theoryTotal = 0; int theoryCorrect = 0;
+        int techTotal = 0; int techCorrect = 0;
 
         for (UserAnswer answer : answers) {
             Question q = answer.getQuestion();
-            // Vérification null pour éviter les crashs si option supprimée
             if (answer.getSelectedOption() != null) {
                 boolean isCorrect = answer.getSelectedOption().getIsCorrect();
-                if (q.getCategorie() == Question.categorieQuestion.THEORY) {
+                if (q.getCategorie() == categorieQuestion.THEORY) {
                     theoryTotal++;
                     if (isCorrect) theoryCorrect++;
                 } else {
@@ -152,7 +137,6 @@ public class QuizService {
         else targetProfile = "HIGH_ALL";
 
         List<Recommendation> recommendations = recommendationRepository.findByTargetProfile(targetProfile);
-
         return new ResultsResponse(finalScoreTheory, finalScoreTechnique, recommendations);
     }
 }
