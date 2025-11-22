@@ -157,8 +157,16 @@ public class QuizControllerTest {
 
     // --- TEST F2 (Submit Answer) ---
 
-    @Test
+   @Test
     void testSubmitAnswer_ShouldReturn200_AndSaveAnswer() throws Exception {
+        // --- AJOUTE CE BLOC DE NETTOYAGE ---
+        userAnswerRepository.deleteAll();
+        answerOptionRepository.deleteAll();
+        questionRepository.deleteAll();
+        quizSessionRepository.deleteAll();
+        // -----------------------------------
+
+        // 1. Préparation : Créer Session + Question + Option
         QuizSession session = new QuizSession();
         session.setAge(25L);
         session = quizSessionRepository.save(session);
@@ -175,14 +183,18 @@ public class QuizControllerTest {
         opt1.setQuestion(q1); 
         opt1 = answerOptionRepository.save(opt1);
 
+        // 2. Création de la requête
         UserAnswerRequest request = new UserAnswerRequest(session.getId(), q1.getId(), opt1.getId());
         String requestJson = objectMapper.writeValueAsString(request);
 
+        // 3. Appel de l'API
         mockMvc.perform(post("/api/quiz/answer")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestJson))
                 .andExpect(status().isOk()); 
 
+        // 4. Vérification
+        // Maintenant ça sera bon, car on est parti de 0
         assertEquals(1, userAnswerRepository.count()); 
     }
 
