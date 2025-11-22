@@ -20,51 +20,51 @@ import com.cyberscale.backend.models.Recommendation;
 import com.cyberscale.backend.models.UserAnswer;
 import com.cyberscale.backend.repositories.AnswerOptionRepository;
 import com.cyberscale.backend.repositories.QuestionRepository;
-import com.cyberscale.backend.repositories.QuizSessionRepository; 
+import com.cyberscale.backend.repositories.QuizSessionRepository;
 import com.cyberscale.backend.repositories.RecommendationRepository;
 import com.cyberscale.backend.repositories.UserAnswerRepository;
 
 @Service
 public class QuizService {
 
-    // On injecte le "Repository" pour pouvoir parler à la BDD
     @Autowired
     private QuizSessionRepository quizSessionRepository;
+
     @Autowired
     private QuestionRepository questionRepository;
+
     @Autowired
     private AnswerOptionRepository answerOptionRepository;
+
     @Autowired
     private UserAnswerRepository userAnswerRepository;
+
     @Autowired
     private RecommendationRepository recommendationRepository;
-    
+
     /**
-     * Crée et sauvegarde une nouvelle session de quiz basée sur la demande d'onboarding.
-     * C'est le DoD #4.
+     * F1 : Créer une session
      */
     public QuizSession createSession(OnboardingRequest request) {
-        
         QuizSession newSession = new QuizSession();
         newSession.setAge(request.age());
         newSession.setSelfEvalTheory(request.selfEvalTheory());
         newSession.setSelfEvalTechnique(request.selfEvalTechnique());
-
-        // Sauvegarde la nouvelle session en BDD et retourne l'objet sauvegardé (avec son ID)
         return quizSessionRepository.save(newSession);
     }
 
+    /**
+     * F2 : Récupérer les questions adaptatives
+     */
     public List<Question> getQuestionsForSession(Long sessionId) {
-        // 1. Récupérer la session
         QuizSession session = quizSessionRepository.findById(sessionId)
-.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session non trouvée"));
-        // 2. Déterminer le niveau
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session introuvable"));
+
         boolean isTheoryAdvanced = session.getSelfEvalTheory() > 5;
         boolean isTechAdvanced = session.getSelfEvalTechnique() > 5;
 
         List<Question> questions = new ArrayList<>();
 
-        // 3. Sélectionner les questions THÉORIE
         if (isTheoryAdvanced) {
             questions.addAll(questionRepository.findByCategorieAndDifficulty(Question.categorieQuestion.THEORY, Question.difficultyQuestion.MEDIUM));
             questions.addAll(questionRepository.findByCategorieAndDifficulty(Question.categorieQuestion.THEORY, Question.difficultyQuestion.HARD));
@@ -73,7 +73,6 @@ public class QuizService {
             questions.addAll(questionRepository.findByCategorieAndDifficulty(Question.categorieQuestion.THEORY, Question.difficultyQuestion.MEDIUM));
         }
 
-        // 4. Sélectionner les questions TECHNIQUE
         if (isTechAdvanced) {
             questions.addAll(questionRepository.findByCategorieAndDifficulty(Question.categorieQuestion.TECHNIQUE, Question.difficultyQuestion.MEDIUM));
             questions.addAll(questionRepository.findByCategorieAndDifficulty(Question.categorieQuestion.TECHNIQUE, Question.difficultyQuestion.HARD));
@@ -82,13 +81,14 @@ public class QuizService {
             questions.addAll(questionRepository.findByCategorieAndDifficulty(Question.categorieQuestion.TECHNIQUE, Question.difficultyQuestion.MEDIUM));
         }
 
-        // 5. Mélanger et Limiter
         Collections.shuffle(questions);
         return questions.stream().limit(10).collect(Collectors.toList());
     }
 
+    /**
+     * F2 : Sauvegarder la réponse de l'utilisateur
+     */
     public void saveUserAnswer(UserAnswerRequest request) {
-        // 1. Vérifier que tout existe
         QuizSession session = quizSessionRepository.findById(request.sessionId())
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session introuvable"));
 
@@ -98,25 +98,29 @@ public class QuizService {
         AnswerOption selectedOption = answerOptionRepository.findById(request.answerOptionId())
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Réponse introuvable"));
 
-        // 2. Créer et sauvegarder l'entité
-        UserAnswer userAnswer = new UserAnswer(session, question, selectedOption);
+        UserAnswer userAnswer = new UserAnswer();
+        userAnswer.setSession(session);
+        userAnswer.setQuestion(question);
+        userAnswer.setSelectedOption(selectedOption);
+        userAnswer.setAnsweredAt(java.time.LocalDateTime.now());
+
+        // C'EST CETTE LIGNE QUI MANQUAIT PROBABLEMENT :
         userAnswerRepository.save(userAnswer);
     }
 
+    /**
+     * F3/F4 : Calculer les résultats
+     */
     public ResultsResponse calculateAndGetResults(Long sessionId) {
-        // 1. Récupérer la session
         QuizSession session = quizSessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session introuvable"));
 
-        // 2. Récupérer toutes les réponses de l'utilisateur
         List<UserAnswer> answers = userAnswerRepository.findBySessionId(sessionId);
 
-        /*if (answers.isEmpty()) {
-            // Pas de réponse ? Score 0.
+        if (answers.isEmpty()) {
             return new ResultsResponse(0.0, 0.0, Collections.emptyList());
-        }*/
+        }
 
-        // 3. Calculer les scores (Théorie vs Technique)
         int theoryTotal = 0;
         int theoryCorrect = 0;
         int techTotal = 0;
@@ -124,27 +128,26 @@ public class QuizService {
 
         for (UserAnswer answer : answers) {
             Question q = answer.getQuestion();
-            boolean isCorrect = answer.getSelectedOption().getIsCorrect();
-
-            if (q.getCategorie() == Question.categorieQuestion.THEORY) {
-                theoryTotal++;
-                if (isCorrect) theoryCorrect++;
-            } else {
-                techTotal++;
-                if (isCorrect) techCorrect++;
+            // Vérification null pour éviter les crashs si option supprimée
+            if (answer.getSelectedOption() != null) {
+                boolean isCorrect = answer.getSelectedOption().getIsCorrect();
+                if (q.getCategorie() == Question.categorieQuestion.THEORY) {
+                    theoryTotal++;
+                    if (isCorrect) theoryCorrect++;
+                } else {
+                    techTotal++;
+                    if (isCorrect) techCorrect++;
+                }
             }
         }
 
-        // Règle de 3 pour avoir un score sur 10
         Double finalScoreTheory = (theoryTotal == 0) ? 0.0 : ((double) theoryCorrect / theoryTotal) * 10.0;
         Double finalScoreTechnique = (techTotal == 0) ? 0.0 : ((double) techCorrect / techTotal) * 10.0;
 
-        // 4. Sauvegarder les scores en BDD (Mise à jour de la session)
         session.setFinalScoreTheory(finalScoreTheory);
         session.setFinalScoreTechnique(finalScoreTechnique);
         quizSessionRepository.save(session);
 
-        // 5. Sélectionner les recommandations (Logique F4 simple)
         String targetProfile;
         if (finalScoreTechnique < 5) {
             targetProfile = "LOW_TECH";
@@ -156,8 +159,6 @@ public class QuizService {
 
         List<Recommendation> recommendations = recommendationRepository.findByTargetProfile(targetProfile);
 
-        // 6. Retourner le tout
         return new ResultsResponse(finalScoreTheory, finalScoreTechnique, recommendations);
     }
-
 }
