@@ -15,6 +15,8 @@ import com.cyberscale.backend.dto.ResultsResponse;
 import com.cyberscale.backend.dto.UserAnswerRequest;
 import com.cyberscale.backend.models.AnswerOption;
 import com.cyberscale.backend.models.Question;
+import com.cyberscale.backend.models.Question.categorieQuestion;
+import com.cyberscale.backend.models.Question.difficultyQuestion;
 import com.cyberscale.backend.models.QuizSession;
 import com.cyberscale.backend.models.Recommendation;
 import com.cyberscale.backend.models.UserAnswer;
@@ -27,24 +29,13 @@ import com.cyberscale.backend.repositories.UserAnswerRepository;
 @Service
 public class QuizService {
 
-    @Autowired
-    private QuizSessionRepository quizSessionRepository;
+    @Autowired private QuizSessionRepository quizSessionRepository;
+    @Autowired private QuestionRepository questionRepository;
+    @Autowired private AnswerOptionRepository answerOptionRepository;
+    @Autowired private UserAnswerRepository userAnswerRepository;
+    @Autowired private RecommendationRepository recommendationRepository;
 
-    @Autowired
-    private QuestionRepository questionRepository;
-
-    @Autowired
-    private AnswerOptionRepository answerOptionRepository;
-
-    @Autowired
-    private UserAnswerRepository userAnswerRepository;
-
-    @Autowired
-    private RecommendationRepository recommendationRepository;
-
-    /**
-     * F1 : Créer une session
-     */
+    // F1
     public QuizSession createSession(OnboardingRequest request) {
         QuizSession newSession = new QuizSession();
         newSession.setAge(request.age());
@@ -53,64 +44,50 @@ public class QuizService {
         return quizSessionRepository.save(newSession);
     }
 
-    /**
-     * F2 : Récupérer les questions adaptatives
-     */
+    // F2 - Version Refactorisée (Zéro Duplication)
     public List<Question> getQuestionsForSession(Long sessionId) {
         QuizSession session = quizSessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session introuvable"));
 
-        boolean isTheoryAdvanced = session.getSelfEvalTheory() > 5;
-        boolean isTechAdvanced = session.getSelfEvalTechnique() > 5;
-
         List<Question> questions = new ArrayList<>();
 
-        if (isTheoryAdvanced) {
-            questions.addAll(questionRepository.findByCategorieAndDifficulty(Question.categorieQuestion.THEORY, Question.difficultyQuestion.MEDIUM));
-            questions.addAll(questionRepository.findByCategorieAndDifficulty(Question.categorieQuestion.THEORY, Question.difficultyQuestion.HARD));
-        } else {
-            questions.addAll(questionRepository.findByCategorieAndDifficulty(Question.categorieQuestion.THEORY, Question.difficultyQuestion.EASY));
-            questions.addAll(questionRepository.findByCategorieAndDifficulty(Question.categorieQuestion.THEORY, Question.difficultyQuestion.MEDIUM));
-        }
+        // 1. Ajouter les questions Théorie
+        boolean isTheoryAdvanced = session.getSelfEvalTheory() > 5;
+        addQuestionsByLevel(questions, categorieQuestion.THEORY, isTheoryAdvanced);
 
-        if (isTechAdvanced) {
-            questions.addAll(questionRepository.findByCategorieAndDifficulty(Question.categorieQuestion.TECHNIQUE, Question.difficultyQuestion.MEDIUM));
-            questions.addAll(questionRepository.findByCategorieAndDifficulty(Question.categorieQuestion.TECHNIQUE, Question.difficultyQuestion.HARD));
-        } else {
-            questions.addAll(questionRepository.findByCategorieAndDifficulty(Question.categorieQuestion.TECHNIQUE, Question.difficultyQuestion.EASY));
-            questions.addAll(questionRepository.findByCategorieAndDifficulty(Question.categorieQuestion.TECHNIQUE, Question.difficultyQuestion.MEDIUM));
-        }
+        // 2. Ajouter les questions Technique
+        boolean isTechAdvanced = session.getSelfEvalTechnique() > 5;
+        addQuestionsByLevel(questions, categorieQuestion.TECHNIQUE, isTechAdvanced);
 
         Collections.shuffle(questions);
         return questions.stream().limit(10).collect(Collectors.toList());
     }
 
-    /**
-     * F2 : Sauvegarder la réponse de l'utilisateur
-     */
+    // Méthode utilitaire pour éviter la duplication
+    private void addQuestionsByLevel(List<Question> questions, categorieQuestion category, boolean isAdvanced) {
+        if (isAdvanced) {
+            questions.addAll(questionRepository.findByCategorieAndDifficulty(category, difficultyQuestion.MEDIUM));
+            questions.addAll(questionRepository.findByCategorieAndDifficulty(category, difficultyQuestion.HARD));
+        } else {
+            questions.addAll(questionRepository.findByCategorieAndDifficulty(category, difficultyQuestion.EASY));
+            questions.addAll(questionRepository.findByCategorieAndDifficulty(category, difficultyQuestion.MEDIUM));
+        }
+    }
+
+    // F2 - Answer
     public void saveUserAnswer(UserAnswerRequest request) {
         QuizSession session = quizSessionRepository.findById(request.sessionId())
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session introuvable"));
-
         Question question = questionRepository.findById(request.questionId())
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Question introuvable"));
-
         AnswerOption selectedOption = answerOptionRepository.findById(request.answerOptionId())
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Réponse introuvable"));
 
-        UserAnswer userAnswer = new UserAnswer();
-        userAnswer.setSession(session);
-        userAnswer.setQuestion(question);
-        userAnswer.setSelectedOption(selectedOption);
-        userAnswer.setAnsweredAt(java.time.LocalDateTime.now());
-
-        // C'EST CETTE LIGNE QUI MANQUAIT PROBABLEMENT :
+        UserAnswer userAnswer = new UserAnswer(session, question, selectedOption);
         userAnswerRepository.save(userAnswer);
     }
 
-    /**
-     * F3/F4 : Calculer les résultats
-     */
+    // F3/F4 - Results
     public ResultsResponse calculateAndGetResults(Long sessionId) {
         QuizSession session = quizSessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session introuvable"));
@@ -121,17 +98,14 @@ public class QuizService {
             return new ResultsResponse(0.0, 0.0, Collections.emptyList());
         }
 
-        int theoryTotal = 0;
-        int theoryCorrect = 0;
-        int techTotal = 0;
-        int techCorrect = 0;
+        int theoryTotal = 0; int theoryCorrect = 0;
+        int techTotal = 0; int techCorrect = 0;
 
         for (UserAnswer answer : answers) {
             Question q = answer.getQuestion();
-            // Vérification null pour éviter les crashs si option supprimée
             if (answer.getSelectedOption() != null) {
                 boolean isCorrect = answer.getSelectedOption().getIsCorrect();
-                if (q.getCategorie() == Question.categorieQuestion.THEORY) {
+                if (q.getCategorie() == categorieQuestion.THEORY) {
                     theoryTotal++;
                     if (isCorrect) theoryCorrect++;
                 } else {
@@ -149,16 +123,11 @@ public class QuizService {
         quizSessionRepository.save(session);
 
         String targetProfile;
-        if (finalScoreTechnique < 5) {
-            targetProfile = "LOW_TECH";
-        } else if (finalScoreTheory < 5) {
-            targetProfile = "LOW_THEORY";
-        } else {
-            targetProfile = "HIGH_ALL";
-        }
+        if (finalScoreTechnique < 5) targetProfile = "LOW_TECH";
+        else if (finalScoreTheory < 5) targetProfile = "LOW_THEORY";
+        else targetProfile = "HIGH_ALL";
 
         List<Recommendation> recommendations = recommendationRepository.findByTargetProfile(targetProfile);
-
         return new ResultsResponse(finalScoreTheory, finalScoreTechnique, recommendations);
     }
 }
