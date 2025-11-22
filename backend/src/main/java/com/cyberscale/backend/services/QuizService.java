@@ -29,13 +29,16 @@ import com.cyberscale.backend.repositories.UserAnswerRepository;
 @Service
 public class QuizService {
 
+    // CONFLIT 1 RÉSOLU : Garder la liste complète et propre des injections
     @Autowired private QuizSessionRepository quizSessionRepository;
     @Autowired private QuestionRepository questionRepository;
     @Autowired private AnswerOptionRepository answerOptionRepository;
     @Autowired private UserAnswerRepository userAnswerRepository;
     @Autowired private RecommendationRepository recommendationRepository;
 
-    // F1
+    /**
+     * F1 : Créer une session
+     */
     public QuizSession createSession(OnboardingRequest request) {
         QuizSession newSession = new QuizSession();
         newSession.setAge(request.age());
@@ -44,18 +47,19 @@ public class QuizService {
         return quizSessionRepository.save(newSession);
     }
 
-    // F2 - Version Refactorisée (Zéro Duplication)
+    /**
+     * F2 : Récupérer les questions adaptatives (Version Refactorisée)
+     */
     public List<Question> getQuestionsForSession(Long sessionId) {
         QuizSession session = quizSessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session introuvable"));
 
         List<Question> questions = new ArrayList<>();
 
-        // 1. Ajouter les questions Théorie
+        // CONFLIT 2 RÉSOLU : Garder la version refactorisée (anti-duplication)
         boolean isTheoryAdvanced = session.getSelfEvalTheory() > 5;
         addQuestionsByLevel(questions, categorieQuestion.THEORY, isTheoryAdvanced);
 
-        // 2. Ajouter les questions Technique
         boolean isTechAdvanced = session.getSelfEvalTechnique() > 5;
         addQuestionsByLevel(questions, categorieQuestion.TECHNIQUE, isTechAdvanced);
 
@@ -63,7 +67,7 @@ public class QuizService {
         return questions.stream().limit(10).collect(Collectors.toList());
     }
 
-    // Méthode utilitaire pour éviter la duplication
+    // Méthode utilitaire pour éviter la duplication (rattrapée ici)
     private void addQuestionsByLevel(List<Question> questions, categorieQuestion category, boolean isAdvanced) {
         if (isAdvanced) {
             questions.addAll(questionRepository.findByCategorieAndDifficulty(category, difficultyQuestion.MEDIUM));
@@ -74,7 +78,9 @@ public class QuizService {
         }
     }
 
-    // F2 - Answer
+    /**
+     * F2 : Sauvegarder la réponse de l'utilisateur
+     */
     public void saveUserAnswer(UserAnswerRequest request) {
         QuizSession session = quizSessionRepository.findById(request.sessionId())
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session introuvable"));
@@ -83,11 +89,14 @@ public class QuizService {
         AnswerOption selectedOption = answerOptionRepository.findById(request.answerOptionId())
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Réponse introuvable"));
 
+        // CONFLIT 3 RÉSOLU : Garder la version avec le constructeur propre
         UserAnswer userAnswer = new UserAnswer(session, question, selectedOption);
         userAnswerRepository.save(userAnswer);
     }
 
-    // F3/F4 - Results
+    /**
+     * F3/F4 : Calculer les résultats et renvoyer les recommandations
+     */
     public ResultsResponse calculateAndGetResults(Long sessionId) {
         QuizSession session = quizSessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session introuvable"));
