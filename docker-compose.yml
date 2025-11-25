@@ -7,9 +7,9 @@ services:
     ports:
       - "5432:5432"  
     environment:
-      - POSTGRES_DB=cyberscale
-      - POSTGRES_USER=admin
-      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=${DB_NAME:-cyberscale}
+      - POSTGRES_USER=${DB_USER:-admin}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-password}
     volumes:
       - postgres_data:/var/lib/postgresql/data 
     restart: unless-stopped
