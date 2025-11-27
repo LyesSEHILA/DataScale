@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberScale - Connexion</title>
+    <link rel="stylesheet" href="css/login.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Identifiez-vous</h1>
+        </header>
+
+        <div id="statusMessage" class="message-box hidden"></div>
+
+        <form id="loginForm">
+            <div class="form-group">
+                <input type="email" placeholder="E-mail" name="email" id="email" required>
+            </div>
+
+            <div class="form-group">
+                <input type="password" placeholder="Mot de passe" name="password" id="password" required>
+            </div>
+                        
+            <button type="submit" id="loginButton">Se connecter</button>
+        </form>
+
+        <div class="signin-link">
+            <p>Pas encore de compte ? <a href="register.html">S'inscrire</a></p>
+        </div>
+    </div>
+
+    <script src="js/login.js"></script>
+</body>
+</html>
