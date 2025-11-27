@@ -1,0 +1,129 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f0f2f5;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    padding: 20px;
+}
+
+.container {
+    background: white;
+    padding: 2rem;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+header {
+    margin-bottom: 1rem; 
+}
+
+h1 { 
+    color: #2c3e50; 
+    margin-bottom: 0; 
+    font-size: 1.8em;
+}
+
+p { 
+    color: #7f8c8d; 
+    margin-bottom: 0; 
+}
+
+.form-group { 
+    margin-bottom: 1.5rem; 
+    text-align: left; 
+}
+
+label { 
+    display: block; 
+    margin-bottom: 0.5rem; 
+    font-weight: bold; 
+    color: #333;
+}
+
+input[type="email"], 
+input[type="password"] { 
+    width: 100%; 
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-sizing: border-box;
+    transition: border-color 0.3s;
+}
+
+input[type="email"]:focus, 
+input[type="password"]:focus {
+    border-color: #3498db;
+    outline: none;
+}
+
+button {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    width: 100%;
+    font-size: 1rem;
+    transition: background 0.3s;
+    margin-top: 10px;
+}
+button:hover { 
+    background-color: #2980b9; 
+}
+
+.terms-text {
+    font-size: 0.8em;
+    color: #888;
+    margin-bottom: 20px;
+}
+
+.terms-text a,
+.signin-link a {
+    color: #3498db;
+    text-decoration: none;
+}
+.terms-text a:hover,
+.signin-link a:hover {
+    text-decoration: underline;
+}
+
+.signin-link {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+    font-size: 0.9em;
+}
+
+.message-box {
+    padding: 10px;
+    margin-bottom: 15px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    font-weight: bold;
+    text-align: center;
+    border: 1px solid transparent;
+}
+
+.message-box.error {
+    background-color: #f2dede;
+    color: #a94442;
+    border-color: #ebccd1;
+}
+
+.message-box.success {
+    background-color: #dff0d8;
+    color: #3c763d;
+    border-color: #d6e9c6;
+}
+
+.hidden {
+    display: none;
+}

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberScale - Inscription</title>
+    <link rel="stylesheet" href="css/register.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Inscription</h1>
+            <p>Veuillez remplir les informations suivantes afin de créer un compte.</p>
+        </header>
+
+        <div id="statusMessage" class="message-box hidden"></div>
+
+        <form id="registerForm">
+            <div class="form-group">
+                <label for="email"><b>Adresse e-mail</b></label>
+                <input type="email" name="email" id="email" required>
+            </div>
+
+            <div class="form-group">
+                <label for="password"><b>Mot de passe</b></label>
+                <input type="password" name="password" id="password" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="passwordRepeat"><b>Confirmer le mot de passe</b></label>
+                <input type="password" name="passwordRepeat" id="passwordRepeat" required>
+            </div>
+            
+            <p class="terms-text">En créant un compte, vous acceptez les <a href="#">Conditions d'utilisation de CyberScale</a>. Consultez notre <a href="#">Politique de confidentialité</a>.</p>
+            
+            <button type="submit" id="registerButton">S'inscrire</button>
+        </form>
+
+        <div class="signin-link">
+            <p>Vous avez déjà un compte ? <a href="login.html">Se connecter</a></p>
+        </div>
+    </div>
+
+    <script src="js/register.js"></script>
+</body>
+</html>
