@@ -1,6 +1,5 @@
 package com.cyberscale.backend.controllers;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,17 +19,14 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 @CrossOrigin(origins = "*") 
 public class AuthController {
 
-    // Remplacer @Autowired sur le champ...
     private final AuthService authService;
 
-    // ...par une injection via le constructeur (meilleure pratique)
     public AuthController(AuthService authService) {
         this.authService = authService;
     }
 
     // Tâche F5: Endpoint POST /api/auth/register
     @PostMapping("/register")
-    // AJOUT DE @Valid pour activer les règles du DTO (ex: @Min(8) sur mdp)
     public ResponseEntity<?> registerUser(@Valid @RequestBody RegisterRequest registerRequest) { 
         
         User newUser = authService.registerUser(registerRequest);
@@ -40,7 +36,6 @@ public class AuthController {
 
     // Tâche F5: Endpoint POST /api/auth/login
     @PostMapping("/login")
-    // AJOUT DE @Valid pour activer les règles du DTO (ex: @NotNull sur email)
     public ResponseEntity<?> loginUser(@Valid @RequestBody LoginRequest loginRequest) { 
         
         User authenticatedUser = authService.loginUser(loginRequest);
@@ -53,13 +48,22 @@ public class AuthController {
         );
     }
     
-    private static class LoginResponse {
-        public String email;
-        public String message;
+    public static class LoginResponse {
+        private String email;
+        private String message;
         
         public LoginResponse(String email, String message) {
             this.email = email;
             this.message = message;
         }
+
+        public String getEmail() {
+            return email;
+        }
+        public String getMessage() {
+            return message;
+        }
+
+
     }
 }

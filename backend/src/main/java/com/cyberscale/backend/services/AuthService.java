@@ -9,9 +9,8 @@ import com.cyberscale.backend.dto.LoginRequest;
 import com.cyberscale.backend.dto.RegisterRequest;
 import com.cyberscale.backend.repositories.UserRepository;
 
-// Le nom du service doit être AuthServiceV2 pour répondre à la demande de nouveau nom
 @Service 
-public class AuthService { // Classe renommée
+public class AuthService { 
 
     private final UserRepository userRepository;
 
