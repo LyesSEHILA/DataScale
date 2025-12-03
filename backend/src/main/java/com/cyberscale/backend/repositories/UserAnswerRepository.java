@@ -11,4 +11,10 @@ import com.cyberscale.backend.models.UserAnswer;
 public interface UserAnswerRepository extends JpaRepository<UserAnswer, Long> {
     // Nous en aurons besoin pour la F3 (calcul des résultats)
     List<UserAnswer> findBySessionId(Long sessionId);
+
+    /**
+     * Méthode du Compteur : Compte le nombre de réponses correctes 
+     * soumises historiquement pour une question donnée.
+     */
+    long countByQuestionIdAndIsCorrectTrue(Long questionId);
 }

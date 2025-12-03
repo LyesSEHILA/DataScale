@@ -15,8 +15,7 @@ import com.cyberscale.backend.dto.ResultsResponse;
 import com.cyberscale.backend.dto.UserAnswerRequest;
 import com.cyberscale.backend.models.AnswerOption;
 import com.cyberscale.backend.models.Question;
-import com.cyberscale.backend.models.Question.categorieQuestion;
-import com.cyberscale.backend.models.Question.difficultyQuestion;
+import com.cyberscale.backend.models.IQuestion.categorieQuestion;
 import com.cyberscale.backend.models.QuizSession;
 import com.cyberscale.backend.models.Recommendation;
 import com.cyberscale.backend.models.UserAnswer;
@@ -35,6 +34,7 @@ public class QuizService {
     @Autowired private AnswerOptionRepository answerOptionRepository;
     @Autowired private UserAnswerRepository userAnswerRepository;
     @Autowired private RecommendationRepository recommendationRepository;
+    @Autowired private QuestionGenerator questionGenerator;
 
     /**
      * F1 : Créer une session
@@ -54,29 +54,9 @@ public class QuizService {
         QuizSession session = quizSessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session introuvable"));
 
-        List<Question> questions = new ArrayList<>();
-
-        // CONFLIT 2 RÉSOLU : Garder la version refactorisée (anti-duplication)
-        boolean isTheoryAdvanced = session.getSelfEvalTheory() > 5;
-        addQuestionsByLevel(questions, categorieQuestion.THEORY, isTheoryAdvanced);
-
-        boolean isTechAdvanced = session.getSelfEvalTechnique() > 5;
-        addQuestionsByLevel(questions, categorieQuestion.TECHNIQUE, isTechAdvanced);
-
-        Collections.shuffle(questions);
-        return questions.stream().limit(10).collect(Collectors.toList());
+        return questionGenerator.generate(session);
     }
 
-    // Méthode utilitaire pour éviter la duplication (rattrapée ici)
-    private void addQuestionsByLevel(List<Question> questions, categorieQuestion category, boolean isAdvanced) {
-        if (isAdvanced) {
-            questions.addAll(questionRepository.findByCategorieAndDifficulty(category, difficultyQuestion.MEDIUM));
-            questions.addAll(questionRepository.findByCategorieAndDifficulty(category, difficultyQuestion.HARD));
-        } else {
-            questions.addAll(questionRepository.findByCategorieAndDifficulty(category, difficultyQuestion.EASY));
-            questions.addAll(questionRepository.findByCategorieAndDifficulty(category, difficultyQuestion.MEDIUM));
-        }
-    }
 
     /**
      * F2 : Sauvegarder la réponse de l'utilisateur
@@ -88,6 +68,8 @@ public class QuizService {
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Question introuvable"));
         AnswerOption selectedOption = answerOptionRepository.findById(request.answerOptionId())
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Réponse introuvable"));
+
+        boolean isAnswerCorrect = selectedOption.isCorrect();
 
         // CONFLIT 3 RÉSOLU : Garder la version avec le constructeur propre
         UserAnswer userAnswer = new UserAnswer(session, question, selectedOption);
@@ -111,18 +93,19 @@ public class QuizService {
         int techTotal = 0; int techCorrect = 0;
 
         for (UserAnswer answer : answers) {
-            Question q = answer.getQuestion();
-            if (answer.getSelectedOption() != null) {
-                boolean isCorrect = answer.getSelectedOption().getIsCorrect();
-                if (q.getCategorie() == categorieQuestion.THEORY) {
-                    theoryTotal++;
-                    if (isCorrect) theoryCorrect++;
-                } else {
-                    techTotal++;
-                    if (isCorrect) techCorrect++;
-                }
-            }
+        Question q = answer.getQuestion();
+        
+        // CORRECTION : On lit le résultat directement depuis l'historique UserAnswer
+        boolean isCorrect = answer.isCorrect(); 
+        
+        if (q.getCategorie() == Question.categorieQuestion.THEORY.ordinal()) { // Attention au nom de l'Enum (voir point 4)
+            theoryTotal++;
+            if (isCorrect) theoryCorrect++;
+        } else {
+            techTotal++;
+            if (isCorrect) techCorrect++;
         }
+    }
 
         Double finalScoreTheory = (theoryTotal == 0) ? 0.0 : ((double) theoryCorrect / theoryTotal) * 10.0;
         Double finalScoreTechnique = (techTotal == 0) ? 0.0 : ((double) techCorrect / techTotal) * 10.0;

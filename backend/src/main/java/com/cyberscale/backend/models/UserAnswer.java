@@ -30,6 +30,8 @@ public class UserAnswer {
     @JoinColumn(name = "selected_option_id")
     private AnswerOption selectedOption;
 
+    private boolean isCorrect;    
+
     private LocalDateTime answeredAt;
 
     public UserAnswer() {
@@ -55,4 +57,15 @@ public class UserAnswer {
     public void setSelectedOption(AnswerOption selectedOption) { this.selectedOption = selectedOption; }
     public LocalDateTime getAnsweredAt() { return answeredAt; }
     public void setAnsweredAt(LocalDateTime answeredAt) { this.answeredAt = answeredAt; }
+
+    public boolean isCorrect() {
+        return isCorrect;
+    }
+
+    public void setCorrect(boolean isCorrect) {
+        this.isCorrect = isCorrect;
+    }
+
+    
+    
 }

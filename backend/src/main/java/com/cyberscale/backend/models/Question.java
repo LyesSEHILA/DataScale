@@ -1,6 +1,7 @@
 package com.cyberscale.backend.models;
 
 import java.util.List;
+import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
@@ -12,13 +13,13 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 
 @Entity
 @Table(name = "questions")
-public class Question {
-    public static enum categorieQuestion{THEORY, TECHNIQUE}
-    public static enum difficultyQuestion{EASY, MEDIUM, HARD}
+public class Question  implements IQuestion{
     
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -31,7 +32,6 @@ public class Question {
     @OneToMany(mappedBy = "question")
     @JsonManagedReference // Important pour éviter les boucles infinies en JSON
     private List<AnswerOption> options;
-
 
     public Question() {}
 
@@ -50,11 +50,11 @@ public class Question {
     public String getText() {
         return text;
     }
-    public categorieQuestion getCategorie() {
-        return categorie;
+    public int getCategorie() {
+        return categorie.ordinal();
     }
-    public difficultyQuestion getDifficulty() {
-        return difficulty;
+    public int getDifficulty() {
+        return this.difficulty.getValue();
     }
 
     // Setters
@@ -75,7 +75,18 @@ public class Question {
         this.difficulty = difficulty;
     }    
 
-    public List<AnswerOption> getOptions() { return options; }
-    public void setOptions(List<AnswerOption> options) { this.options = options; }
+    public List<AnswerOption> getOptions() { return new ArrayList<AnswerOption>(options); }
+    public void setOptions(List<AnswerOption> options) { this.options = new ArrayList<AnswerOption>(options); }
+
     
+    public Map<Long, Boolean> getAnswerKeyMap() {
+        Map<Long, Boolean> correction = new HashMap<>();
+    
+        for (AnswerOption option : getOptions()) {
+            correction.put(option.getId(), option.isCorrect());
+        }
+
+        return correction;
+    
+    }    
 }

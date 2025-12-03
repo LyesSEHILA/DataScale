@@ -19,5 +19,4 @@ public record OnboardingRequest(
     @Min(value = 0, message = "L'évaluation doit être entre 1 et 10")
     @Max(value = 10, message = "L'évaluation doit être entre 1 et 10")
     Long selfEvalTechnique
-    
 ) {}
