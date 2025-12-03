@@ -11,7 +11,7 @@ import com.cyberscale.backend.models.User;
 import com.cyberscale.backend.dto.LoginRequest;
 import com.cyberscale.backend.dto.RegisterRequest;
 import com.cyberscale.backend.services.AuthService;
-import jakarta.validation.Valid; // NOUVEL IMPORT
+import jakarta.validation.Valid; 
 import org.springframework.web.bind.annotation.CrossOrigin;
 
 @RestController
