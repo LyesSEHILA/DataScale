@@ -56,12 +56,12 @@ public class AdaptiveQuestionGenerator implements QuestionGenerator {
 
         // 3. Sélection Finale (basée sur la liste filtrée et les ratios)
         List<Question> theoryQuestions = validQuestions.stream()
-            .filter(q -> IQuestion.categorieQuestion.THEORY.ordinal() == q.getCategorie())
+            .filter(q -> q.getCategorie() == IQuestion.CategorieQuestion.THEORY)            
             .limit(countTheory)
             .collect(Collectors.toList());
 
         List<Question> techniqueQuestions = validQuestions.stream()
-            .filter(q -> IQuestion.categorieQuestion.TECHNIQUE.ordinal() == q.getCategorie())
+            .filter(q -> q.getCategorie() == IQuestion.CategorieQuestion.TECHNIQUE)
             .limit(countTechnique)
             .collect(Collectors.toList());
 

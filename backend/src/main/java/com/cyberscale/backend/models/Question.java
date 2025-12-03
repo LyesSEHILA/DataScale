@@ -1,5 +1,7 @@
 package com.cyberscale.backend.models;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -13,80 +15,69 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
-import java.util.ArrayList;
-import java.util.HashMap;
-
 
 @Entity
 @Table(name = "questions")
-public class Question  implements IQuestion{
+public class Question implements IQuestion { //
     
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     private Long id;
+    
     private String text;
+
     @Enumerated(EnumType.STRING)
-    private categorieQuestion categorie;
+    private IQuestion.CategorieQuestion categorie;
+
     @Enumerated(EnumType.STRING)
-    private difficultyQuestion difficulty;
+    private IQuestion.DifficultyQuestion difficulty;
+
     @OneToMany(mappedBy = "question")
-    @JsonManagedReference // Important pour éviter les boucles infinies en JSON
+    @JsonManagedReference
     private List<AnswerOption> options;
 
     public Question() {}
 
-    public Question(Long id, String text, categorieQuestion categorie, difficultyQuestion difficulty) {
+    public Question(Long id, String text, IQuestion.CategorieQuestion categorie, IQuestion.DifficultyQuestion difficulty) {
         this.id = id;
         this.text = text;
         this.categorie = categorie;
         this.difficulty = difficulty;
     }
 
-    // Getters
     
-    public Long getId() {
-        return id;
-    }
-    public String getText() {
-        return text;
-    }
-    public int getCategorie() {
-        return categorie.ordinal();
-    }
-    public int getDifficulty() {
-        return this.difficulty.getValue();
-    }
+    public Long getId() { return id; }
 
-    // Setters
+    @Override
+    public String getText() { return text; }
 
-    public void setId(Long id) {
-        this.id = id;
+    @Override
+    public IQuestion.CategorieQuestion getCategorie() { return categorie; }
+
+    @Override
+    public IQuestion.DifficultyQuestion getDifficulty() { return difficulty; }
+
+    @Override
+    public List<AnswerOption> getOptions() { 
+        return options != null ? new ArrayList<>(options) : new ArrayList<>(); 
     }
 
-    public void setText(String text) {
-        this.text = text;
-    }
-
-    public void setCategorie(categorieQuestion categorie) {
-        this.categorie = categorie;
-    }
-
-    public void setDifficulty(difficultyQuestion difficulty) {
-        this.difficulty = difficulty;
-    }    
-
-    public List<AnswerOption> getOptions() { return new ArrayList<AnswerOption>(options); }
-    public void setOptions(List<AnswerOption> options) { this.options = new ArrayList<AnswerOption>(options); }
-
-    
+    @Override
     public Map<Long, Boolean> getAnswerKeyMap() {
         Map<Long, Boolean> correction = new HashMap<>();
-    
-        for (AnswerOption option : getOptions()) {
-            correction.put(option.getId(), option.isCorrect());
+        if (getOptions() != null) {
+            for (AnswerOption option : getOptions()) {
+                correction.put(option.getId(), option.getIsCorrect());
+            }
         }
-
         return correction;
-    
-    }    
+    }
+
+    // --- Setters ---
+
+    public void setId(Long id) { this.id = id; }
+    public void setText(String text) { this.text = text; }
+    public void setCategorie(IQuestion.CategorieQuestion categorie) { this.categorie = categorie; }
+    public void setDifficulty(IQuestion.DifficultyQuestion difficulty) { this.difficulty = difficulty; }    
+    public void setOptions(List<AnswerOption> options) { this.options = options; }
 }

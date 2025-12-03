@@ -36,8 +36,8 @@ public class QuizSteps {
         
         Question q = new Question();
         q.setText("Cucumber Question");
-        q.setCategorie(Question.categorieQuestion.THEORY);
-        q.setDifficulty(Question.difficultyQuestion.EASY);
+        q.setCategorie(IQuestion.CategorieQuestion.THEORY);
+        q.setDifficulty(IQuestion.DifficultyQuestion.EASY);
         q = questionRepository.save(q);
         this.questionId = q.getId();
 
