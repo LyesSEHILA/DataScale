@@ -198,4 +198,81 @@ public class QuizControllerTest {
                 .andExpect(jsonPath("$.recommendations").isArray())
                 .andExpect(jsonPath("$.recommendations", hasSize(1)));
     }
+
+    // --- NOUVEAUX TESTS DE COUVERTURE (F2 - Generator) ---
+
+    @Test
+    void testGetQuestions_ShouldHandleZeroScores() throws Exception {
+        // Cas 1 : Scores à 0 (Premier lancement)
+        QuizSession session = new QuizSession();
+        session.setAge(20L);
+        session.setSelfEvalTheory(0L);    // <--- Zéro
+        session.setSelfEvalTechnique(0L); // <--- Zéro
+        session = quizSessionRepository.saveAndFlush(session);
+
+        // On ajoute des questions pour qu'il ait de quoi choisir
+        for (int i = 0; i < 5; i++) {
+            Question q = new Question();
+            q.setText("Q" + i);
+            q.setCategorie(IQuestion.CategorieQuestion.THEORY); // Il en faut 5
+            q.setDifficulty(IQuestion.DifficultyQuestion.EASY);
+            questionRepository.saveAndFlush(q);
+        }
+        for (int i = 0; i < 5; i++) {
+            Question q = new Question();
+            q.setText("Q" + (i+5));
+            q.setCategorie(IQuestion.CategorieQuestion.TECHNIQUE); // Il en faut 5
+            q.setDifficulty(IQuestion.DifficultyQuestion.EASY);
+            questionRepository.saveAndFlush(q);
+        }
+
+        mockMvc.perform(get("/api/quiz/questions")
+                .param("sessionId", session.getId().toString())
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(10))); // Doit retourner 10 questions (5/5)
+    }
+
+    @Test
+    void testGetQuestions_ShouldFilterTooEasyQuestions() throws Exception {
+        // Cas 2 : Une question a été réussie 5 fois -> Elle doit être filtrée
+        QuizSession session = new QuizSession();
+        session.setAge(25L);
+        session.setSelfEvalTheory(5L);
+        session.setSelfEvalTechnique(5L);
+        session = quizSessionRepository.saveAndFlush(session);
+
+        // Question A : Trop facile (Réussie 5 fois)
+        Question qEasy = new Question();
+        qEasy.setText("Trop Facile");
+        qEasy.setCategorie(IQuestion.CategorieQuestion.THEORY);
+        qEasy.setDifficulty(IQuestion.DifficultyQuestion.EASY);
+        qEasy = questionRepository.saveAndFlush(qEasy);
+
+        AnswerOption optCorrect = new AnswerOption(null, "Vrai", true);
+        optCorrect.setQuestion(qEasy);
+        optCorrect = answerOptionRepository.saveAndFlush(optCorrect);
+
+        // On simule 5 réussites
+        for (int i = 0; i < 5; i++) {
+            UserAnswer success = new UserAnswer(session, qEasy, optCorrect);
+            userAnswerRepository.saveAndFlush(success);
+        }
+
+        // Question B : Normale (Jamais posée)
+        Question qNormal = new Question();
+        qNormal.setText("Normale");
+        qNormal.setCategorie(IQuestion.CategorieQuestion.THEORY);
+        qNormal.setDifficulty(IQuestion.DifficultyQuestion.EASY);
+        qNormal = questionRepository.saveAndFlush(qNormal);
+
+        // Action
+        mockMvc.perform(get("/api/quiz/questions")
+                .param("sessionId", session.getId().toString())
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                // La question "Trop Facile" ne doit PAS être là, seule la "Normale" reste
+                .andExpect(jsonPath("$[*].text").value("Normale")) 
+                .andExpect(jsonPath("$", hasSize(1))); 
+    }
 }

@@ -1,9 +1,7 @@
 package com.cyberscale.backend.services;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -14,7 +12,7 @@ import com.cyberscale.backend.dto.OnboardingRequest;
 import com.cyberscale.backend.dto.ResultsResponse;
 import com.cyberscale.backend.dto.UserAnswerRequest;
 import com.cyberscale.backend.models.AnswerOption;
-import com.cyberscale.backend.models.IQuestion; 
+import com.cyberscale.backend.models.IQuestion;
 import com.cyberscale.backend.models.Question;
 import com.cyberscale.backend.models.QuizSession;
 import com.cyberscale.backend.models.Recommendation;
@@ -33,8 +31,14 @@ public class QuizService {
     @Autowired private AnswerOptionRepository answerOptionRepository;
     @Autowired private UserAnswerRepository userAnswerRepository;
     @Autowired private RecommendationRepository recommendationRepository;
+    
+    // INJECTION DU GÉNÉRATEUR (C'est lui qui va être testé désormais)
+    @Autowired 
+    private QuestionGenerator questionGenerator;
 
-
+    /**
+     * F1 : Créer une session
+     */
     public QuizSession createSession(OnboardingRequest request) {
         QuizSession newSession = new QuizSession();
         newSession.setAge(request.age());
@@ -43,33 +47,19 @@ public class QuizService {
         return quizSessionRepository.save(newSession);
     }
 
+    /**
+     * F2 : Récupérer les questions (Délégué au générateur)
+     */
     public List<Question> getQuestionsForSession(Long sessionId) {
         QuizSession session = quizSessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session introuvable"));
 
-        List<Question> questions = new ArrayList<>();
-
-        boolean isTheoryAdvanced = session.getSelfEvalTheory() > 5;
-        addQuestionsByLevel(questions, IQuestion.CategorieQuestion.THEORY, isTheoryAdvanced);
-
-        boolean isTechAdvanced = session.getSelfEvalTechnique() > 5;
-        addQuestionsByLevel(questions, IQuestion.CategorieQuestion.TECHNIQUE, isTechAdvanced);
-
-        Collections.shuffle(questions);
-        return questions.stream().limit(10).collect(Collectors.toList());
+        return questionGenerator.generate(session);
     }
 
-    private void addQuestionsByLevel(List<Question> questions, IQuestion.CategorieQuestion category, boolean isAdvanced) {
-        if (isAdvanced) {
-            questions.addAll(questionRepository.findByCategorieAndDifficulty(category, IQuestion.DifficultyQuestion.MEDIUM));
-            questions.addAll(questionRepository.findByCategorieAndDifficulty(category, IQuestion.DifficultyQuestion.HARD));
-        } else {
-            questions.addAll(questionRepository.findByCategorieAndDifficulty(category, IQuestion.DifficultyQuestion.EASY));
-            questions.addAll(questionRepository.findByCategorieAndDifficulty(category, IQuestion.DifficultyQuestion.MEDIUM));
-        }
-    }
-
-
+    /**
+     * F2 : Sauvegarder la réponse de l'utilisateur
+     */
     public void saveUserAnswer(UserAnswerRequest request) {
         QuizSession session = quizSessionRepository.findById(request.sessionId())
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session introuvable"));
@@ -82,6 +72,9 @@ public class QuizService {
         userAnswerRepository.save(userAnswer);
     }
 
+    /**
+     * F3/F4 : Calculer les résultats et renvoyer les recommandations
+     */
     public ResultsResponse calculateAndGetResults(Long sessionId) {
         QuizSession session = quizSessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session introuvable"));
@@ -97,9 +90,11 @@ public class QuizService {
 
         for (UserAnswer answer : answers) {
             Question q = answer.getQuestion();
+            // Vérification null pour éviter les crashs
             if (answer.getSelectedOption() != null) {
                 boolean isCorrect = answer.getSelectedOption().getIsCorrect();
                 
+                // Comparaison avec l'Enum de l'interface IQuestion
                 if (q.getCategorie() == IQuestion.CategorieQuestion.THEORY) {
                     theoryTotal++;
                     if (isCorrect) theoryCorrect++;
