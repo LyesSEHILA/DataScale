@@ -1,5 +1,6 @@
 package com.cyberscale.backend.controllers;
 
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -7,7 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -33,7 +34,7 @@ public class AuthControllerTest {
     @Autowired
     private ObjectMapper objectMapper; // Convertit les objets Java en JSON
 
-    @MockBean // Crée une fausse version du AuthService
+    @MockitoBean 
     private AuthService authService;
 
     private final String BASE_URL = "/api/auth";

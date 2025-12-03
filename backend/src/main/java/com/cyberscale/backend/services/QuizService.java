@@ -1,9 +1,7 @@
 package com.cyberscale.backend.services;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -14,8 +12,8 @@ import com.cyberscale.backend.dto.OnboardingRequest;
 import com.cyberscale.backend.dto.ResultsResponse;
 import com.cyberscale.backend.dto.UserAnswerRequest;
 import com.cyberscale.backend.models.AnswerOption;
+import com.cyberscale.backend.models.IQuestion;
 import com.cyberscale.backend.models.Question;
-import com.cyberscale.backend.models.IQuestion.categorieQuestion;
 import com.cyberscale.backend.models.QuizSession;
 import com.cyberscale.backend.models.Recommendation;
 import com.cyberscale.backend.models.UserAnswer;
@@ -28,13 +26,15 @@ import com.cyberscale.backend.repositories.UserAnswerRepository;
 @Service
 public class QuizService {
 
-    // CONFLIT 1 RÉSOLU : Garder la liste complète et propre des injections
     @Autowired private QuizSessionRepository quizSessionRepository;
     @Autowired private QuestionRepository questionRepository;
     @Autowired private AnswerOptionRepository answerOptionRepository;
     @Autowired private UserAnswerRepository userAnswerRepository;
     @Autowired private RecommendationRepository recommendationRepository;
-    @Autowired private QuestionGenerator questionGenerator;
+    
+    // INJECTION DU GÉNÉRATEUR (C'est lui qui va être testé désormais)
+    @Autowired 
+    private QuestionGenerator questionGenerator;
 
     /**
      * F1 : Créer une session
@@ -48,7 +48,7 @@ public class QuizService {
     }
 
     /**
-     * F2 : Récupérer les questions adaptatives (Version Refactorisée)
+     * F2 : Récupérer les questions (Délégué au générateur)
      */
     public List<Question> getQuestionsForSession(Long sessionId) {
         QuizSession session = quizSessionRepository.findById(sessionId)
@@ -56,7 +56,6 @@ public class QuizService {
 
         return questionGenerator.generate(session);
     }
-
 
     /**
      * F2 : Sauvegarder la réponse de l'utilisateur
@@ -69,9 +68,6 @@ public class QuizService {
         AnswerOption selectedOption = answerOptionRepository.findById(request.answerOptionId())
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Réponse introuvable"));
 
-        boolean isAnswerCorrect = selectedOption.isCorrect();
-
-        // CONFLIT 3 RÉSOLU : Garder la version avec le constructeur propre
         UserAnswer userAnswer = new UserAnswer(session, question, selectedOption);
         userAnswerRepository.save(userAnswer);
     }
@@ -93,19 +89,21 @@ public class QuizService {
         int techTotal = 0; int techCorrect = 0;
 
         for (UserAnswer answer : answers) {
-        Question q = answer.getQuestion();
-        
-        // CORRECTION : On lit le résultat directement depuis l'historique UserAnswer
-        boolean isCorrect = answer.isCorrect(); 
-        
-        if (q.getCategorie() == Question.categorieQuestion.THEORY.ordinal()) { // Attention au nom de l'Enum (voir point 4)
-            theoryTotal++;
-            if (isCorrect) theoryCorrect++;
-        } else {
-            techTotal++;
-            if (isCorrect) techCorrect++;
+            Question q = answer.getQuestion();
+            // Vérification null pour éviter les crashs
+            if (answer.getSelectedOption() != null) {
+                boolean isCorrect = answer.getSelectedOption().getIsCorrect();
+                
+                // Comparaison avec l'Enum de l'interface IQuestion
+                if (q.getCategorie() == IQuestion.CategorieQuestion.THEORY) {
+                    theoryTotal++;
+                    if (isCorrect) theoryCorrect++;
+                } else {
+                    techTotal++;
+                    if (isCorrect) techCorrect++;
+                }
+            }
         }
-    }
 
         Double finalScoreTheory = (theoryTotal == 0) ? 0.0 : ((double) theoryCorrect / theoryTotal) * 10.0;
         Double finalScoreTechnique = (techTotal == 0) ? 0.0 : ((double) techCorrect / techTotal) * 10.0;

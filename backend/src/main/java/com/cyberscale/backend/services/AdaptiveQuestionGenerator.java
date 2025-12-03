@@ -48,20 +48,20 @@ public class AdaptiveQuestionGenerator implements QuestionGenerator {
         // Application du Compteur : on filtre les questions qui ont été trop souvent réussies
         List<Question> validQuestions = allQuestions.stream()
             .filter(q -> {
-                // Le filtre ici vérifie combien de fois la question a été réussie
-                long successCount = userAnswerRepository.countByQuestionIdAndIsCorrectTrue(q.getId());
+                // Appel de la nouvelle méthode corrigée
+                long successCount = userAnswerRepository.countByQuestionIdAndSelectedOptionIsCorrectTrue(q.getId());
                 return successCount < SUCCESS_THRESHOLD; 
             })
             .collect(Collectors.toList());
 
         // 3. Sélection Finale (basée sur la liste filtrée et les ratios)
         List<Question> theoryQuestions = validQuestions.stream()
-            .filter(q -> IQuestion.categorieQuestion.THEORY.ordinal() == q.getCategorie())
+            .filter(q -> q.getCategorie() == IQuestion.CategorieQuestion.THEORY)            
             .limit(countTheory)
             .collect(Collectors.toList());
 
         List<Question> techniqueQuestions = validQuestions.stream()
-            .filter(q -> IQuestion.categorieQuestion.TECHNIQUE.ordinal() == q.getCategorie())
+            .filter(q -> q.getCategorie() == IQuestion.CategorieQuestion.TECHNIQUE)
             .limit(countTechnique)
             .collect(Collectors.toList());
 

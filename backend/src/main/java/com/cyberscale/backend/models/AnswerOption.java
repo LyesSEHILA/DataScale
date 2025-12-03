@@ -29,9 +29,10 @@ public class AnswerOption {
 
     public AnswerOption() {}
 
-    public AnswerOption(Long id, String text) {
+    public AnswerOption(Long id, String text, boolean isCorrect) {
         this.id = id;
         this.text = text;
+        this.isCorrect = isCorrect;
     }
 
     // Getters
@@ -66,12 +67,16 @@ public class AnswerOption {
         this.question = question;
     }
 
-    public boolean isCorrect() {
+    public void setIsCorrect(Boolean isCorrect) {
+        this.isCorrect = isCorrect;
+    }
+
+    public Boolean getIsCorrect() {
         return isCorrect;
     }
 
-    public void setCorrect(boolean correct) {
-        isCorrect = correct;
+    public Boolean isCorrect() {
+        return isCorrect;
     }
     
 }
