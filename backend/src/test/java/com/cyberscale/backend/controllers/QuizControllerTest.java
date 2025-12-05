@@ -44,6 +44,7 @@ public class QuizControllerTest {
     @Autowired private AnswerOptionRepository answerOptionRepository;
     @Autowired private UserAnswerRepository userAnswerRepository;
     @Autowired private RecommendationRepository recommendationRepository;
+    @Autowired private com.cyberscale.backend.repositories.UserRepository userRepository; 
 
     @BeforeEach
     void setup() {
@@ -282,5 +283,20 @@ public class QuizControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].text").value("Normale")) 
                 .andExpect(jsonPath("$", hasSize(1))); 
+    }
+
+    @Test
+    void testStartQuiz_WithUser_ShouldLinkUser() throws Exception {
+        com.cyberscale.backend.models.User user = new com.cyberscale.backend.models.User("testF6", "f6@test.com", "pass");
+        user = userRepository.saveAndFlush(user);
+
+        OnboardingRequest request = new OnboardingRequest(25L, 5L, 5L, user.getId());
+        String requestJson = objectMapper.writeValueAsString(request);
+
+        mockMvc.perform(post("/api/quiz/start")
+                .contentType(MediaType.APPLICATION_JSON).content(requestJson))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.id").exists())
+            .andExpect(jsonPath("$.user.id").value(user.getId()));
     }
 }
