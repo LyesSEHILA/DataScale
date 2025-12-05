@@ -25,6 +25,7 @@ const handleRegister = async (e) => {
     e.preventDefault(); // Empêche le rechargement de la page
 
     const registerButton = document.getElementById('registerButton');
+    const usernameInput = document.getElementById('username');
     const emailInput = document.getElementById('email');
     const passwordInput = document.getElementById('password');
     const passwordRepeatInput = document.getElementById('passwordRepeat');
@@ -42,12 +43,18 @@ const handleRegister = async (e) => {
         return;
     }
 
+    if (usernameInput.value.trim().length < 3) {
+        displayStatus("Erreur : Le nom d'utilisateur est trop court.", true);
+        return;
+    }
+
     // Désactiver le bouton pendant l'appel
     registerButton.disabled = true;
     displayStatus("Inscription en cours...", false); // Message de "succès" (style vert) pour le chargement
 
     try {
         const registrationData = {
+            username: usernameInput.value,
             email: emailInput.value,
             password: passwordInput.value
             // Le backend gérera le hachage et le stockage
