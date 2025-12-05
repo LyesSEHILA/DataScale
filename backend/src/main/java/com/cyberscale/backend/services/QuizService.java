@@ -22,6 +22,7 @@ import com.cyberscale.backend.repositories.QuestionRepository;
 import com.cyberscale.backend.repositories.QuizSessionRepository;
 import com.cyberscale.backend.repositories.RecommendationRepository;
 import com.cyberscale.backend.repositories.UserAnswerRepository;
+import com.cyberscale.backend.repositories.UserRepository;
 
 @Service
 public class QuizService {
@@ -31,25 +32,12 @@ public class QuizService {
     @Autowired private AnswerOptionRepository answerOptionRepository;
     @Autowired private UserAnswerRepository userAnswerRepository;
     @Autowired private RecommendationRepository recommendationRepository;
+    @Autowired private UserRepository userRepository;
     
-    // INJECTION DU GÉNÉRATEUR (C'est lui qui va être testé désormais)
     @Autowired 
     private QuestionGenerator questionGenerator;
 
-    /**
-     * F1 : Créer une session
-     */
-    public QuizSession createSession(OnboardingRequest request) {
-        QuizSession newSession = new QuizSession();
-        newSession.setAge(request.age());
-        newSession.setSelfEvalTheory(request.selfEvalTheory());
-        newSession.setSelfEvalTechnique(request.selfEvalTechnique());
-        return quizSessionRepository.save(newSession);
-    }
 
-    /**
-     * F2 : Récupérer les questions (Délégué au générateur)
-     */
     public List<Question> getQuestionsForSession(Long sessionId) {
         QuizSession session = quizSessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session introuvable"));
@@ -57,9 +45,6 @@ public class QuizService {
         return questionGenerator.generate(session);
     }
 
-    /**
-     * F2 : Sauvegarder la réponse de l'utilisateur
-     */
     public void saveUserAnswer(UserAnswerRequest request) {
         QuizSession session = quizSessionRepository.findById(request.sessionId())
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session introuvable"));
@@ -72,9 +57,6 @@ public class QuizService {
         userAnswerRepository.save(userAnswer);
     }
 
-    /**
-     * F3/F4 : Calculer les résultats et renvoyer les recommandations
-     */
     public ResultsResponse calculateAndGetResults(Long sessionId) {
         QuizSession session = quizSessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session introuvable"));
@@ -90,11 +72,9 @@ public class QuizService {
 
         for (UserAnswer answer : answers) {
             Question q = answer.getQuestion();
-            // Vérification null pour éviter les crashs
             if (answer.getSelectedOption() != null) {
                 boolean isCorrect = answer.getSelectedOption().getIsCorrect();
                 
-                // Comparaison avec l'Enum de l'interface IQuestion
                 if (q.getCategorie() == IQuestion.CategorieQuestion.THEORY) {
                     theoryTotal++;
                     if (isCorrect) theoryCorrect++;
@@ -119,5 +99,25 @@ public class QuizService {
 
         List<Recommendation> recommendations = recommendationRepository.findByTargetProfile(targetProfile);
         return new ResultsResponse(finalScoreTheory, finalScoreTechnique, recommendations);
+    }
+
+    public QuizSession createSession(OnboardingRequest request) {
+        QuizSession newSession = new QuizSession();
+        newSession.setAge(request.age());
+        newSession.setSelfEvalTheory(request.selfEvalTheory());
+        newSession.setSelfEvalTechnique(request.selfEvalTechnique());
+
+        if (request.userId() != null) {
+            userRepository.findById(request.userId()).ifPresent(user -> {
+                newSession.setUser(user);
+            });
+        }
+
+        return quizSessionRepository.save(newSession);
+    }
+    
+
+    public List<QuizSession> getUserHistory(Long userId) {
+        return quizSessionRepository.findByUserIdOrderByCreatedAtDesc(userId);
     }
 }
