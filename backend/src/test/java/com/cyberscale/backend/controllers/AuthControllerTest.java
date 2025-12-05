@@ -8,24 +8,23 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import; // <--- IMPORT AJOUTÉ
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.cyberscale.backend.config.SecurityConfig; // <--- IMPORT AJOUTÉ
 import com.cyberscale.backend.dto.LoginRequest;
 import com.cyberscale.backend.dto.RegisterRequest;
 import com.cyberscale.backend.models.User;
 import com.cyberscale.backend.services.AuthService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-/**
- * Tests unitaires pour AuthController.
- * @WebMvcTest charge uniquement la couche contrôleur, ce qui est plus rapide.
- * Le AuthService est injecté en tant que @MockBean pour simuler son comportement.
- */
 @WebMvcTest(AuthController.class)
+@Import(SecurityConfig.class)
+
 public class AuthControllerTest {
 
     @Autowired
