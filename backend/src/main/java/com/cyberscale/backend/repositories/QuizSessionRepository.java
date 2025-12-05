@@ -1,11 +1,9 @@
 package com.cyberscale.backend.repositories;
 
-import java.util.List;
-
+import com.cyberscale.backend.models.QuizSession;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-
-import com.cyberscale.backend.models.QuizSession;
+import java.util.List;
 
 @Repository
 public interface QuizSessionRepository extends JpaRepository<QuizSession, Long> {

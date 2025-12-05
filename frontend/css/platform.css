@@ -1,0 +1,119 @@
+:root {
+    --primary: #4e73df;
+    --dark: #2c3e50;
+    --light: #f8f9fc;
+    --gray: #858796;
+}
+
+body {
+    display: flex;
+    background-color: var(--light);
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+/* --- SIDEBAR --- */
+.sidebar {
+    width: 250px;
+    height: 100vh;
+    background: white;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+    position: fixed;
+}
+
+.logo h2 { color: var(--primary); margin-bottom: 40px; text-align: center; }
+
+.nav-links { list-style: none; padding: 0; flex-grow: 1; }
+.nav-links li { margin-bottom: 10px; }
+
+.nav-links a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    color: var(--gray);
+    padding: 12px 15px;
+    border-radius: 8px;
+    transition: all 0.3s;
+    font-weight: 500;
+}
+
+.nav-links a:hover, .nav-links li.active a {
+    background-color: #4e73df1a; /* Bleu très clair */
+    color: var(--primary);
+}
+
+.user-profile {
+    border-top: 1px solid #eee;
+    padding-top: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#logoutBtn {
+    background: none; border: none; color: #e74c3c; cursor: pointer; font-size: 1.1rem;
+}
+
+/* --- MAIN CONTENT --- */
+.main-content {
+    margin-left: 250px; /* Largeur sidebar */
+    padding: 40px;
+    width: 100%;
+}
+
+.main-content header { margin-bottom: 40px; }
+.highlight { color: var(--primary); }
+
+/* --- CARDS GRID --- */
+.activity-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 25px;
+}
+
+.activity-card {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: 1px solid #f0f0f0;
+    position: relative;
+    overflow: hidden;
+}
+
+.activity-card:hover:not(.locked) {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 15px rgba(0,0,0,0.05);
+}
+
+.activity-card.locked { opacity: 0.7; cursor: default; }
+
+.icon-box {
+    width: 50px; height: 50px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem;
+    margin-bottom: 15px;
+}
+
+.blue { background: #e1ecf4; color: #3498db; }
+.purple { background: #f3e5f5; color: #9b59b6; }
+.red { background: #fadbd8; color: #e74c3c; }
+.green { background: #d4efdf; color: #27ae60; }
+
+.activity-card h3 { margin: 0 0 10px 0; color: var(--dark); }
+.activity-card p { color: var(--gray); font-size: 0.9rem; margin-bottom: 20px; }
+
+.btn-link { color: var(--primary); font-weight: bold; font-size: 0.9rem; }
+
+.badge {
+    position: absolute; top: 15px; right: 15px;
+    background: #eee; color: #777;
+    padding: 3px 8px; border-radius: 10px; font-size: 0.7rem; font-weight: bold;
+}

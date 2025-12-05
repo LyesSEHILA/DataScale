@@ -5,18 +5,33 @@ const API_URL_REGISTER = 'http://localhost:8080/api/auth/register';
  * @param {string} message - Le message à afficher.
  * @param {boolean} isError - True si c'est un message d'erreur, false pour un succès.
  */
-const displayStatus = (message, isError = false) => {
-    const statusDiv = document.getElementById('statusMessage');
-    statusDiv.textContent = message;
-    statusDiv.classList.remove('hidden', 'success', 'error');
-    
-    if (isError) {
-        statusDiv.classList.add('error');
-    } else {
-        // Pour les messages de succès ou d'attente
-        statusDiv.classList.add('success'); 
+
+function displayStatus(message, isError) {
+    // 1. On cherche l'élément
+    let statusDiv = document.getElementById('statusMessage');
+
+    // 2. S'il n'existe pas, on le crée
+    if (!statusDiv) {
+        // ATTENTION : Pas de "let" ici, on assigne la variable existante !
+        statusDiv = document.createElement('div'); 
+        statusDiv.id = 'statusMessage';
+        statusDiv.className = "mt-4 p-3 rounded text-center text-sm font-medium";
+        
+        // On l'ajoute au formulaire
+        const form = document.getElementById('registerForm');
+        if (form) form.appendChild(statusDiv);
     }
-};
+
+    // 3. On met à jour le texte (Maintenant statusDiv n'est plus null)
+    statusDiv.textContent = message;
+
+    // 4. On gère la couleur
+    if (isError) {
+        statusDiv.className = "mt-4 p-3 rounded text-center text-sm font-medium bg-red-100 text-red-700 border border-red-200";
+    } else {
+        statusDiv.className = "mt-4 p-3 rounded text-center text-sm font-medium bg-green-100 text-green-700 border border-green-200";
+    }
+}
 
 /**
  * Gère la soumission du formulaire d'inscription.
@@ -79,9 +94,10 @@ const handleRegister = async (e) => {
                 window.location.href = 'login.html'; 
             }, 2000); // 2 secondes de délai
 
-        } else if (response.status === 409) {
-            // 409 Conflict: L'email existe déjà
-            displayStatus("Erreur : Un compte existe déjà avec cette adresse email.", true);
+        } else if (!response.ok) {
+            const errorData = await response.json();
+            const message = errorData.message || "Erreur lors de l'inscription.";
+            throw new Error(message);
         } else {
             // Autres erreurs (ex: 400 Bad Request pour validation)
             const errorBody = await response.json().catch(() => ({ message: 'Réponse invalide du serveur.' }));
