@@ -5,9 +5,9 @@ import org.springframework.security.crypto.password.PasswordEncoder; // Import i
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.cyberscale.backend.models.User;
 import com.cyberscale.backend.dto.LoginRequest;
 import com.cyberscale.backend.dto.RegisterRequest;
+import com.cyberscale.backend.models.User;
 import com.cyberscale.backend.repositories.UserRepository;
 
 @Service 
@@ -26,6 +26,7 @@ public class AuthService {
         if (userRepository.existsByEmail(request.email())) { 
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email déjà utilisé");
         }
+
         if (userRepository.existsByUsername(request.username())) { 
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Nom d'utilisateur déjà utilisé");
         }
@@ -43,10 +44,9 @@ public class AuthService {
     }
 
     public User loginUser(LoginRequest request) {
-        User user = userRepository.findByUsername(request.username()) 
+        User user = userRepository.findByEmail(request.email()) 
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Identifiants incorrects"));
 
-        // SÉCURITÉ : On vérifie si le mot de passe correspond au hash
         if (!passwordEncoder.matches(request.password(), user.getPassword())) { 
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Identifiants incorrects");
         }

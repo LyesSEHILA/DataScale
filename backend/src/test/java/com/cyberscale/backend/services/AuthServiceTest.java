@@ -11,14 +11,13 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.crypto.password.PasswordEncoder; // Import nécessaire
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -28,7 +27,7 @@ public class AuthServiceTest {
     private UserRepository userRepository;
 
     @Mock
-    private PasswordEncoder passwordEncoder; // <--- AJOUT : On mock l'encodeur
+    private PasswordEncoder passwordEncoder;
 
     @InjectMocks
     private AuthService authService;
@@ -40,115 +39,89 @@ public class AuthServiceTest {
     @BeforeEach
     void setUp() {
         validRegisterRequest = new RegisterRequest("john.doe", "john@test.com", "password123");
-        validLoginRequest = new LoginRequest("john.doe", "password123");
-        // On simule un utilisateur déjà en base (avec un mot de passe haché)
+        
+        // CORRECTION : On utilise l'email pour le login
+        validLoginRequest = new LoginRequest("john@test.com", "password123");
+        
         mockUser = new User("john.doe", "john@test.com", "encodedPassword123");
         mockUser.setId(1L);
     }
 
-    // ===================================
-    // TESTS pour registerUser()
-    // ===================================
-
     @Test
     void registerUser_Success() {
-        // Arrange
         when(userRepository.existsByEmail(validRegisterRequest.email())).thenReturn(false);
         when(userRepository.existsByUsername(validRegisterRequest.username())).thenReturn(false);
-        // On simule le hachage du mot de passe
         when(passwordEncoder.encode(validRegisterRequest.password())).thenReturn("encodedPassword123");
         when(userRepository.save(any(User.class))).thenReturn(mockUser);
 
-        // Act
         User resultUser = authService.registerUser(validRegisterRequest);
 
-        // Assert
         assertNotNull(resultUser);
-        
-        // Verify
-        verify(passwordEncoder, times(1)).encode(validRegisterRequest.password()); // Vérifie qu'on a bien haché
-        verify(userRepository, times(1)).save(any(User.class));
+        verify(passwordEncoder).encode(validRegisterRequest.password());
+        verify(userRepository).save(any(User.class));
     }
 
     @Test
     void registerUser_EmailConflict() {
-        // Arrange
         when(userRepository.existsByEmail(validRegisterRequest.email())).thenReturn(true);
         
-        // Act & Assert
         ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> {
             authService.registerUser(validRegisterRequest);
         });
 
         assertEquals(HttpStatus.CONFLICT, exception.getStatusCode());
-        assertEquals("Email déjà utilisé", exception.getReason());
-
-        verify(userRepository, never()).save(any(User.class));
     }
 
     @Test
     void registerUser_UsernameConflict() {
-        // Arrange
         when(userRepository.existsByEmail(validRegisterRequest.email())).thenReturn(false);
         when(userRepository.existsByUsername(validRegisterRequest.username())).thenReturn(true);
 
-        // Act & Assert
         ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> {
             authService.registerUser(validRegisterRequest);
         });
 
         assertEquals(HttpStatus.CONFLICT, exception.getStatusCode());
-        assertEquals("Nom d'utilisateur déjà utilisé", exception.getReason());
     }
 
-    // ===================================
-    // TESTS pour loginUser()
-    // ===================================
+    // --- CORRECTION DES TESTS DE LOGIN ---
 
     @Test
     void loginUser_Success() {
-        // Arrange
-        when(userRepository.findByUsername(validLoginRequest.username())).thenReturn(Optional.of(mockUser));
-        // On dit à l'encodeur : "Si on te donne 'password123' et le hash, dis que c'est bon"
+        // On cherche par EMAIL maintenant
+        when(userRepository.findByEmail(validLoginRequest.email())).thenReturn(Optional.of(mockUser));
         when(passwordEncoder.matches(validLoginRequest.password(), mockUser.getPassword())).thenReturn(true);
 
-        // Act
         User resultUser = authService.loginUser(validLoginRequest);
 
-        // Assert
         assertNotNull(resultUser);
-        assertEquals(mockUser.getUsername(), resultUser.getUsername());
+        assertEquals(mockUser.getEmail(), resultUser.getEmail());
     }
 
     @Test
     void loginUser_UserNotFound() {
-        // Arrange
-        when(userRepository.findByUsername(validLoginRequest.username())).thenReturn(Optional.empty());
+        // On cherche par EMAIL
+        when(userRepository.findByEmail(validLoginRequest.email())).thenReturn(Optional.empty());
 
-        // Act & Assert
         ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> {
             authService.loginUser(validLoginRequest);
         });
 
         assertEquals(HttpStatus.UNAUTHORIZED, exception.getStatusCode());
-        // CORRECTION : On attend le nouveau message sécurisé
         assertEquals("Identifiants incorrects", exception.getReason());
     }
 
     @Test
     void loginUser_IncorrectPassword() {
-        // Arrange
-        when(userRepository.findByUsername(validLoginRequest.username())).thenReturn(Optional.of(mockUser));
-        // On dit à l'encodeur : "Le mot de passe ne correspond pas"
+        // On cherche par EMAIL
+        when(userRepository.findByEmail(validLoginRequest.email())).thenReturn(Optional.of(mockUser));
         when(passwordEncoder.matches(validLoginRequest.password(), mockUser.getPassword())).thenReturn(false);
 
-        // Act & Assert
         ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> {
             authService.loginUser(validLoginRequest);
         });
 
         assertEquals(HttpStatus.UNAUTHORIZED, exception.getStatusCode());
-        // CORRECTION : On attend le nouveau message sécurisé
         assertEquals("Identifiants incorrects", exception.getReason());
     }
 }

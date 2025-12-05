@@ -3,46 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CyberScale - Inscription</title>
-    <link rel="stylesheet" href="css/register.css">
+    <title>Inscription - CyberScale</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .hero-bg { background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); }
+    </style>
 </head>
-<body>
-    <div class="container">
-        <header>
-            <h1>Inscription</h1>
-            <p>Veuillez remplir les informations suivantes afin de créer un compte.</p>
-        </header>
+<body class="hero-bg flex items-center justify-center min-h-screen p-4">
 
-        <div id="statusMessage" class="message-box hidden"></div>
+    <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-blue-100">
+        
+        <div class="text-center mb-8">
+            <a href="index.html" class="text-2xl font-bold text-blue-600 mb-2 block">CyberScale 🛡️</a>
+            <h2 class="text-xl font-semibold text-gray-800">Créer un compte</h2>
+            <p class="text-sm text-gray-500 mt-1">Rejoignez la communauté et progressez.</p>
+        </div>
 
-        <form id="registerForm">
-            <div class="form-group">
-                <label for="username"><b>Nom d'utilisateur</b></label>
-                <input type="text" name="username" id="username" required>
-            </div>
-
-            <div class="form-group">
-                <label for="email"><b>Adresse e-mail</b></label>
-                <input type="email" name="email" id="email" required>
-            </div>
-
-            <div class="form-group">
-                <label for="password"><b>Mot de passe</b></label>
-                <input type="password" name="password" id="password" required>
-            </div>
+        <form id="registerForm" class="space-y-4">
             
-            <div class="form-group">
-                <label for="passwordRepeat"><b>Confirmer le mot de passe</b></label>
-                <input type="password" name="passwordRepeat" id="passwordRepeat" required>
+            <div>
+                <label for="username" class="block text-sm font-medium text-gray-700 mb-1">Pseudo</label>
+                <input type="text" id="username" required placeholder="CyberHacker"
+                    class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none transition bg-gray-50">
             </div>
-            
-            <p class="terms-text">En créant un compte, vous acceptez les <a href="#">Conditions d'utilisation de CyberScale</a>. Consultez notre <a href="#">Politique de confidentialité</a>.</p>
-            
-            <button type="submit" id="registerButton">S'inscrire</button>
+
+            <div>
+                <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input type="email" id="email" required placeholder="exemple@email.com"
+                    class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none transition bg-gray-50">
+            </div>
+
+            <div>
+                <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Mot de passe</label>
+                <input type="password" id="password" required placeholder="8 caractères min."
+                    class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none transition bg-gray-50">
+            </div>
+
+            <div>
+                <label for="passwordRepeat" class="block text-sm font-medium text-gray-700 mb-1">Confirmer le mot de passe</label>
+                <input type="password" id="passwordRepeat" required 
+                    class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none transition bg-gray-50">
+            </div>
+
+            <div id="statusMessage" class="hidden p-3 rounded-lg text-sm text-center font-medium"></div>
+
+            <button type="submit" id="registerButton" 
+                class="w-full bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 transition shadow-lg transform hover:-translate-y-0.5">
+                S'inscrire gratuitement
+            </button>
         </form>
 
-        <div class="signin-link">
-            <p>Vous avez déjà un compte ? <a href="login.html">Se connecter</a></p>
+        <div class="mt-6 text-center text-sm text-gray-600">
+            Déjà un compte ? 
+            <a href="login.html" class="text-blue-600 font-semibold hover:underline">Se connecter</a>
         </div>
     </div>
 

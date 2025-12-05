@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accueil - CyberScale</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/platform.css"> <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    
+    <nav class="sidebar">
+        <div class="logo">
+            <h2>CyberScale 🛡️</h2>
+        </div>
+        <ul class="nav-links">
+            <li class="active"><a href="home.html"><i class="fas fa-home"></i> Accueil</a></li>
+            <li><a href="dashboard.html"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+            <li><a href="quiz-intro.html"><i class="fas fa-question-circle"></i> Quiz Positionnement</a></li>
+            <li><a href="#"><i class="fas fa-trophy"></i> Challenges (Arena)</a></li> <li><a href="#"><i class="fas fa-certificate"></i> Certifications</a></li> </ul>
+        <div class="user-profile">
+            <div class="user-info">
+                <span id="navPseudo">Chargement...</span>
+                <small>Membre</small>
+            </div>
+            <button id="logoutBtn"><i class="fas fa-sign-out-alt"></i></button>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <header>
+            <h1>Bienvenue, <span class="highlight" id="headerPseudo">...</span> 👋</h1>
+            <p>Prêt à monter en compétences aujourd'hui ?</p>
+        </header>
+
+        <div class="activity-grid">
+            
+            <div class="card activity-card" onclick="window.location.href='quiz-intro.html'">
+                <div class="icon-box blue">
+                    <i class="fas fa-radar"></i>
+                </div>
+                <h3>Quiz de Positionnement</h3>
+                <p>Évaluez votre niveau actuel en Théorie et Technique.</p>
+                <span class="btn-link">Lancer le test &rarr;</span>
+            </div>
+
+            <div class="card activity-card" onclick="window.location.href='dashboard.html'">
+                <div class="icon-box purple">
+                    <i class="fas fa-chart-pie"></i>
+                </div>
+                <h3>Mon Dashboard</h3>
+                <p>Consultez votre historique et votre progression.</p>
+                <span class="btn-link">Voir mes stats &rarr;</span>
+            </div>
+
+            <div class="card activity-card locked">
+                <div class="icon-box red">
+                    <i class="fas fa-terminal"></i>
+                </div>
+                <h3>Challenge Arena</h3>
+                <p>Mettez les mains dans le code avec nos terminaux interactifs.</p>
+                <span class="badge">Bientôt</span>
+            </div>
+
+            <div class="card activity-card locked">
+                <div class="icon-box green">
+                    <i class="fas fa-award"></i>
+                </div>
+                <h3>Simulateur Certif</h3>
+                <p>Entraînez-vous pour le CEH, Security+ et CISSP.</p>
+                <span class="badge">Bientôt</span>
+            </div>
+
+        </div>
+    </main>
+
+    <script src="js/auth-guard.js"></script> <script>
+        // Petit script pour afficher le pseudo
+        document.addEventListener("DOMContentLoaded", () => {
+            const pseudo = localStorage.getItem('userName') || "Hacker";
+            document.getElementById('navPseudo').textContent = pseudo;
+            document.getElementById('headerPseudo').textContent = pseudo;
+            
+            document.getElementById('logoutBtn').addEventListener('click', () => {
+                localStorage.clear();
+                window.location.href = 'login.html';
+            });
+        });
+    </script>
+</body>
+</html>
