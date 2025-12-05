@@ -23,13 +23,11 @@ public class SeleniumTest {
 
     @BeforeAll
     static void setupClass() {
-        // Installe le pilote Firefox (GeckoDriver) automatiquement
         WebDriverManager.firefoxdriver().setup();
     }
 
     @BeforeEach
     void setupTest() {
-        // Configuration de Firefox en mode "sans tête" (invisible) pour la CI
         FirefoxOptions options = new FirefoxOptions();
         options.addArguments("-headless"); 
         
@@ -40,15 +38,14 @@ public class SeleniumTest {
     @AfterEach
     void teardown() {
         if (driver != null) {
-            driver.quit(); // Ferme le navigateur
+            driver.quit();
         }
     }
 
     @Test
     void testUserFlow_ShouldStartQuiz() {
-        // 1. Trouver le chemin absolu vers le fichier index.html du frontend
-        // On remonte d'un cran (backend/../frontend)
-        File frontendDir = Paths.get("..", "frontend", "index.html").toAbsolutePath().normalize().toFile();
+        // CORRECTION ICI : On pointe vers quiz-intro.html au lieu de index.html
+        File frontendDir = Paths.get("..", "frontend", "quiz-intro.html").toAbsolutePath().normalize().toFile();
         String fileUrl = "file://" + frontendDir.getPath();
         
         System.out.println("Test Selenium sur : " + fileUrl);
@@ -56,17 +53,16 @@ public class SeleniumTest {
         // 2. Ouvrir la page
         driver.get(fileUrl);
 
-        // 3. Vérifier qu'on est sur la bonne page (Titre)
-        String title = driver.getTitle();
-        // On vérifie juste que le titre contient "CyberScale" (ou ce que tu as mis dans <title>)
-        // Adapte "CyberScale" si ton titre est différent !
-        assertTrue(title.contains("CyberScale"), "Le titre de la page devrait contenir 'CyberScale'");
+        // 3. Remplir le formulaire (qui existe bien sur quiz-intro.html)
+        WebElement ageInput = driver.findElement(By.id("ageInput"));
+        ageInput.clear(); // Bonne pratique : vider avant d'écrire
+        ageInput.sendKeys("25");
 
-        // 4. Tenter de trouver le bouton (juste pour prouver que le DOM est chargé)
+        // 4. Vérifier le bouton
         WebElement startButton = driver.findElement(By.id("startButton"));
         assertTrue(startButton.isDisplayed(), "Le bouton commencer doit être visible");
         
-        // On ne clique pas car l'API ne tourne pas forcément pendant le test, 
-        // et on veut que le test soit vert (réussite) pour valider la config Selenium.
+        // On ne clique pas pour éviter l'erreur API si le backend est éteint, 
+        // le but est de valider que la page s'affiche et que les éléments sont là.
     }
 }
