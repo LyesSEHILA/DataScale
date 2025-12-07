@@ -7,8 +7,8 @@ ALTER TABLE answers_option ALTER COLUMN id RESTART WITH 1;
 -- ---------------------------------------------------
 -- Question 1 (Théorie, Facile)
 -- ---------------------------------------------------
-INSERT INTO questions (id, text, categorie, difficulty) 
-VALUES (1, 'Qu est-ce qu un "Phishing" (Hameçonnage) ?', 'THEORY', 'EASY');
+INSERT INTO questions (id, text, categorie, difficulty, points_weight) 
+VALUES (1, 'Qu est-ce qu un "Phishing" (Hameçonnage) ?', 'THEORY', 'EASY', 1);
 
 -- Réponses pour la Question 1 (note le "question_id = 1")
 INSERT INTO answers_option (id, text, is_correct, question_id) 
@@ -27,8 +27,8 @@ VALUES (4, 'Un protocole de réseau sans fil sécurisé.', false, 1);
 -- ---------------------------------------------------
 -- Question 2 (Technique, Moyenne)
 -- ---------------------------------------------------
-INSERT INTO questions (id, text, categorie, difficulty) 
-VALUES (2, 'Quelle commande Nmap est utilisée pour une analyse rapide des ports TCP les plus courants ?', 'TECHNIQUE', 'MEDIUM');
+INSERT INTO questions (id, text, categorie, difficulty, points_weight) 
+VALUES (2, 'Quelle commande Nmap est utilisée pour une analyse rapide des ports TCP les plus courants ?', 'TECHNIQUE', 'MEDIUM', 3);
 
 -- Réponses pour la Question 2 (note le "question_id = 2")
 INSERT INTO answers_option (id, text, is_correct, question_id) 
@@ -47,8 +47,8 @@ VALUES (8, 'nmap -O [cible]', false, 2);
 -- ---------------------------------------------------
 -- Question 3 (Technique, Facile)
 -- ---------------------------------------------------
-INSERT INTO questions (id, text, categorie, difficulty) 
-VALUES (3, 'Quel outil est principalement utilisé pour intercepter et analyser le trafic réseau ?', 'TECHNIQUE', 'EASY');
+INSERT INTO questions (id, text, categorie, difficulty, points_weight) 
+VALUES (3, 'Quel outil est principalement utilisé pour intercepter et analyser le trafic réseau ?', 'TECHNIQUE', 'EASY', 1);
 
 -- Réponses pour la Question 3
 INSERT INTO answers_option (id, text, is_correct, question_id) 
@@ -66,8 +66,8 @@ VALUES (12, 'Notepad++', false, 3);
 -- ---------------------------------------------------
 -- Question 4 (Théorie, Difficile)
 -- ---------------------------------------------------
-INSERT INTO questions (id, text, categorie, difficulty) 
-VALUES (4, 'À quelle phase du "Cyber Kill Chain" de Lockheed Martin correspond l exploitation d une vulnérabilité ?', 'THEORY', 'HARD');
+INSERT INTO questions (id, text, categorie, difficulty, points_weight) 
+VALUES (4, 'À quelle phase du "Cyber Kill Chain" de Lockheed Martin correspond l exploitation d une vulnérabilité ?', 'THEORY', 'HARD', 5);
 
 -- Réponses pour la Question 4
 INSERT INTO answers_option (id, text, is_correct, question_id) 
@@ -86,8 +86,8 @@ VALUES (16, 'Phase 7: Actions sur Objectifs', false, 4);
 -- ---------------------------------------------------
 -- Question 5 (Théorie, Facile)
 -- ---------------------------------------------------
-INSERT INTO questions (id, text, categorie, difficulty) 
-VALUES (5, 'Que signifie l acronyme "VPN" ?', 'THEORY', 'EASY');
+INSERT INTO questions (id, text, categorie, difficulty, points_weight) 
+VALUES (5, 'Que signifie l acronyme "VPN" ?', 'THEORY', 'EASY', 1);
 
 -- Réponses pour la Question 5
 INSERT INTO answers_option (id, text, is_correct, question_id) 
@@ -102,8 +102,8 @@ VALUES (20, 'Verified Private Naming (Nommage Privé Vérifié)', false, 5);
 -- ---------------------------------------------------
 -- Question 6 (Technique, Medium)
 -- ---------------------------------------------------
-INSERT INTO questions (id, text, categorie, difficulty) 
-VALUES (6, 'Quel outil est couramment utilisé pour "craquer" des hashs de mots de passe ?', 'TECHNIQUE', 'MEDIUM');
+INSERT INTO questions (id, text, categorie, difficulty, points_weight) 
+VALUES (6, 'Quel outil est couramment utilisé pour "craquer" des hashs de mots de passe ?', 'TECHNIQUE', 'MEDIUM', 3);
 
 -- Réponses pour la Question 6
 INSERT INTO answers_option (id, text, is_correct, question_id) 
@@ -118,8 +118,8 @@ VALUES (24, 'Metasploit', false, 6);
 -- ---------------------------------------------------
 -- Question 7 (Théorie, Medium)
 -- ---------------------------------------------------
-INSERT INTO questions (id, text, categorie, difficulty) 
-VALUES (7, 'Que signifie la triade "CIA" en cybersécurité ?', 'THEORY', 'MEDIUM');
+INSERT INTO questions (id, text, categorie, difficulty, points_weight) 
+VALUES (7, 'Que signifie la triade "CIA" en cybersécurité ?', 'THEORY', 'MEDIUM', 3);
 
 -- Réponses pour la Question 7
 INSERT INTO answers_option (id, text, is_correct, question_id) 
@@ -134,8 +134,8 @@ VALUES (28, 'Cyber, Intelligence, Analysis (Cyber, Renseignement, Analyse)', fal
 -- ---------------------------------------------------
 -- Question 8 (Technique, Hard)
 -- ---------------------------------------------------
-INSERT INTO questions (id, text, categorie, difficulty) 
-VALUES (8, 'Quelle attaque consiste à intercepter et potentiellement altérer la communication entre deux parties ?', 'TECHNIQUE', 'HARD');
+INSERT INTO questions (id, text, categorie, difficulty, points_weight) 
+VALUES (8, 'Quelle attaque consiste à intercepter et potentiellement altérer la communication entre deux parties ?', 'TECHNIQUE', 'HARD', 5);
 
 -- Réponses pour la Question 8
 INSERT INTO answers_option (id, text, is_correct, question_id) 
@@ -150,8 +150,8 @@ VALUES (32, 'Phishing', false, 8);
 -- ---------------------------------------------------
 -- Question 9 (Théorie, Facile)
 -- ---------------------------------------------------
-INSERT INTO questions (id, text, categorie, difficulty) 
-VALUES (9, 'Qu est-ce qu un "pare-feu" (Firewall) ?', 'THEORY', 'EASY');
+INSERT INTO questions (id, text, categorie, difficulty, points_weight) 
+VALUES (9, 'Qu est-ce qu un "pare-feu" (Firewall) ?', 'THEORY', 'EASY', 1);
 
 -- Réponses pour la Question 9
 INSERT INTO answers_option (id, text, is_correct, question_id) 
@@ -166,8 +166,8 @@ VALUES (36, 'Un système de refroidissement pour les serveurs.', false, 9);
 -- ---------------------------------------------------
 -- Question 10 (Technique, Medium)
 -- ---------------------------------------------------
-INSERT INTO questions (id, text, categorie, difficulty) 
-VALUES (10, 'Quel fichier sur un système Linux contient généralement les hashs de mots de passe des utilisateurs ?', 'TECHNIQUE', 'MEDIUM');
+INSERT INTO questions (id, text, categorie, difficulty, points_weight) 
+VALUES (10, 'Quel fichier sur un système Linux contient généralement les hashs de mots de passe des utilisateurs ?', 'TECHNIQUE', 'MEDIUM', 3);
 
 -- Réponses pour la Question 10
 INSERT INTO answers_option (id, text, is_correct, question_id) 
@@ -182,8 +182,8 @@ VALUES (40, '/etc/hosts', false, 10);
 -- ---------------------------------------------------
 -- Question 11 (Théorie, Medium)
 -- ---------------------------------------------------
-INSERT INTO questions (id, text, categorie, difficulty) 
-VALUES (11, 'Qu est-ce qu un "malware" ?', 'THEORY', 'MEDIUM');
+INSERT INTO questions (id, text, categorie, difficulty, points_weight) 
+VALUES (11, 'Qu est-ce qu un "malware" ?', 'THEORY', 'MEDIUM', 3);
 
 -- Réponses pour la Question 11
 INSERT INTO answers_option (id, text, is_correct, question_id) 
@@ -198,8 +198,8 @@ VALUES (44, 'Un vêtement de protection pour technicien.', false, 11);
 -- ---------------------------------------------------
 -- Question 12 (Technique, Hard)
 -- ---------------------------------------------------
-INSERT INTO questions (id, text, categorie, difficulty) 
-VALUES (12, 'Qu est-ce qu une attaque par "Injection SQL" ?', 'TECHNIQUE', 'HARD');
+INSERT INTO questions (id, text, categorie, difficulty, points_weight) 
+VALUES (12, 'Qu est-ce qu une attaque par "Injection SQL" ?', 'TECHNIQUE', 'HARD', 5);
 
 -- Réponses pour la Question 12
 INSERT INTO answers_option (id, text, is_correct, question_id) 
@@ -214,8 +214,8 @@ VALUES (48, 'Un type de câble réseau pour serveurs de base de données.', fals
 -- ---------------------------------------------------
 -- Question 13 (Théorie, Facile)
 -- ---------------------------------------------------
-INSERT INTO questions (id, text, categorie, difficulty) 
-VALUES (13, 'Que signifie "2FA" ?', 'THEORY', 'EASY');
+INSERT INTO questions (id, text, categorie, difficulty, points_weight) 
+VALUES (13, 'Que signifie "2FA" ?', 'THEORY', 'EASY', 1);
 
 -- Réponses pour la Question 13
 INSERT INTO answers_option (id, text, is_correct, question_id) 
@@ -230,8 +230,8 @@ VALUES (52, 'Two-Form Access (Accès à deux formulaires)', false, 13);
 -- ---------------------------------------------------
 -- Question 14 (Technique, Medium)
 -- ---------------------------------------------------
-INSERT INTO questions (id, text, categorie, difficulty) 
-VALUES (14, 'Quel framework open-source est le plus populaire pour développer et exécuter des exploits ?', 'TECHNIQUE', 'MEDIUM');
+INSERT INTO questions (id, text, categorie, difficulty, points_weight) 
+VALUES (14, 'Quel framework open-source est le plus populaire pour développer et exécuter des exploits ?', 'TECHNIQUE', 'MEDIUM', 3);
 
 -- Réponses pour la Question 14
 INSERT INTO answers_option (id, text, is_correct, question_id) 
@@ -246,8 +246,8 @@ VALUES (56, 'Snort', false, 14);
 -- ---------------------------------------------------
 -- Question 15 (Théorie, Medium)
 -- ---------------------------------------------------
-INSERT INTO questions (id, text, categorie, difficulty) 
-VALUES (15, 'Quel est le but principal du protocole HTTPS ?', 'THEORY', 'MEDIUM');
+INSERT INTO questions (id, text, categorie, difficulty, points_weight) 
+VALUES (15, 'Quel est le but principal du protocole HTTPS ?', 'THEORY', 'MEDIUM', 3);
 
 -- Réponses pour la Question 15
 INSERT INTO answers_option (id, text, is_correct, question_id) 
@@ -262,8 +262,8 @@ VALUES (60, 'Bloquer les publicités pop-up.', false, 15);
 -- ---------------------------------------------------
 -- Question 16 (Technique, Hard)
 -- ---------------------------------------------------
-INSERT INTO questions (id, text, categorie, difficulty) 
-VALUES (16, 'Qu est-ce qu une attaque "DDoS" ?', 'TECHNIQUE', 'HARD');
+INSERT INTO questions (id, text, categorie, difficulty, points_weight) 
+VALUES (16, 'Qu est-ce qu une attaque "DDoS" ?', 'TECHNIQUE', 'HARD', 5);
 
 -- Réponses pour la Question 16
 INSERT INTO answers_option (id, text, is_correct, question_id) 
@@ -278,8 +278,8 @@ VALUES (64, 'Une attaque qui installe un virus sur un ordinateur personnel.', fa
 -- ---------------------------------------------------
 -- Question 17 (Théorie, Hard)
 -- ---------------------------------------------------
-INSERT INTO questions (id, text, categorie, difficulty) 
-VALUES (17, 'Quel est le nom du principal règlement de l Union Européenne sur la protection des données personnelles ?', 'THEORY', 'HARD');
+INSERT INTO questions (id, text, categorie, difficulty, points_weight) 
+VALUES (17, 'Quel est le nom du principal règlement de l Union Européenne sur la protection des données personnelles ?', 'THEORY', 'HARD', 5);
 
 -- Réponses pour la Question 17
 INSERT INTO answers_option (id, text, is_correct, question_id) 
@@ -294,8 +294,8 @@ VALUES (68, 'SOX', false, 17);
 -- ---------------------------------------------------
 -- Question 18 (Technique, Medium)
 -- ---------------------------------------------------
-INSERT INTO questions (id, text, categorie, difficulty) 
-VALUES (18, 'Quel outil en ligne de commande est utilisé pour interroger les serveurs DNS ?', 'TECHNIQUE', 'MEDIUM');
+INSERT INTO questions (id, text, categorie, difficulty, points_weight) 
+VALUES (18, 'Quel outil en ligne de commande est utilisé pour interroger les serveurs DNS ?', 'TECHNIQUE', 'MEDIUM', 3);
 
 -- Réponses pour la Question 18
 INSERT INTO answers_option (id, text, is_correct, question_id) 
@@ -310,8 +310,8 @@ VALUES (72, 'nslookup (ou dig)', true, 18);
 -- ---------------------------------------------------
 -- Question 19 (Théorie, Medium)
 -- ---------------------------------------------------
-INSERT INTO questions (id, text, categorie, difficulty) 
-VALUES (19, 'Qu est-ce que l "Ingénierie Sociale" (Social Engineering) ?', 'THEORY', 'MEDIUM');
+INSERT INTO questions (id, text, categorie, difficulty, points_weight) 
+VALUES (19, 'Qu est-ce que l "Ingénierie Sociale" (Social Engineering) ?', 'THEORY', 'MEDIUM', 3);
 
 -- Réponses pour la Question 19
 INSERT INTO answers_option (id, text, is_correct, question_id) 
@@ -326,8 +326,8 @@ VALUES (76, 'Une méthode de chiffrement de données.', false, 19);
 -- ---------------------------------------------------
 -- Question 20 (Technique, Hard)
 -- ---------------------------------------------------
-INSERT INTO questions (id, text, categorie, difficulty) 
-VALUES (20, 'Qu est-ce qu une attaque "Cross-Site Scripting (XSS)" ?', 'TECHNIQUE', 'HARD');
+INSERT INTO questions (id, text, categorie, difficulty, points_weight) 
+VALUES (20, 'Qu est-ce qu une attaque "Cross-Site Scripting (XSS)" ?', 'TECHNIQUE', 'HARD', 5);
 
 -- Réponses pour la Question 20
 INSERT INTO answers_option (id, text, is_correct, question_id) 
@@ -382,3 +382,4 @@ VALUES (8, 'Livre: "Red Team Field Manual (RTFM)"', 'LIVRE', 'https://www.amazon
 
 INSERT INTO recommendation (id, title, type, url, target_profile) 
 VALUES (9, 'Hack The Box: Pro Labs', 'EXERCICE', 'https://www.hackthebox.com/hacker/pro-labs', 'HIGH_ALL');
+

@@ -19,8 +19,12 @@ public class UserAnswer {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "session_id")
+    @JoinColumn(name = "session_id", nullable = true)
     private QuizSession session;
+
+    @ManyToOne
+    @JoinColumn(name = "exam_session_id", nullable = true)
+    private ExamSession examSession;
 
     @ManyToOne
     @JoinColumn(name = "question_id")
@@ -52,6 +56,8 @@ public class UserAnswer {
     public QuizSession getSession() { return session; }
     public void setSession(QuizSession session) { this.session = session; }
     public Question getQuestion() { return question; }
+    public ExamSession getExamSession() { return examSession; }
+    public void setExamSession(ExamSession examSession) { this.examSession = examSession; }
     public void setQuestion(Question question) { this.question = question; }
     public AnswerOption getSelectedOption() { return selectedOption; }
     public void setSelectedOption(AnswerOption selectedOption) { this.selectedOption = selectedOption; }

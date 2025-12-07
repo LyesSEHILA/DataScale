@@ -35,7 +35,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @AutoConfigureMockMvc
 @Transactional
 @TestPropertySource(properties = "spring.sql.init.data-locations=classpath:non-existent.sql")
-public class QuizControllerTest {
+class QuizControllerTest {
 
     @Autowired private MockMvc mockMvc;
     @Autowired private ObjectMapper objectMapper;

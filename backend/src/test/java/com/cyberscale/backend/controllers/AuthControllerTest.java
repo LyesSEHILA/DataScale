@@ -25,7 +25,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @WebMvcTest(AuthController.class)
 @Import(SecurityConfig.class)
 
-public class AuthControllerTest {
+class AuthControllerTest {
 
     @Autowired
     private MockMvc mockMvc; // Permet de simuler des requêtes HTTP
