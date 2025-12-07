@@ -19,7 +19,7 @@ import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "questions")
-public class Question implements IQuestion { //
+public class Question implements IQuestion { 
     
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -33,7 +33,11 @@ public class Question implements IQuestion { //
     @Enumerated(EnumType.STRING)
     private IQuestion.DifficultyQuestion difficulty;
 
+    @Column(name = "points_weight")
     private Integer pointsWeight = 1;
+
+    @Column(name = "exam_ref")
+    private String examRef; // Ex: "CISSP", "CEH", "SECURITY+"
     
     @OneToMany(mappedBy = "question")
     @JsonManagedReference
@@ -47,7 +51,6 @@ public class Question implements IQuestion { //
         this.categorie = categorie;
         this.difficulty = difficulty;
     }
-
     
     public Long getId() { return id; }
 
@@ -60,9 +63,9 @@ public class Question implements IQuestion { //
     @Override
     public IQuestion.DifficultyQuestion getDifficulty() { return difficulty; }
 
-    public Integer getPointsWeight() {
-        return pointsWeight;
-    }
+    public Integer getPointsWeight() { return pointsWeight; }
+
+    public String getExamRef() { return examRef; }
 
     @Override
     public List<AnswerOption> getOptions() { 
@@ -88,5 +91,6 @@ public class Question implements IQuestion { //
     public void setCategorie(IQuestion.CategorieQuestion categorie) { this.categorie = categorie; }
     public void setDifficulty(IQuestion.DifficultyQuestion difficulty) { this.difficulty = difficulty; }  
     public void setPointsWeight(Integer pointsWeight) { this.pointsWeight = pointsWeight; }  
+    public void setExamRef(String examRef) { this.examRef = examRef; }
     public void setOptions(List<AnswerOption> options) { this.options = options; }
 }
