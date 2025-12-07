@@ -7,6 +7,7 @@ import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -32,6 +33,8 @@ public class Question implements IQuestion { //
     @Enumerated(EnumType.STRING)
     private IQuestion.DifficultyQuestion difficulty;
 
+    private Integer pointsWeight = 1;
+    
     @OneToMany(mappedBy = "question")
     @JsonManagedReference
     private List<AnswerOption> options;
@@ -57,6 +60,10 @@ public class Question implements IQuestion { //
     @Override
     public IQuestion.DifficultyQuestion getDifficulty() { return difficulty; }
 
+    public Integer getPointsWeight() {
+        return pointsWeight;
+    }
+
     @Override
     public List<AnswerOption> getOptions() { 
         return options != null ? new ArrayList<>(options) : new ArrayList<>(); 
@@ -73,11 +80,13 @@ public class Question implements IQuestion { //
         return correction;
     }
 
+
     // --- Setters ---
 
     public void setId(Long id) { this.id = id; }
     public void setText(String text) { this.text = text; }
     public void setCategorie(IQuestion.CategorieQuestion categorie) { this.categorie = categorie; }
-    public void setDifficulty(IQuestion.DifficultyQuestion difficulty) { this.difficulty = difficulty; }    
+    public void setDifficulty(IQuestion.DifficultyQuestion difficulty) { this.difficulty = difficulty; }  
+    public void setPointsWeight(Integer pointsWeight) { this.pointsWeight = pointsWeight; }  
     public void setOptions(List<AnswerOption> options) { this.options = options; }
 }
