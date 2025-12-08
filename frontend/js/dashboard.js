@@ -31,54 +31,53 @@ async function loadHistory(userId) {
     try {
         const response = await fetch(`${API_URL_USER}/${userId}/history`);
         if (!response.ok) throw new Error("Erreur API");
-        const sessions = await response.json();
+        const history = await response.json();
 
-        // --- Calculs Statistiques ---
-        const total = sessions.length;
-        document.getElementById('totalTests').textContent = total;
+        // Stats simples (Compte total)
+        document.getElementById('totalTests').textContent = history.length;
+        // (Pour les moyennes Théorie/Technique, on peut les masquer ou les garder fixes pour l'instant
+        // car le DTO simplifié ne les contient plus séparément, ce n'est pas grave pour cette version).
 
-        if (total > 0) {
-            // Calcul des moyennes (si données dispos)
-            const sumTheory = sessions.reduce((acc, s) => acc + (s.finalScoreTheory || 0), 0);
-            const sumTech = sessions.reduce((acc, s) => acc + (s.finalScoreTechnique || 0), 0);
-            
-            document.getElementById('avgTheory').textContent = (sumTheory / total).toFixed(1) + "/10";
-            document.getElementById('avgTech').textContent = (sumTech / total).toFixed(1) + "/10";
-        } else {
-            document.getElementById('avgTheory').textContent = "-";
-            document.getElementById('avgTech').textContent = "-";
-        }
-
-        // --- Remplissage Tableau ---
         tbody.innerHTML = "";
         
-        if (total === 0) {
-            tbody.innerHTML = `<tr><td colspan="4" class="px-6 py-8 text-center text-gray-500 italic">Aucun quiz passé pour le moment. Lancez-vous !</td></tr>`;
+        if (history.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" class="px-6 py-8 text-center text-gray-500 italic">Aucune activité pour le moment.</td></tr>`;
             return;
         }
 
-        sessions.forEach(session => {
-            const dateObj = new Date(session.createdAt);
-            const dateStr = dateObj.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
-            const timeStr = dateObj.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+        history.forEach(item => {
+            const dateObj = new Date(item.date);
+            const dateStr = dateObj.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+            
+            // Badge pour le TYPE (Quiz vs Examen)
+            const typeBadge = item.type === 'EXAMEN' 
+                ? `<span class="bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs font-bold">EXAMEN</span>`
+                : `<span class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-bold">QUIZ</span>`;
 
-            const thScore = session.finalScoreTheory != null ? session.finalScoreTheory.toFixed(1) : "-";
-            const teScore = session.finalScoreTechnique != null ? session.finalScoreTechnique.toFixed(1) : "-";
+            // Badge pour le SCORE
+            let scoreColor = "text-gray-700";
+            if (item.maxScore > 0) {
+                const percent = item.score / item.maxScore;
+                if(percent >= 0.7) scoreColor = "text-green-600 font-bold";
+                else if(percent < 0.5) scoreColor = "text-red-600 font-bold";
+            }
 
             const row = `
-                <tr class="hover:bg-gray-50 transition">
-                    <td class="px-6 py-4 text-gray-900">
-                        <div class="font-medium">${dateStr}</div>
-                        <div class="text-xs text-gray-400">${timeStr}</div>
+                <tr class="hover:bg-gray-50 transition border-b border-gray-100">
+                    <td class="px-6 py-4 text-gray-500 font-medium">
+                        ${dateStr}
                     </td>
                     <td class="px-6 py-4">
-                        <span class="${getBadgeClass(session.finalScoreTheory)}">${thScore}</span>
+                        <div class="flex items-center gap-2">
+                            ${typeBadge}
+                            <span class="text-gray-900">${item.title}</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 ${scoreColor} text-lg">
+                        ${item.score} <span class="text-xs text-gray-400 font-normal">/ ${item.maxScore}</span>
                     </td>
                     <td class="px-6 py-4">
-                        <span class="${getBadgeClass(session.finalScoreTechnique)}">${teScore}</span>
-                    </td>
-                    <td class="px-6 py-4 text-right">
-                        <a href="#" onclick="viewResult(${session.id})" class="text-blue-600 hover:text-blue-800 font-medium text-sm hover:underline">Voir les détails</a>
+                        <span class="text-sm font-medium text-gray-600">${item.status}</span>
                     </td>
                 </tr>
             `;
