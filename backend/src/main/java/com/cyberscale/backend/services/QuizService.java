@@ -12,12 +12,14 @@ import com.cyberscale.backend.dto.OnboardingRequest;
 import com.cyberscale.backend.dto.ResultsResponse;
 import com.cyberscale.backend.dto.UserAnswerRequest;
 import com.cyberscale.backend.models.AnswerOption;
+import com.cyberscale.backend.models.ExamSession;
 import com.cyberscale.backend.models.IQuestion;
 import com.cyberscale.backend.models.Question;
 import com.cyberscale.backend.models.QuizSession;
 import com.cyberscale.backend.models.Recommendation;
 import com.cyberscale.backend.models.UserAnswer;
 import com.cyberscale.backend.repositories.AnswerOptionRepository;
+import com.cyberscale.backend.repositories.ExamSessionRepository;
 import com.cyberscale.backend.repositories.QuestionRepository;
 import com.cyberscale.backend.repositories.QuizSessionRepository;
 import com.cyberscale.backend.repositories.RecommendationRepository;
@@ -33,6 +35,7 @@ public class QuizService {
     @Autowired private UserAnswerRepository userAnswerRepository;
     @Autowired private RecommendationRepository recommendationRepository;
     @Autowired private UserRepository userRepository;
+    @Autowired private ExamSessionRepository examSessionRepository;
     
     @Autowired 
     private QuestionGenerator questionGenerator;
@@ -117,7 +120,47 @@ public class QuizService {
     }
     
 
-    public List<QuizSession> getUserHistory(Long userId) {
-        return quizSessionRepository.findByUserIdOrderByCreatedAtDesc(userId);
+    public List<com.cyberscale.backend.dto.HistoryDTO> getUserHistory(Long userId) {
+        List<com.cyberscale.backend.dto.HistoryDTO> history = new java.util.ArrayList<>();
+
+        // 1. Récupérer les QUIZ
+        List<QuizSession> quizzes = quizSessionRepository.findByUserIdOrderByCreatedAtDesc(userId);
+        for (QuizSession q : quizzes) {
+            history.add(new com.cyberscale.backend.dto.HistoryDTO(
+                q.getId(),
+                "QUIZ",
+                "Évaluation Initiale",
+                (int) ((q.getFinalScoreTheory() + q.getFinalScoreTechnique()) / 2),
+                10,
+                q.getCreatedAt(),
+                "Terminé"
+            ));
+        }
+
+        // 2. Récupérer les EXAMENS
+        List<ExamSession> exams = examSessionRepository.findByUserId(userId);
+        for (ExamSession e : exams) {
+            String status = "Terminé";
+            if (e.getMaxPossibleScore() > 0) {
+                double percent = (double) e.getFinalScore() / e.getMaxPossibleScore();
+                status = percent >= 0.7 ? "Validé ✅" : "Échoué ❌";
+            }
+            
+            history.add(new com.cyberscale.backend.dto.HistoryDTO(
+                e.getId(),
+                "EXAMEN",
+                "Certification Blanche", // Vous pourrez améliorer pour mettre le vrai nom (CEH...)
+                e.getFinalScore(),
+                e.getMaxPossibleScore(),
+                e.getStartTime(), // ou endTime
+                status
+            ));
+        }
+
+        // 3. Trier par date (le plus récent en premier)
+        history.sort((a, b) -> b.date().compareTo(a.date()));
+
+        return history;
     }
+
 }

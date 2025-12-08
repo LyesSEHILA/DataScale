@@ -389,6 +389,8 @@ VALUES (9, 'Hack The Box: Pro Labs', 'EXERCICE', 'https://www.hackthebox.com/hac
 -- Poids: 5 points
 -- ==================================================================================
 
+ALTER SEQUENCE answers_option_id_seq RESTART WITH 1000;
+
 -- Q100 (CISSP - Sécurité Logicielle)
 INSERT INTO questions (id, text, categorie, difficulty, points_weight, exam_ref) 
 VALUES (100, 'Dans le modèle Bell-LaPadula, quelle règle interdit à un sujet de lire des données d un niveau de sécurité supérieur ?', 'THEORY', 'HARD', 5, 'CISSP');
@@ -626,7 +628,7 @@ INSERT INTO answers_option (text, is_correct, question_id) VALUES ('ALE', false,
 -- Q128 (CEH – SQL Injection)
 INSERT INTO questions (id, text, categorie, difficulty, points_weight, exam_ref) 
 VALUES (128, 'Quel caractère est souvent utilisé pour casser une requête SQL vulnérable ?', 'TECHNIQUE', 'MEDIUM', 5, 'CEH');
-INSERT INTO answers_option (text, is_correct, question_id) VALUES ('\', true, 128);
+INSERT INTO answers_option (text, is_correct, question_id) VALUES ('''', true, 128);
 INSERT INTO answers_option (text, is_correct, question_id) VALUES (';', false, 128);
 INSERT INTO answers_option (text, is_correct, question_id) VALUES ('%', false, 128);
 INSERT INTO answers_option (text, is_correct, question_id) VALUES ('#', false, 128);

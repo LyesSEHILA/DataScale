@@ -1,14 +1,25 @@
 package com.cyberscale.backend.services;
 
-import com.cyberscale.backend.models.*;
-import com.cyberscale.backend.repositories.*;
+import java.time.LocalDateTime;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.time.LocalDateTime;
-import java.util.List;
+import com.cyberscale.backend.models.AnswerOption;
+import com.cyberscale.backend.models.ExamSession;
+import com.cyberscale.backend.models.Question;
+import com.cyberscale.backend.models.User;
+import com.cyberscale.backend.models.UserAnswer;
+import com.cyberscale.backend.repositories.AnswerOptionRepository;
+import com.cyberscale.backend.repositories.ExamSessionRepository;
+import com.cyberscale.backend.repositories.QuestionRepository;
+import com.cyberscale.backend.repositories.UserAnswerRepository;
+import com.cyberscale.backend.repositories.UserRepository;
+
+import jakarta.transaction.Transactional;
 
 @Service
 public class ExamService {
@@ -17,15 +28,20 @@ public class ExamService {
     @Autowired private QuestionRepository questionRepository;
     @Autowired private AnswerOptionRepository answerOptionRepository;
     @Autowired private UserAnswerRepository userAnswerRepository;
+    @Autowired private UserRepository userRepository;
 
-    /**
-     * Démarrer un examen
-     */
-    public ExamSession startExam(String candidateName) {
+
+    public ExamSession startExam(String candidateName, Long userId) {
         ExamSession session = new ExamSession();
         session.setCandidateName(candidateName);
-        // Règle : Examen de 30 minutes par exemple
         session.setEndTime(LocalDateTime.now().plusMinutes(30));
+
+        // Si un ID est fourni, on lie l'utilisateur
+        if (userId != null) {
+            User user = userRepository.findById(userId).orElse(null);
+            session.setUser(user);
+        }
+
         return examSessionRepository.save(session);
     }
 
@@ -59,6 +75,7 @@ public class ExamService {
     /**
      * Terminer l'examen et Calculer le Score Pondéré
      */
+    @Transactional
     public ExamSession finishExam(Long sessionId) {
         ExamSession session = examSessionRepository.findById(sessionId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session introuvable"));
@@ -90,4 +107,16 @@ public class ExamService {
 
         return examSessionRepository.save(session);
     }
+
+    public List<Question> getExamQuestions(Long sessionId) {
+        ExamSession session = examSessionRepository.findById(sessionId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session introuvable"));
+
+        List<Question> allQuestions = questionRepository.findAll();
+        
+        java.util.Collections.shuffle(allQuestions);
+        return allQuestions.stream().limit(20).toList();
+    }
+
+    
 }
