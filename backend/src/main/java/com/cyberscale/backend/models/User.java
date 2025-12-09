@@ -25,6 +25,8 @@ public class User {
     @Column(nullable = false)
     private String password; 
 
+    private Integer points = 0;
+
     public User() {
     }
 
@@ -65,4 +67,12 @@ public class User {
     public void setPassword(String password) {
         this.password = password;
     }
+
+    public Integer getPoints() { return points != null ? points : 0; }
+    public void setPoints(Integer points) { this.points = points; }
+
+    public void addPoints(int pointsToAdd) {
+        this.points = (this.points == null ? 0 : this.points) + pointsToAdd;
+    }
+    
 }
