@@ -1,0 +1,102 @@
+.dashboard-container {
+    max-width: 1000px;
+}
+
+.dashboard-header {
+    margin-bottom: 40px;
+    position: relative;
+}
+
+.back-link {
+    position: absolute;
+    top: 0;
+    left: 0;
+    color: #7f8c8d;
+    text-decoration: none;
+    font-size: 0.9rem;
+}
+
+.challenges-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 25px;
+}
+
+/* Carte Challenge */
+.challenge-card {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 20px;
+    transition: transform 0.2s, box-shadow 0.2s;
+    position: relative;
+    overflow: hidden;
+}
+
+.challenge-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+}
+
+/* Indicateur Validé (Checkmark) */
+.status-icon {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    font-size: 1.5rem;
+}
+
+/* Badges de Difficulté */
+.badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    color: white;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+}
+
+.badge-facile { background-color: #2ecc71; }   /* Vert */
+.badge-moyen { background-color: #f39c12; }    /* Orange */
+.badge-hardcore { background-color: #e74c3c; } /* Rouge */
+
+/* Contenu */
+.challenge-card h3 {
+    margin: 10px 0;
+    color: #2c3e50;
+}
+
+.challenge-card p {
+    font-size: 0.9rem;
+    color: #7f8c8d;
+    margin-bottom: 20px;
+    line-height: 1.4;
+}
+
+.challenge-points {
+    font-weight: bold;
+    color: #34495e;
+    font-size: 0.9rem;
+}
+
+.btn-action {
+    display: block;
+    width: 100%;
+    margin-top: 15px;
+    padding: 10px;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.btn-action:hover { background-color: #2980b9; }
+
+.card-validated {
+    border: 2px solid #2ecc71;
+    background-color: #f9fffb;
+}
