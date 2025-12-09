@@ -3,18 +3,26 @@ const API_URL = "http://localhost:8080/api/quiz";
 document.addEventListener("DOMContentLoaded", () => {
     const form = document.getElementById("onboardingForm");
 
+    // Petit bonus : Pré-remplir les sliders si l'utilisateur a déjà joué ? (Optionnel)
+    // Pour l'instant, on se concentre sur l'envoi de l'ID.
+
     if (form) {
         form.addEventListener("submit", async (e) => {
-            e.preventDefault(); // Empêche le rechargement de la page
+            e.preventDefault(); 
 
             const age = document.getElementById("ageInput").value;
             const theory = document.getElementById("theorySlider").value;
             const tech = document.getElementById("techSlider").value;
+            
+            // RÉCUPÉRATION DE L'ID UTILISATEUR (C'est ça qui manquait !)
+            const userId = localStorage.getItem('userId');
 
             const data = {
                 age: parseInt(age),
                 selfEvalTheory: parseInt(theory),
-                selfEvalTechnique: parseInt(tech)
+                selfEvalTechnique: parseInt(tech),
+                // On l'ajoute à la requête (si il existe)
+                userId: userId ? parseInt(userId) : null 
             };
 
             try {
@@ -28,10 +36,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 const session = await response.json();
                 
-                // 1. Stocker l'ID de session
                 localStorage.setItem('quizSessionId', session.id);
-                
-                // 2. Rediriger vers la page suivante (F2)
                 window.location.href = 'quiz.html';
 
             } catch (error) {
