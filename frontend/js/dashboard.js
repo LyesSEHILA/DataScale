@@ -12,21 +12,28 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // 2. Affichage des pseudos
     const pseudo = username || "Utilisateur";
-    document.getElementById('headerPseudo').textContent = pseudo;
-    document.getElementById('sidebarUsername').textContent = pseudo;
+    const headerPseudo = document.getElementById('headerPseudo');
+    const sidebarUsername = document.getElementById('sidebarUsername');
+    
+    if(headerPseudo) headerPseudo.textContent = pseudo;
+    if(sidebarUsername) sidebarUsername.textContent = pseudo;
 
     // 3. Chargement des données
     await loadHistory(userId);
 
     // 4. Déconnexion
-    document.getElementById('logoutBtn').addEventListener('click', () => {
-        localStorage.clear();
-        window.location.href = 'index.html';
-    });
+    const logoutBtn = document.getElementById('logoutBtn');
+    if(logoutBtn){
+        logoutBtn.addEventListener('click', () => {
+            localStorage.clear();
+            window.location.href = 'index.html';
+        });
+    }
 });
 
 async function loadHistory(userId) {
     const tbody = document.getElementById('historyBody');
+    if(!tbody) return;
     
     try {
         const response = await fetch(`${API_URL_USER}/${userId}/history`);
@@ -34,9 +41,8 @@ async function loadHistory(userId) {
         const history = await response.json();
 
         // Stats simples (Compte total)
-        document.getElementById('totalTests').textContent = history.length;
-        // (Pour les moyennes Théorie/Technique, on peut les masquer ou les garder fixes pour l'instant
-        // car le DTO simplifié ne les contient plus séparément, ce n'est pas grave pour cette version).
+        const totalTestsElem = document.getElementById('totalTests');
+        if(totalTestsElem) totalTestsElem.textContent = history.length;
 
         tbody.innerHTML = "";
         
@@ -62,6 +68,27 @@ async function loadHistory(userId) {
                 else if(percent < 0.5) scoreColor = "text-red-600 font-bold";
             }
 
+            // --- LOGIQUE BOUTON REPRENDRE ---
+            let actionHtml = '';
+            
+            if (item.status === "En cours" && item.type === 'EXAMEN') {
+                // Bouton interactif pour reprendre
+                actionHtml = `
+                    <button onclick="resumeExam(${item.id}, '${item.title}')" 
+                        class="bg-orange-100 text-orange-700 px-3 py-1 rounded-lg text-xs font-bold hover:bg-orange-200 transition flex items-center gap-1">
+                        <i class="fas fa-play"></i> Reprendre
+                    </button>
+                `;
+            } else {
+                // Texte simple pour les statuts finaux
+                let statusClass = "text-gray-600";
+                if(item.status.includes("Validé")) statusClass = "text-green-600 font-bold";
+                if(item.status.includes("Échoué")) statusClass = "text-red-600 font-bold";
+                
+                actionHtml = `<span class="text-sm font-medium ${statusClass}">${item.status}</span>`;
+            }
+            // -------------------------------
+
             const row = `
                 <tr class="hover:bg-gray-50 transition border-b border-gray-100">
                     <td class="px-6 py-4 text-gray-500 font-medium">
@@ -77,7 +104,7 @@ async function loadHistory(userId) {
                         ${item.score} <span class="text-xs text-gray-400 font-normal">/ ${item.maxScore}</span>
                     </td>
                     <td class="px-6 py-4">
-                        <span class="text-sm font-medium text-gray-600">${item.status}</span>
+                        ${actionHtml}
                     </td>
                 </tr>
             `;
@@ -90,14 +117,14 @@ async function loadHistory(userId) {
     }
 }
 
-function getBadgeClass(score) {
-    const base = "inline-block px-2.5 py-0.5 rounded-full text-xs font-bold";
-    if (score == null) return `${base} bg-gray-100 text-gray-500`;
-    if (score >= 7) return `${base} bg-green-100 text-green-700`;
-    if (score >= 4) return `${base} bg-yellow-100 text-yellow-700`;
-    return `${base} bg-red-100 text-red-700`;
-}
+// Fonction appelée quand on clique sur "Reprendre"
+window.resumeExam = function(sessionId, title) {
+    localStorage.setItem('examSessionId', sessionId);
+    localStorage.setItem('currentExamRef', title);
+    window.location.href = 'exam.html';
+};
 
+// Fonction optionnelle pour voir le détail d'un résultat fini (Quiz)
 window.viewResult = function(sessionId) {
     localStorage.setItem('quizSessionId', sessionId);
     window.location.href = 'results.html';

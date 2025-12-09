@@ -25,6 +25,17 @@
                 <span class="text-5xl font-extrabold text-gray-900" id="scoreValue">--</span>
                 <span class="text-xl text-gray-400" id="maxScore">/ --</span>
             </div>
+            <div class="bg-blue-50 rounded-2xl p-6 mb-8 border border-blue-100">
+            <h3 class="text-blue-900 font-bold mb-2">Estimation IA 🤖</h3>
+            <p class="text-blue-700 text-sm">
+                Basé sur les seuils officiels, vous avez 
+                <span id="probValue" class="font-extrabold text-2xl">--%</span> 
+                de chances de réussir l'examen réel.
+            </p>
+            <div class="w-full bg-blue-200 rounded-full h-2.5 mt-3">
+                <div id="probBar" class="bg-blue-600 h-2.5 rounded-full transition-all duration-1000" style="width: 0%"></div>
+            </div>
+        </div>
             <div class="mt-4">
                 <span id="statusBadge" class="px-4 py-1 rounded-full text-sm font-bold">
                     Calcul en cours...
@@ -75,6 +86,11 @@
                 statusBadge.className = "px-4 py-1 rounded-full text-sm font-bold bg-red-100 text-red-700 border border-red-200";
                 statusBadge.textContent = "ÉCHEC - RÉESSAYEZ ❌";
             }
+
+            // Affichage Probabilité
+            const prob = result.successProbability || 0;
+            document.getElementById('probValue').textContent = prob + "%";
+            document.getElementById('probBar').style.width = prob + "%";
         });
     </script>
 </body>

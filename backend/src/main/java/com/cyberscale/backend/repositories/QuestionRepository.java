@@ -12,4 +12,5 @@ import com.cyberscale.backend.models.Question;
 public interface QuestionRepository extends JpaRepository<Question, Long> {
     // Signature mise à jour avec IQuestion...
     List<Question> findByCategorieAndDifficulty(IQuestion.CategorieQuestion categorie, IQuestion.DifficultyQuestion difficulty);
+    List<Question> findByExamRef(String examRef);
 }

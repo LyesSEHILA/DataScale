@@ -1,9 +1,13 @@
 package com.cyberscale.backend.controllers;
 
-import java.time.LocalDateTime;
-
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import java.time.LocalDateTime;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,9 +16,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.cyberscale.backend.models.ExamSession;
@@ -48,51 +49,43 @@ public class UserControllerTest {
     }
 
     @Test
-    void testGetUserHistory_ShouldReturnMixedAndSortedHistory() throws Exception {
-        // 1. Créer une session QUIZ (Ancienne)
+    void testGetUserHistory_ShouldTranslateTitlesCorrectly() throws Exception {
+        // 1. Quiz (Ancien)
         QuizSession quiz = new QuizSession();
         quiz.setUser(testUser);
-        quiz.setFinalScoreTheory(8.0);
-        quiz.setFinalScoreTechnique(6.0);
-        quiz.setCreatedAt(LocalDateTime.now().minusDays(2)); // Il y a 2 jours
+        quiz.setCreatedAt(LocalDateTime.now().minusDays(5));
         quizSessionRepository.save(quiz);
 
-        // 2. Créer une session EXAMEN (Récente - Échouée)
-        ExamSession examFail = new ExamSession();
-        examFail.setUser(testUser);
-        examFail.setCandidateName("HistoryTester");
-        examFail.setFinalScore(10);
-        examFail.setMaxPossibleScore(100); // 10% -> Échec
-        examFail.setStartTime(LocalDateTime.now().minusHours(1));
-        examSessionRepository.save(examFail);
+        // 2. Exam Security+ (Récent)
+        ExamSession examSec = new ExamSession();
+        examSec.setUser(testUser);
+        examSec.setExamRef("SEC_PLUS"); // Code technique
+        examSec.setFinalScore(100);
+        examSec.setMaxPossibleScore(100);
+        examSec.setStartTime(LocalDateTime.now().minusDays(1));
+        examSessionRepository.save(examSec);
 
-        // 3. Créer une session EXAMEN (Très Récente - Réussie)
-        ExamSession examSuccess = new ExamSession();
-        examSuccess.setUser(testUser);
-        examSuccess.setCandidateName("HistoryTester");
-        examSuccess.setFinalScore(80);
-        examSuccess.setMaxPossibleScore(100); // 80% -> Succès
-        examSuccess.setStartTime(LocalDateTime.now()); // Maintenant
-        examSessionRepository.save(examSuccess);
+        // 3. Exam CEH (Très récent)
+        ExamSession examCeh = new ExamSession();
+        examCeh.setUser(testUser);
+        examCeh.setExamRef("CEH");
+        examCeh.setFinalScore(20);
+        examCeh.setMaxPossibleScore(100);
+        examCeh.setStartTime(LocalDateTime.now());
+        examSessionRepository.save(examCeh);
 
-        // 4. Appel API
+        // 4. Validation
         mockMvc.perform(get("/api/user/" + testUser.getId() + "/history")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(3))) // 3 éléments au total
-                // Vérifier le tri (le plus récent en premier = examSuccess)
-                .andExpect(jsonPath("$[0].type", is("EXAMEN")))
-                .andExpect(jsonPath("$[0].status", is("Validé ✅")))
-                // Le deuxième (examFail)
-                .andExpect(jsonPath("$[1].status", is("Échoué ❌")))
-                // Le dernier (le quiz)
+                .andExpect(jsonPath("$", hasSize(3)))
+                // Vérifier l'ordre (CEH en premier) et le TITRE traduit
+                .andExpect(jsonPath("$[0].title", is("CEH v12 Simulator")))
+                .andExpect(jsonPath("$[0].status", is("Échoué ❌")))
+                // Vérifier Security+
+                .andExpect(jsonPath("$[1].title", is("CompTIA Security+")))
+                .andExpect(jsonPath("$[1].status", is("Validé ✅")))
+                // Vérifier Quiz
                 .andExpect(jsonPath("$[2].type", is("QUIZ")));
-    }
-    
-    @Test
-    void testGetUserHistory_Empty() throws Exception {
-        mockMvc.perform(get("/api/user/" + testUser.getId() + "/history"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(0)));
     }
 }

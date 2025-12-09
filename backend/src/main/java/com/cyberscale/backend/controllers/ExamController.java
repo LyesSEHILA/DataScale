@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.cyberscale.backend.dto.ExamAnswerRequest;
 import com.cyberscale.backend.models.ExamSession;
 import com.cyberscale.backend.services.ExamService;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/exam")
@@ -28,8 +29,9 @@ public class ExamController {
    @PostMapping("/start")
     public ResponseEntity<ExamSession> start(
             @RequestParam String candidateName, 
-            @RequestParam(required = false) Long userId) { // Nouveau paramètre
-        return ResponseEntity.ok(examService.startExam(candidateName, userId));
+            @RequestParam(required = false) Long userId,
+            @RequestParam(required = false) String examRef) { // Ajout examRef
+        return ResponseEntity.ok(examService.startExam(candidateName, userId, examRef));
     }
 
     @PostMapping("/answer")
@@ -47,4 +49,10 @@ public class ExamController {
     public ResponseEntity<List<com.cyberscale.backend.models.Question>> getQuestions(@PathVariable Long sessionId) {
         return ResponseEntity.ok(examService.getExamQuestions(sessionId));
     }
+
+    @GetMapping("/{sessionId}/status")
+    public ResponseEntity<?> getExamStatus(@PathVariable Long sessionId) {
+        return ResponseEntity.ok(examService.getExamStatus(sessionId));
+    }
+    
 }

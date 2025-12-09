@@ -25,6 +25,9 @@ import com.cyberscale.backend.repositories.QuizSessionRepository;
 import com.cyberscale.backend.repositories.RecommendationRepository;
 import com.cyberscale.backend.repositories.UserAnswerRepository;
 import com.cyberscale.backend.repositories.UserRepository;
+import jakarta.transaction.Transactional;
+import java.util.Map;
+
 
 @Service
 public class QuizService {
@@ -126,11 +129,15 @@ public class QuizService {
         // 1. Récupérer les QUIZ
         List<QuizSession> quizzes = quizSessionRepository.findByUserIdOrderByCreatedAtDesc(userId);
         for (QuizSession q : quizzes) {
+            // Protection NULLS pour les quiz
+            Double theory = q.getFinalScoreTheory() != null ? q.getFinalScoreTheory() : 0.0;
+            Double tech = q.getFinalScoreTechnique() != null ? q.getFinalScoreTechnique() : 0.0;
+            
             history.add(new com.cyberscale.backend.dto.HistoryDTO(
                 q.getId(),
                 "QUIZ",
                 "Évaluation Initiale",
-                (int) ((q.getFinalScoreTheory() + q.getFinalScoreTechnique()) / 2),
+                (int) ((theory + tech) / 2),
                 10,
                 q.getCreatedAt(),
                 "Terminé"
@@ -140,24 +147,35 @@ public class QuizService {
         // 2. Récupérer les EXAMENS
         List<ExamSession> exams = examSessionRepository.findByUserId(userId);
         for (ExamSession e : exams) {
-            String status = "Terminé";
-            if (e.getMaxPossibleScore() > 0) {
-                double percent = (double) e.getFinalScore() / e.getMaxPossibleScore();
+            // --- A. PROTECTION ET CALCULS (C'est ce qu'il vous manquait !) ---
+            Integer finalScore = e.getFinalScore() != null ? e.getFinalScore() : 0;
+            Integer maxScore = e.getMaxPossibleScore() != null ? e.getMaxPossibleScore() : 0;
+
+            String status = "En cours";
+            if (maxScore > 0) {
+                double percent = (double) finalScore / maxScore;
                 status = percent >= 0.7 ? "Validé ✅" : "Échoué ❌";
             }
-            
+
+            // --- B. GESTION DES TITRES ---
+            String title = "Certification Blanche";
+            if ("CEH".equals(e.getExamRef())) title = "CEH v12 Simulator";
+            else if ("SEC_PLUS".equals(e.getExamRef())) title = "CompTIA Security+";
+            else if ("CISSP".equals(e.getExamRef())) title = "CISSP Manager";
+
+            // --- C. AJOUT A L'HISTORIQUE ---
             history.add(new com.cyberscale.backend.dto.HistoryDTO(
                 e.getId(),
                 "EXAMEN",
-                "Certification Blanche", // Vous pourrez améliorer pour mettre le vrai nom (CEH...)
-                e.getFinalScore(),
-                e.getMaxPossibleScore(),
-                e.getStartTime(), // ou endTime
-                status
+                title,      // Utilise la variable 'title'
+                finalScore, // Utilise la variable 'finalScore'
+                maxScore,   // Utilise la variable 'maxScore'
+                e.getStartTime(), 
+                status      // Utilise la variable 'status'
             ));
         }
 
-        // 3. Trier par date (le plus récent en premier)
+        // 3. Trier par date
         history.sort((a, b) -> b.date().compareTo(a.date()));
 
         return history;

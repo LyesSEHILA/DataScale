@@ -20,6 +20,7 @@ import com.cyberscale.backend.repositories.UserAnswerRepository;
 import com.cyberscale.backend.repositories.UserRepository;
 
 import jakarta.transaction.Transactional;
+import java.util.Map;
 
 @Service
 public class ExamService {
@@ -31,17 +32,16 @@ public class ExamService {
     @Autowired private UserRepository userRepository;
 
 
-    public ExamSession startExam(String candidateName, Long userId) {
+    public ExamSession startExam(String candidateName, Long userId, String examRef) {
         ExamSession session = new ExamSession();
         session.setCandidateName(candidateName);
+        session.setExamRef(examRef); 
         session.setEndTime(LocalDateTime.now().plusMinutes(30));
 
-        // Si un ID est fourni, on lie l'utilisateur
         if (userId != null) {
             User user = userRepository.findById(userId).orElse(null);
             session.setUser(user);
         }
-
         return examSessionRepository.save(session);
     }
 
@@ -52,7 +52,6 @@ public class ExamService {
         ExamSession session = examSessionRepository.findById(sessionId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session d'examen introuvable"));
 
-        // 1. Règle Stricte : Check Time
         if (LocalDateTime.now().isAfter(session.getEndTime())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "L'examen est terminé ! Réponse refusée.");
         }
@@ -62,7 +61,6 @@ public class ExamService {
         AnswerOption selectedOption = answerOptionRepository.findById(optionId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Option introuvable"));
 
-        // Sauvegarde (en utilisant le champ examSession ajouté à UserAnswer)
         UserAnswer answer = new UserAnswer();
         answer.setExamSession(session);
         answer.setQuestion(question);
@@ -80,27 +78,40 @@ public class ExamService {
         ExamSession session = examSessionRepository.findById(sessionId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session introuvable"));
 
-        List<UserAnswer> answers = userAnswerRepository.findAll();
-
+        List<UserAnswer> answers = userAnswerRepository.findAll(); 
         int totalScore = 0;
         int maxScore = 0;
 
         for (UserAnswer ans : answers) {
-    
             if (ans.getExamSession() != null && session.getId().equals(ans.getExamSession().getId())) {
-                
                 Question q = ans.getQuestion();
                 maxScore += q.getPointsWeight();
-
                 if (ans.getSelectedOption().getIsCorrect()) {
                     totalScore += q.getPointsWeight();
                 }
             } 
         }
-
+        
         session.setFinalScore(totalScore);
         session.setMaxPossibleScore(maxScore);
-        
+
+        if (maxScore > 0) {
+            double userPercent = (double) totalScore / maxScore;
+            
+            double officialThreshold = 0.70; 
+            if ("Security+".equals(session.getExamRef())) officialThreshold = 0.83; 
+            if ("CEH".equals(session.getExamRef())) officialThreshold = 0.75; 
+            
+            int probability = (int) ((userPercent / officialThreshold) * 80.0);
+            
+            probability = Math.min(99, Math.max(0, probability));
+            
+            session.setSuccessProbability(probability);
+        } else {
+            session.setSuccessProbability(0);
+        }
+        // -----------------------------
+
         if (LocalDateTime.now().isBefore(session.getEndTime())) {
             session.setEndTime(LocalDateTime.now());
         }
@@ -112,11 +123,33 @@ public class ExamService {
         ExamSession session = examSessionRepository.findById(sessionId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session introuvable"));
 
-        List<Question> allQuestions = questionRepository.findAll();
+        List<Question> questions;
+        if (session.getExamRef() != null) {
+            questions = questionRepository.findByExamRef(session.getExamRef());
+        } else {
+            questions = questionRepository.findAll();
+        }
         
-        java.util.Collections.shuffle(allQuestions);
-        return allQuestions.stream().limit(20).toList();
+        java.util.Collections.shuffle(questions);
+        return questions.stream().limit(20).toList();
     }
 
+    public Map<String, Object> getExamStatus(Long sessionId) {
+    ExamSession session = examSessionRepository.findById(sessionId)
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session introuvable"));
+
+    long secondsLeft = java.time.Duration.between(LocalDateTime.now(), session.getEndTime()).getSeconds();
+    if (secondsLeft < 0) secondsLeft = 0;
+
+    // ON AJOUTE CECI :
+    long answeredCount = userAnswerRepository.countByExamSessionId(sessionId);
+
+    return Map.of(
+        "secondsLeft", secondsLeft,
+        "isFinished", session.getFinalScore() != null,
+        "examRef", session.getExamRef() != null ? session.getExamRef() : "EXAM",
+        "currentIndex", answeredCount // On renvoie l'index où reprendre (ex: 3 réponses = index 3, donc 4ème question)
+    );
+}
     
 }

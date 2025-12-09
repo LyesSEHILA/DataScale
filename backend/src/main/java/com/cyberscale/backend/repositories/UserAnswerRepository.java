@@ -8,6 +8,6 @@ import com.cyberscale.backend.models.UserAnswer;
 @Repository
 public interface UserAnswerRepository extends JpaRepository<UserAnswer, Long> {
     List<UserAnswer> findBySessionId(Long sessionId);
-
     long countByQuestionIdAndSelectedOptionIsCorrectTrue(Long questionId);
+    long countByExamSessionId(Long examSessionId);
 }

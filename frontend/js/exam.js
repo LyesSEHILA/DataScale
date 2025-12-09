@@ -11,12 +11,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
     }
 
-    // 1. Initialiser l'examen (Charger questions)
     await loadQuestions();
-
-    // 2. Démarrer le Timer (ex: 30 minutes)
-    startTimer(30 * 60); 
+    await syncTimer();
 });
+
 
 async function loadQuestions() {
     try {
@@ -125,24 +123,65 @@ window.finishExam = async function() {
     }
 };
 
+async function syncTimer() {
+    try {
+        const response = await fetch(`${API_BASE}/${sessionId}/status`);
+        if (!response.ok) throw new Error("Impossible de synchroniser");
+        
+        const status = await response.json();
+        
+        if (status.isFinished || status.secondsLeft <= 0) {
+            alert("Examen terminé ou temps écoulé.");
+            window.location.href = "exam-result.html";
+            return;
+        }
+
+        // 1. MISE À JOUR DU TIMER
+        startTimer(status.secondsLeft);
+
+        // 2. MISE À JOUR DE LA QUESTION (Reprise)
+        // Si le serveur nous dit qu'on est à la question 3 (index 3), on met à jour currentIndex
+        if (typeof status.currentIndex === 'number') {
+            currentIndex = status.currentIndex;
+            
+            // Si on a fini toutes les questions mais qu'on n'a pas cliqué sur finir...
+            if (currentIndex >= questions.length && questions.length > 0) {
+                currentIndex = questions.length - 1; // On reste sur la dernière
+            }
+            
+            // On affiche la bonne question directement !
+            displayQuestion(currentIndex);
+        }
+
+    } catch (e) {
+        console.error("Erreur sync:", e);
+        // Fallback (on ne touche pas à currentIndex si erreur)
+        startTimer(30 * 60); 
+    }
+}
+
 // --- TIMER ---
 function startTimer(durationSeconds) {
-    let timer = durationSeconds, minutes, seconds;
+    let timer = durationSeconds;
     const display = document.getElementById('timer');
     
+    // On nettoie un éventuel intervalle existant
+    if (timerInterval) clearInterval(timerInterval);
+
     timerInterval = setInterval(function () {
-        minutes = parseInt(timer / 60, 10);
-        seconds = parseInt(timer % 60, 10);
+        // Calcul minutes/secondes
+        let minutes = parseInt(timer / 60, 10);
+        let seconds = parseInt(timer % 60, 10);
 
         minutes = minutes < 10 ? "0" + minutes : minutes;
         seconds = seconds < 10 ? "0" + seconds : seconds;
 
-        display.textContent = minutes + ":" + seconds;
+        if (display) display.textContent = minutes + ":" + seconds;
 
         if (--timer < 0) {
             clearInterval(timerInterval);
-            alert("Temps écoulé !");
-            finishExam(); // Force la fin
+            alert("Temps écoulé ! Envoi des réponses...");
+            finishExam();
         }
     }, 1000);
 }

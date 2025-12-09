@@ -22,6 +22,9 @@ public class ExamSession {
     @JoinColumn(name = "user_id")
     private User user;
 
+    private String examRef; 
+    private Integer successProbability;
+
 
     private String candidateName;
 
@@ -62,4 +65,9 @@ public class ExamSession {
 
     public User getUser() { return user; }
     public void setUser(User user) { this.user = user; }
+    public String getExamRef() { return examRef; }
+    public void setExamRef(String examRef) { this.examRef = examRef; }
+
+    public Integer getSuccessProbability() { return successProbability; }
+    public void setSuccessProbability(Integer successProbability) { this.successProbability = successProbability; }
 }

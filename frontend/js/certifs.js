@@ -23,7 +23,8 @@ async function startExam(examRef) {
     const userId = localStorage.getItem('userId'); 
 
     // 2. Construire l'URL avec le paramètre userId (si connecté)
-    let url = `${API_EXAM_START}?candidateName=${encodeURIComponent(candidateName)}`;
+    let url = `${API_EXAM_START}?candidateName=${encodeURIComponent(candidateName)}&examRef=${encodeURIComponent(examRef)}`;
+    
     if (userId && userId !== "undefined") {
         url += `&userId=${userId}`;
     }
