@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.cyberscale.backend.models.QuizSession;
 import com.cyberscale.backend.services.QuizService;
 
 @RestController
@@ -24,8 +23,7 @@ public class UserController {
     }
     
     @GetMapping("/{userId}/history")
-    public ResponseEntity<List<QuizSession>> getUserHistory(@PathVariable Long userId) {
-        List<QuizSession> history = quizService.getUserHistory(userId);
-        return ResponseEntity.ok(history);
+    public ResponseEntity<List<com.cyberscale.backend.dto.HistoryDTO>> getUserHistory(@PathVariable Long userId) {
+        return ResponseEntity.ok(quizService.getUserHistory(userId));
     }
 }

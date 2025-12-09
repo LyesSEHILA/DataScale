@@ -1,7 +1,14 @@
 package com.cyberscale.backend.models;
 
-import jakarta.persistence.*;
 import java.time.LocalDateTime;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "exam_session")
@@ -10,6 +17,14 @@ public class ExamSession {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
+
+    private String examRef; 
+    private Integer successProbability;
+
 
     private String candidateName;
 
@@ -47,4 +62,12 @@ public class ExamSession {
     public boolean isValid() {
         return LocalDateTime.now().isBefore(this.endTime);
     }
+
+    public User getUser() { return user; }
+    public void setUser(User user) { this.user = user; }
+    public String getExamRef() { return examRef; }
+    public void setExamRef(String examRef) { this.examRef = examRef; }
+
+    public Integer getSuccessProbability() { return successProbability; }
+    public void setSuccessProbability(Integer successProbability) { this.successProbability = successProbability; }
 }

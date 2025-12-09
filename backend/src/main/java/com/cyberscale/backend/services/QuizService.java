@@ -12,17 +12,22 @@ import com.cyberscale.backend.dto.OnboardingRequest;
 import com.cyberscale.backend.dto.ResultsResponse;
 import com.cyberscale.backend.dto.UserAnswerRequest;
 import com.cyberscale.backend.models.AnswerOption;
+import com.cyberscale.backend.models.ExamSession;
 import com.cyberscale.backend.models.IQuestion;
 import com.cyberscale.backend.models.Question;
 import com.cyberscale.backend.models.QuizSession;
 import com.cyberscale.backend.models.Recommendation;
 import com.cyberscale.backend.models.UserAnswer;
 import com.cyberscale.backend.repositories.AnswerOptionRepository;
+import com.cyberscale.backend.repositories.ExamSessionRepository;
 import com.cyberscale.backend.repositories.QuestionRepository;
 import com.cyberscale.backend.repositories.QuizSessionRepository;
 import com.cyberscale.backend.repositories.RecommendationRepository;
 import com.cyberscale.backend.repositories.UserAnswerRepository;
 import com.cyberscale.backend.repositories.UserRepository;
+import jakarta.transaction.Transactional;
+import java.util.Map;
+
 
 @Service
 public class QuizService {
@@ -33,6 +38,7 @@ public class QuizService {
     @Autowired private UserAnswerRepository userAnswerRepository;
     @Autowired private RecommendationRepository recommendationRepository;
     @Autowired private UserRepository userRepository;
+    @Autowired private ExamSessionRepository examSessionRepository;
     
     @Autowired 
     private QuestionGenerator questionGenerator;
@@ -117,7 +123,62 @@ public class QuizService {
     }
     
 
-    public List<QuizSession> getUserHistory(Long userId) {
-        return quizSessionRepository.findByUserIdOrderByCreatedAtDesc(userId);
+    public List<com.cyberscale.backend.dto.HistoryDTO> getUserHistory(Long userId) {
+        List<com.cyberscale.backend.dto.HistoryDTO> history = new java.util.ArrayList<>();
+
+        // 1. Récupérer les QUIZ
+        List<QuizSession> quizzes = quizSessionRepository.findByUserIdOrderByCreatedAtDesc(userId);
+        for (QuizSession q : quizzes) {
+            // Protection NULLS pour les quiz
+            Double theory = q.getFinalScoreTheory() != null ? q.getFinalScoreTheory() : 0.0;
+            Double tech = q.getFinalScoreTechnique() != null ? q.getFinalScoreTechnique() : 0.0;
+            
+            history.add(new com.cyberscale.backend.dto.HistoryDTO(
+                q.getId(),
+                "QUIZ",
+                "Évaluation Initiale",
+                (int) ((theory + tech) / 2),
+                10,
+                q.getCreatedAt(),
+                "Terminé"
+            ));
+        }
+
+        // 2. Récupérer les EXAMENS
+        List<ExamSession> exams = examSessionRepository.findByUserId(userId);
+        for (ExamSession e : exams) {
+            // --- A. PROTECTION ET CALCULS (C'est ce qu'il vous manquait !) ---
+            Integer finalScore = e.getFinalScore() != null ? e.getFinalScore() : 0;
+            Integer maxScore = e.getMaxPossibleScore() != null ? e.getMaxPossibleScore() : 0;
+
+            String status = "En cours";
+            if (maxScore > 0) {
+                double percent = (double) finalScore / maxScore;
+                status = percent >= 0.7 ? "Validé ✅" : "Échoué ❌";
+            }
+
+            // --- B. GESTION DES TITRES ---
+            String title = "Certification Blanche";
+            if ("CEH".equals(e.getExamRef())) title = "CEH v12 Simulator";
+            else if ("SEC_PLUS".equals(e.getExamRef())) title = "CompTIA Security+";
+            else if ("CISSP".equals(e.getExamRef())) title = "CISSP Manager";
+
+            // --- C. AJOUT A L'HISTORIQUE ---
+            history.add(new com.cyberscale.backend.dto.HistoryDTO(
+                e.getId(),
+                "EXAMEN",
+                title,      // Utilise la variable 'title'
+                finalScore, // Utilise la variable 'finalScore'
+                maxScore,   // Utilise la variable 'maxScore'
+                e.getStartTime(), 
+                status      // Utilise la variable 'status'
+            ));
+        }
+
+        // 3. Trier par date
+        history.sort((a, b) -> b.date().compareTo(a.date()));
+
+        return history;
     }
+
 }

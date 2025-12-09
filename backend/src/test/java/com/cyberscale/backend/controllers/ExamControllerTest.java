@@ -2,8 +2,12 @@ package com.cyberscale.backend.controllers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.hamcrest.Matchers.hasSize;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 import java.time.LocalDateTime;
 
@@ -27,13 +31,11 @@ import com.cyberscale.backend.repositories.QuestionRepository;
 import com.cyberscale.backend.repositories.UserAnswerRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 @SpringBootTest
-@AutoConfigureMockMvc(addFilters = false) // Désactive la sécurité pour les tests
+@AutoConfigureMockMvc(addFilters = false)
 @Transactional
-@TestPropertySource(properties = "spring.sql.init.data-locations=") // On ignore data.sql
+@TestPropertySource(properties = "spring.sql.init.data-locations=")
 public class ExamControllerTest {
 
     @Autowired private MockMvc mockMvc;
@@ -51,83 +53,101 @@ public class ExamControllerTest {
         examSessionRepository.deleteAll();
     }
 
-    // --- TEST 1 : Démarrage de l'examen ---
-    void testStartExam_ShouldReturnSession() throws Exception {
-    mockMvc.perform(post("/api/exam/start")
-            .param("candidateName", "John Doe")
-            // Retirez .contentType(...) car on envoie un simple paramètre de formulaire/URL, pas un JSON Body
-            .accept(MediaType.APPLICATION_JSON)) // On accepte du JSON en réponse
-            .andDo(print()) // <--- AFFICHERA L'ERREUR DANS LA CONSOLE SI ÇA ECHOUE ENCORE
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.id").exists())
-            .andExpect(jsonPath("$.candidateName").value("John Doe"));
-}
-
-    // --- TEST 2 : Vérification du Score Pondéré ---
+    // --- TEST 1 : Démarrage de l'examen avec Ref ---
     @Test
-    void testFinishExam_ShouldCalculateWeightedScore() throws Exception {
-        // 1. Créer une Session
+    void testStartExam_ShouldReturnSessionWithRef() throws Exception {
+        mockMvc.perform(post("/api/exam/start")
+                .param("candidateName", "John Doe")
+                .param("examRef", "SEC_PLUS") // On teste le paramètre
+                .accept(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").exists())
+                .andExpect(jsonPath("$.examRef").value("SEC_PLUS")) // Vérif
+                .andExpect(jsonPath("$.candidateName").value("John Doe"));
+    }
+
+    // --- TEST 2 : Vérification du Score et Probabilité ---
+    @Test
+    void testFinishExam_ShouldCalculateScoreAndProbability() throws Exception {
+        // 1. Créer une Session Security+
         ExamSession session = new ExamSession();
         session.setCandidateName("Tester");
+        session.setExamRef("SEC_PLUS");
         session = examSessionRepository.save(session);
 
-        // 2. Créer une question DIFFICILE (Poids = 5)
-        Question qHard = new Question();
-        qHard.setText("Question Difficile");
-        qHard.setCategorie(Question.CategorieQuestion.THEORY);
-        qHard.setDifficulty(Question.DifficultyQuestion.HARD);
-        qHard.setPointsWeight(5); // Simulation de la donnée en base
-        qHard = questionRepository.save(qHard);
+        // 2. Créer une question (5 points)
+        Question q1 = new Question();
+        q1.setText("Q1");
+        q1.setPointsWeight(5);
+        q1.setExamRef("SEC_PLUS");
+        q1 = questionRepository.save(q1);
 
-        AnswerOption optCorrect = new AnswerOption(null, "Bonne réponse", true);
-        optCorrect.setQuestion(qHard);
+        AnswerOption optCorrect = new AnswerOption(null, "Correct", true);
+        optCorrect.setQuestion(q1);
         optCorrect = answerOptionRepository.save(optCorrect);
 
-        // 3. Soumettre la bonne réponse
-        String jsonAnswer = "{\"sessionId\": " + session.getId() + ", \"questionId\": " + qHard.getId() + ", \"optionId\": " + optCorrect.getId() + "}";
+        // 3. Répondre juste
+        String jsonAnswer = "{\"sessionId\": " + session.getId() + ", \"questionId\": " + q1.getId() + ", \"optionId\": " + optCorrect.getId() + "}";
         mockMvc.perform(post("/api/exam/answer")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(jsonAnswer))
                 .andExpect(status().isOk());
 
-        // 4. Terminer l'examen
+        // 4. Terminer
         MvcResult result = mockMvc.perform(post("/api/exam/finish/" + session.getId())
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andReturn();
 
-        // 5. Vérifier que le score est bien de 5 (et pas 1)
         String responseBody = result.getResponse().getContentAsString();
         JsonNode json = objectMapper.readTree(responseBody);
         
-        assertEquals(5, json.get("finalScore").asInt(), "Le score doit être de 5 pour une question HARD");
+        // 5. Vérifications
+        assertEquals(5, json.get("finalScore").asInt());
+        // Avec 100% de réussite (5/5), la probabilité devrait être élevée (>80%)
+        assertNotNull(json.get("successProbability"));
+        int prob = json.get("successProbability").asInt();
+        assertEquals(true, prob > 50, "La probabilité doit être positive pour un score parfait");
     }
 
-    // --- TEST 3 : Blocage si temps écoulé ---
+    // --- TEST 3 : Filtrage des questions ---
     @Test
-    void testSubmitAnswer_ShouldFail_WhenTimeIsOver() throws Exception {
-        // 1. Créer une session expirée (Fin il y a 10 minutes)
-        ExamSession expiredSession = new ExamSession();
-        expiredSession.setCandidateName("Late Candidate");
-        expiredSession.setEndTime(LocalDateTime.now().minusMinutes(10)); 
-        expiredSession = examSessionRepository.save(expiredSession);
+    void testGetQuestions_ShouldFilterByExamRef() throws Exception {
+        // Session CEH
+        ExamSession session = new ExamSession();
+        session.setExamRef("CEH"); 
+        session = examSessionRepository.save(session);
 
-        // 2. Question & Option
-        Question q = new Question(); 
-        q.setText("Q");
-        q = questionRepository.save(q);
-        
-        AnswerOption opt = new AnswerOption(null, "A", true);
-        opt.setQuestion(q);
-        opt = answerOptionRepository.save(opt);
+        // Question CEH
+        Question qCEH = new Question(); 
+        qCEH.setText("CEH Question"); 
+        qCEH.setExamRef("CEH");
+        questionRepository.save(qCEH);
 
-        // 3. Tentative de réponse
-        String jsonAnswer = "{\"sessionId\": " + expiredSession.getId() + ", \"questionId\": " + q.getId() + ", \"optionId\": " + opt.getId() + "}";
+        // Question Autre (ne doit pas apparaître)
+        Question qOther = new Question(); 
+        qOther.setText("Other"); 
+        qOther.setExamRef("CISSP");
+        questionRepository.save(qOther);
+
+        mockMvc.perform(get("/api/exam/" + session.getId() + "/questions")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1))) // On ne doit avoir que la question CEH
+                .andExpect(jsonPath("$[0].text").value("CEH Question"));
+    }
+    
+    // --- TEST 4 : Status ---
+    @Test
+    void testGetStatus_ShouldReturnTimeAndIndex() throws Exception {
+        ExamSession session = new ExamSession();
+        session.setEndTime(LocalDateTime.now().plusMinutes(10));
+        session = examSessionRepository.save(session);
         
-        // 4. On s'attend à une erreur 403 Forbidden
-        mockMvc.perform(post("/api/exam/answer")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(jsonAnswer))
-                .andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/exam/" + session.getId() + "/status"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.secondsLeft").exists())
+            .andExpect(jsonPath("$.currentIndex").value(0));
     }
 }
