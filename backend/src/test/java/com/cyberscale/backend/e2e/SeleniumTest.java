@@ -94,4 +94,41 @@ public class SeleniumTest {
         WebElement xtermScreen = driver.findElement(By.className("xterm-screen"));
         assertTrue(xtermScreen.isDisplayed(), "Le terminal Xterm.js doit être actif");
     }
+    
+    @Test
+    void testArena_ScenarioCTF_ShouldRevealFlag() throws InterruptedException {
+        String fileUrl = getFrontendFileUrl("arena.html");
+        
+        // 1. Initialisation Auth & Chargement
+        driver.get(fileUrl);
+        JavascriptExecutor js = (JavascriptExecutor) driver;
+        js.executeScript("localStorage.setItem('userId', '999');");
+        js.executeScript("localStorage.setItem('userName', 'Hacker');");
+        driver.get(fileUrl); // Recharge pour appliquer l'auth
+
+        // 2. Trouver la zone de saisie cachée de Xterm.js
+        // Xterm crée un <textarea> invisible pour capter le clavier
+        WebElement terminalInput = driver.findElement(By.cssSelector("textarea.xterm-helper-textarea"));
+
+        // 3. Étape 1 : 'ls'
+        terminalInput.sendKeys("ls\n");
+        Thread.sleep(500); // Attente du rendu
+
+        // 4. Étape 2 : 'cat shadow' (Doit échouer)
+        terminalInput.sendKeys("cat shadow\n");
+        Thread.sleep(500);
+        
+        // On vérifie que "Permission denied" est apparu dans le terminal
+        // Astuce : On récupère tout le texte du terminal via les lignes xterm
+        String terminalText = driver.findElement(By.className("xterm-screen")).getText();
+        assertTrue(terminalText.contains("Permission denied"), "cat shadow devrait être refusé");
+
+        // 5. Étape 3 : 'sudo cat shadow' (Doit réussir)
+        terminalInput.sendKeys("sudo cat shadow\n");
+        Thread.sleep(1000); // Attente de la simulation sudo (setTimeout 500ms dans le JS)
+
+        // 6. Vérification du Flag
+        terminalText = driver.findElement(By.className("xterm-screen")).getText();
+        assertTrue(terminalText.contains("CTF{LINUX_MASTER_2025}"), "Le flag doit être visible après sudo");
+    }
 }
