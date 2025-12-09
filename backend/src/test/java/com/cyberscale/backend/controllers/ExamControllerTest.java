@@ -11,15 +11,22 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.time.LocalDateTime;
 
+import static org.hamcrest.Matchers.hasSize;
+import static org.junit.jupiter.api.Assertions.assertEquals; // Import pour GET
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.TestPropertySource; // Import indispensable
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.cyberscale.backend.models.AnswerOption;
@@ -149,5 +156,44 @@ public class ExamControllerTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.secondsLeft").exists())
             .andExpect(jsonPath("$.currentIndex").value(0));
+    }
+
+    // --- NOUVEAU TEST 4 : Récupération des questions ---
+    @Test
+    void testGetQuestions_ShouldReturnList() throws Exception {
+        ExamSession session = new ExamSession();
+        session.setCandidateName("Reader");
+        session = examSessionRepository.save(session);
+
+        Question q1 = new Question(); q1.setText("Q1"); questionRepository.save(q1);
+        Question q2 = new Question(); q2.setText("Q2"); questionRepository.save(q2);
+
+        mockMvc.perform(get("/api/exam/" + session.getId() + "/questions")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(2))); 
+    }
+
+    @Test
+    void testFinishExam_ShouldReturn404_WhenSessionNotFound() throws Exception {
+        mockMvc.perform(post("/api/exam/finish/999999") // ID inexistant
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void testAnswer_ShouldReturn404_WhenSessionNotFound() throws Exception {
+        String jsonAnswer = "{\"sessionId\": 99999, \"questionId\": 1, \"optionId\": 1}";
+        mockMvc.perform(post("/api/exam/answer")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonAnswer))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void testGetQuestions_ShouldReturn404_WhenSessionNotFound() throws Exception {
+        mockMvc.perform(get("/api/exam/99999/questions")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound());
     }
 }
