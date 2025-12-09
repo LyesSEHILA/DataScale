@@ -64,5 +64,4 @@ public class QuizController {
         return ResponseEntity.ok(results);
     }
 
-
 }
