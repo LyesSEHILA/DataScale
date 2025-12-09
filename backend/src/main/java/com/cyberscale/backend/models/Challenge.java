@@ -9,7 +9,7 @@ import jakarta.persistence.Table;
 public class Challenge {
 
     @Id
-    private String id; // Ex: "CTF_LINUX_1" (Plus parlant qu'un Long)
+    private String id;
 
     private String name;
     private String description;
@@ -18,9 +18,10 @@ public class Challenge {
 
     public Challenge() {}
 
-    public Challenge(String id, String name, String flagSecret, Integer pointsReward) {
+    public Challenge(String id, String name, String description, String flagSecret, Integer pointsReward) {
         this.id = id;
         this.name = name;
+        this.description = description; 
         this.flagSecret = flagSecret;
         this.pointsReward = pointsReward;
     }
@@ -30,5 +31,6 @@ public class Challenge {
     public String getFlagSecret() { return flagSecret; }
     public Integer getPointsReward() { return pointsReward; }
     
-    // Setters si besoin...
+    public String getName() { return name; }
+    public String getDescription() { return description; }
 }

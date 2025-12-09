@@ -31,17 +31,11 @@ class ArenaControllerTest {
     @Test
     void testValidateFlag_Integration() throws Exception {
         // 1. Setup Données
-        User user = userRepository.save(new User("Tester", "test@arena.com", "pass"));
-        challengeRepository.save(new Challenge("TEST_CTF", "Test", "FLAG123", 50));
+        User user = userRepository.saveAndFlush(new User("Tester", "test@arena.com", "pass"));
+        challengeRepository.saveAndFlush(new Challenge("TEST_CTF", "Test", "Desc", "FLAG123", 50));
 
-        // 2. Appel API avec le BON flag
-        String jsonRequest = """
-            {
-                "userId": %d,
-                "challengeId": "TEST_CTF",
-                "flag": "FLAG123"
-            }
-        """.formatted(user.getId());
+        // --- CAS 1 : BON FLAG ---
+        String jsonRequest = String.format("{\"userId\": %d, \"challengeId\": \"TEST_CTF\", \"flag\": \"FLAG123\"}", user.getId());
 
         mockMvc.perform(post("/api/arena/validate")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -49,19 +43,16 @@ class ArenaControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
                 
-        // 3. Appel API avec le MAUVAIS flag
-        String badRequest = """
-            {
-                "userId": %d,
-                "challengeId": "TEST_CTF",
-                "flag": "WRONG"
-            }
-        """.formatted(user.getId());
+        // --- CAS 2 : MAUVAIS FLAG (Avec un NOUVEL utilisateur) ---
+        // On crée un user vierge pour être sûr qu'il n'a pas déjà validé le challenge
+        User user2 = userRepository.saveAndFlush(new User("Loser", "loser@arena.com", "pass"));
+
+        String badRequest = String.format("{\"userId\": %d, \"challengeId\": \"TEST_CTF\", \"flag\": \"WRONG\"}", user2.getId());
 
         mockMvc.perform(post("/api/arena/validate")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(badRequest))
-                .andExpect(status().isBadRequest()) // Ou 400
+                .andExpect(status().isBadRequest()) // Maintenant ça sera bien 400 car user2 n'a pas encore gagné
                 .andExpect(jsonPath("$.success").value(false));
     }
 }

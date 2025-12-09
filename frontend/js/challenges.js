@@ -1,8 +1,17 @@
 const API_CHALLENGES = "http://localhost:8080/api/challenges";
+const API_USER = "http://localhost:8080/api/user"; // Pour récupérer les points
 
 document.addEventListener("DOMContentLoaded", () => {
-
+    // 1. Gestion Session
+    const userId = localStorage.getItem('userId');
     const username = localStorage.getItem('userName') || "Utilisateur";
+
+    if (!userId) {
+        window.location.href = 'login.html';
+        return;
+    }
+
+    // 2. Affichage Sidebar
     const sidebarUser = document.getElementById('sidebarUsername');
     if(sidebarUser) sidebarUser.textContent = username;
 
@@ -14,14 +23,39 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    loadChallenges();
+    // 3. Charger les données
+    loadUserScore(userId);     // <--- NOUVEAU
+    loadChallenges(userId);    // <--- CORRECTION : On passe l'ID
 });
 
-async function loadChallenges() {
+// --- CHARGER LE SCORE ---
+async function loadUserScore(userId) {
+    const pointsElem = document.getElementById('userPoints');
+    if(!pointsElem) return;
+
+    try {
+        const response = await fetch(`${API_USER}/${userId}`);
+        if(response.ok) {
+            const user = await response.json();
+            // Animation simple du compteur
+            pointsElem.textContent = user.points || 0;
+        }
+    } catch(e) {
+        console.error("Erreur score:", e);
+        pointsElem.textContent = "?";
+    }
+}
+
+// --- CHARGER LES CHALLENGES ---
+async function loadChallenges(userId) {
     const grid = document.getElementById("challengesGrid");
 
     try {
-        const response = await fetch(API_CHALLENGES);
+        // CORRECTION IMPORTANTE : Ajout de ?userId=... dans l'URL
+        // Cela permet au backend de savoir quels challenges sont validés par CE user
+        const url = `${API_CHALLENGES}?userId=${userId}`;
+        
+        const response = await fetch(url);
         if (!response.ok) throw new Error("Erreur serveur");
         
         const challenges = await response.json();
@@ -55,18 +89,21 @@ function renderChallenges(challenges, container) {
         }
 
         const isValidated = challenge.isValidated;
+        
+        // Style du bouton selon l'état
         const btnClass = isValidated 
             ? "bg-green-50 text-green-700 border border-green-200 cursor-default" 
             : "bg-gray-900 text-white hover:bg-gray-800 shadow-lg transition transform hover:-translate-y-0.5";
         
-        const btnText = isValidated ? "Challenge Validé ✅" : "Lancer le défi";
-        const btnAction = isValidated ? "" : `onclick="startChallenge(${challenge.id}, '${challenge.title}')"`;
+        const btnText = isValidated ? 'Challenge Validé <i class="fas fa-check-circle"></i>' : "Lancer le défi";
+        
+        // CORRECTION PRÉCÉDENTE : Ajout des quotes autour des IDs
+        const btnAction = isValidated ? "" : `onclick="startChallenge('${challenge.id}', '${challenge.title}')"`;
         
         const validatedBadge = isValidated 
             ? `<span class="absolute top-4 left-4 bg-white/90 text-green-700 text-xs font-bold px-2 py-1 rounded shadow-sm flex items-center gap-1"><i class="fas fa-check-circle"></i> FAIT</span>` 
             : "";
 
-        // --- Template HTML ---
         return `
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition relative flex flex-col h-full group">
                 
@@ -101,9 +138,9 @@ function renderChallenges(challenges, container) {
     }).join('');
 }
 
-// Fonction pour démarrer un challenge (Placeholder pour l'instant)
 function startChallenge(id, title) {
-    console.log(`Démarrage du challenge ID ${id}: ${title}`);
-    alert(`🚀 Lancement du challenge : ${title}\n\n(Cette fonctionnalité sera connectée au moteur de jeu prochainement)`);
-    // Ici, on pourrait rediriger vers une page spécifique : window.location.href = `play-challenge.html?id=${id}`;
+    localStorage.setItem('currentChallengeId', id);
+    if(confirm(`Voulez-vous entrer dans l'arène pour résoudre : "${title}" ?`)) {
+        window.location.href = 'arena.html';
+    }
 }
