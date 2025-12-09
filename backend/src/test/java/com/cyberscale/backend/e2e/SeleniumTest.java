@@ -9,7 +9,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.openqa.selenium.By;
-import org.openqa.selenium.JavascriptExecutor; // <--- Import Important
+import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.Keys; // <--- IMPORT CRUCIAL
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.firefox.FirefoxDriver;
@@ -31,7 +32,6 @@ public class SeleniumTest {
         FirefoxOptions options = new FirefoxOptions();
         options.addArguments("-headless");
         
-        // CRUCIAL : Permet au localStorage de fonctionner correctement entre fichiers locaux (file://)
         options.addPreference("security.fileuri.strict_origin_policy", false);
         options.addPreference("dom.storage.enabled", true);
         
@@ -76,22 +76,53 @@ public class SeleniumTest {
     void testArena_ShouldLoadTerminal() {
         String fileUrl = getFrontendFileUrl("arena.html");
         
-        // 1. On charge la page une première fois (ce qui déclenche la redirection vers login.html)
         driver.get(fileUrl);
-
-        // 2. On injecte le cookie/token utilisateur via Javascript
         JavascriptExecutor js = (JavascriptExecutor) driver;
         js.executeScript("localStorage.setItem('userId', '999');");
         js.executeScript("localStorage.setItem('userName', 'SeleniumTester');");
-
-        // 3. On RECHARGE la page (maintenant l'AuthGuard va nous laisser passer !)
         driver.get(fileUrl);
 
-        // 4. Vérifications
         WebElement terminalContainer = driver.findElement(By.id("terminal"));
         assertTrue(terminalContainer.isDisplayed(), "Le conteneur du terminal doit être visible");
 
         WebElement xtermScreen = driver.findElement(By.className("xterm-screen"));
         assertTrue(xtermScreen.isDisplayed(), "Le terminal Xterm.js doit être actif");
+    }
+
+    // --- LE TEST CTF CORRIGÉ ---
+    @Test
+    void testArena_ScenarioCTF_ShouldRevealFlag() throws InterruptedException {
+        String fileUrl = getFrontendFileUrl("arena.html");
+        
+        // 1. Auth & Chargement
+        driver.get(fileUrl);
+        JavascriptExecutor js = (JavascriptExecutor) driver;
+        js.executeScript("localStorage.setItem('userId', '999');");
+        js.executeScript("localStorage.setItem('userName', 'Hacker');");
+        driver.get(fileUrl);
+
+        WebElement terminalInput = driver.findElement(By.cssSelector("textarea.xterm-helper-textarea"));
+
+        // 3. 'ls'
+        terminalInput.sendKeys("ls" + Keys.ENTER); // Utilisation de Keys.ENTER
+        Thread.sleep(1000); // Délai augmenté pour laisser Xterm réagir
+
+        // 4. 'cat shadow' (Doit échouer)
+        terminalInput.sendKeys("cat shadow" + Keys.ENTER);
+        Thread.sleep(1000);
+        
+        String terminalText = driver.findElement(By.className("xterm-screen")).getText();
+        // Debug : Affiche ce que Selenium voit pour aider si ça échoue encore
+        System.out.println("Terminal Output: " + terminalText);
+        
+        assertTrue(terminalText.contains("Permission denied"), "cat shadow devrait être refusé");
+
+        // 5. 'sudo cat shadow' (Doit réussir)
+        terminalInput.sendKeys("sudo cat shadow" + Keys.ENTER);
+        Thread.sleep(1500); // Sudo a un petit délai simulé
+
+        // 6. Vérif Flag
+        terminalText = driver.findElement(By.className("xterm-screen")).getText();
+        assertTrue(terminalText.contains("CTF{LINUX_MASTER_2025}"), "Le flag doit être visible après sudo");
     }
 }
