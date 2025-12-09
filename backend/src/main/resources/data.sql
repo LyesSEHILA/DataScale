@@ -800,3 +800,7 @@ INSERT INTO answers_option (text, is_correct, question_id) VALUES ('Payload', tr
 INSERT INTO answers_option (text, is_correct, question_id) VALUES ('Auxiliary', false, 149);
 INSERT INTO answers_option (text, is_correct, question_id) VALUES ('Exploit', false, 149);
 INSERT INTO answers_option (text, is_correct, question_id) VALUES ('Encoder', false, 149);
+
+-- CHALLENGES ARENA
+INSERT INTO challenges (id, name, description, flag_secret, points_reward) 
+VALUES ('CTF_LINUX_1', 'Mission Alpha-1', 'Récupérer le fichier shadow', 'CTF{LINUX_MASTER_2025}', 50);

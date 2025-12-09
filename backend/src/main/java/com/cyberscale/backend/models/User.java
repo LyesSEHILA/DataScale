@@ -7,6 +7,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table; 
 import jakarta.persistence.UniqueConstraint;
+import com.fasterxml.jackson.annotation.JsonIgnore; 
 
 @Entity
 @Table(name = "app_user", uniqueConstraints = {
@@ -23,7 +24,10 @@ public class User {
     private String email; 
     
     @Column(nullable = false)
+    @JsonIgnore
     private String password; 
+
+    private Integer points = 0;
 
     public User() {
     }
@@ -65,4 +69,12 @@ public class User {
     public void setPassword(String password) {
         this.password = password;
     }
+
+    public Integer getPoints() { return points != null ? points : 0; }
+    public void setPoints(Integer points) { this.points = points; }
+
+    public void addPoints(int pointsToAdd) {
+        this.points = (this.points == null ? 0 : this.points) + pointsToAdd;
+    }
+
 }
