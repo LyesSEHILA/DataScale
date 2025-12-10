@@ -1,9 +1,12 @@
 package com.cyberscale.backend.repositories;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-
 import com.cyberscale.backend.models.QuizSession;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import java.util.List;
 
-public interface  QuizSessionRepository extends JpaRepository<QuizSession, Long>{
+@Repository
+public interface QuizSessionRepository extends JpaRepository<QuizSession, Long> {
     
+    List<QuizSession> findByUserIdOrderByCreatedAtDesc(Long userId);
 }

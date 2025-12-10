@@ -19,12 +19,13 @@ public class AnswerOption {
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     private Long id;
     private String text;
-    private Boolean isCorrect;
 
     @ManyToOne
     @JoinColumn(name = "question_id")
     @JsonBackReference
     private Question question; 
+
+    private boolean isCorrect;
 
     public AnswerOption() {}
 
@@ -58,15 +59,6 @@ public class AnswerOption {
     }
 
 
-    public Boolean getIsCorrect() {
-        return isCorrect;
-    }
-
-
-    public void setIsCorrect(Boolean isCorrect) {
-        this.isCorrect = isCorrect;
-    }
-
     public Question getQuestion() {
         return question;
     }
@@ -75,6 +67,16 @@ public class AnswerOption {
         this.question = question;
     }
 
+    public void setIsCorrect(Boolean isCorrect) {
+        this.isCorrect = isCorrect;
+    }
 
+    public Boolean getIsCorrect() {
+        return isCorrect;
+    }
+
+    public Boolean isCorrect() {
+        return isCorrect;
+    }
     
 }

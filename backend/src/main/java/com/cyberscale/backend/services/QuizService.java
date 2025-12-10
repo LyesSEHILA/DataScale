@@ -1,9 +1,7 @@
 package com.cyberscale.backend.services;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -14,73 +12,45 @@ import com.cyberscale.backend.dto.OnboardingRequest;
 import com.cyberscale.backend.dto.ResultsResponse;
 import com.cyberscale.backend.dto.UserAnswerRequest;
 import com.cyberscale.backend.models.AnswerOption;
+import com.cyberscale.backend.models.ExamSession;
+import com.cyberscale.backend.models.IQuestion;
 import com.cyberscale.backend.models.Question;
-import com.cyberscale.backend.models.Question.categorieQuestion;
-import com.cyberscale.backend.models.Question.difficultyQuestion;
 import com.cyberscale.backend.models.QuizSession;
 import com.cyberscale.backend.models.Recommendation;
 import com.cyberscale.backend.models.UserAnswer;
 import com.cyberscale.backend.repositories.AnswerOptionRepository;
+import com.cyberscale.backend.repositories.ExamSessionRepository;
 import com.cyberscale.backend.repositories.QuestionRepository;
 import com.cyberscale.backend.repositories.QuizSessionRepository;
 import com.cyberscale.backend.repositories.RecommendationRepository;
 import com.cyberscale.backend.repositories.UserAnswerRepository;
+import com.cyberscale.backend.repositories.UserRepository;
+import jakarta.transaction.Transactional;
+import java.util.Map;
+
 
 @Service
 public class QuizService {
 
-    // CONFLIT 1 RÉSOLU : Garder la liste complète et propre des injections
     @Autowired private QuizSessionRepository quizSessionRepository;
     @Autowired private QuestionRepository questionRepository;
     @Autowired private AnswerOptionRepository answerOptionRepository;
     @Autowired private UserAnswerRepository userAnswerRepository;
     @Autowired private RecommendationRepository recommendationRepository;
+    @Autowired private UserRepository userRepository;
+    @Autowired private ExamSessionRepository examSessionRepository;
+    
+    @Autowired 
+    private QuestionGenerator questionGenerator;
 
-    /**
-     * F1 : Créer une session
-     */
-    public QuizSession createSession(OnboardingRequest request) {
-        QuizSession newSession = new QuizSession();
-        newSession.setAge(request.age());
-        newSession.setSelfEvalTheory(request.selfEvalTheory());
-        newSession.setSelfEvalTechnique(request.selfEvalTechnique());
-        return quizSessionRepository.save(newSession);
-    }
 
-    /**
-     * F2 : Récupérer les questions adaptatives (Version Refactorisée)
-     */
     public List<Question> getQuestionsForSession(Long sessionId) {
         QuizSession session = quizSessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session introuvable"));
 
-        List<Question> questions = new ArrayList<>();
-
-        // CONFLIT 2 RÉSOLU : Garder la version refactorisée (anti-duplication)
-        boolean isTheoryAdvanced = session.getSelfEvalTheory() > 5;
-        addQuestionsByLevel(questions, categorieQuestion.THEORY, isTheoryAdvanced);
-
-        boolean isTechAdvanced = session.getSelfEvalTechnique() > 5;
-        addQuestionsByLevel(questions, categorieQuestion.TECHNIQUE, isTechAdvanced);
-
-        Collections.shuffle(questions);
-        return questions.stream().limit(10).collect(Collectors.toList());
+        return questionGenerator.generate(session);
     }
 
-    // Méthode utilitaire pour éviter la duplication (rattrapée ici)
-    private void addQuestionsByLevel(List<Question> questions, categorieQuestion category, boolean isAdvanced) {
-        if (isAdvanced) {
-            questions.addAll(questionRepository.findByCategorieAndDifficulty(category, difficultyQuestion.MEDIUM));
-            questions.addAll(questionRepository.findByCategorieAndDifficulty(category, difficultyQuestion.HARD));
-        } else {
-            questions.addAll(questionRepository.findByCategorieAndDifficulty(category, difficultyQuestion.EASY));
-            questions.addAll(questionRepository.findByCategorieAndDifficulty(category, difficultyQuestion.MEDIUM));
-        }
-    }
-
-    /**
-     * F2 : Sauvegarder la réponse de l'utilisateur
-     */
     public void saveUserAnswer(UserAnswerRequest request) {
         QuizSession session = quizSessionRepository.findById(request.sessionId())
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session introuvable"));
@@ -89,14 +59,10 @@ public class QuizService {
         AnswerOption selectedOption = answerOptionRepository.findById(request.answerOptionId())
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Réponse introuvable"));
 
-        // CONFLIT 3 RÉSOLU : Garder la version avec le constructeur propre
         UserAnswer userAnswer = new UserAnswer(session, question, selectedOption);
         userAnswerRepository.save(userAnswer);
     }
 
-    /**
-     * F3/F4 : Calculer les résultats et renvoyer les recommandations
-     */
     public ResultsResponse calculateAndGetResults(Long sessionId) {
         QuizSession session = quizSessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session introuvable"));
@@ -114,7 +80,8 @@ public class QuizService {
             Question q = answer.getQuestion();
             if (answer.getSelectedOption() != null) {
                 boolean isCorrect = answer.getSelectedOption().getIsCorrect();
-                if (q.getCategorie() == categorieQuestion.THEORY) {
+                
+                if (q.getCategorie() == IQuestion.CategorieQuestion.THEORY) {
                     theoryTotal++;
                     if (isCorrect) theoryCorrect++;
                 } else {
@@ -139,4 +106,79 @@ public class QuizService {
         List<Recommendation> recommendations = recommendationRepository.findByTargetProfile(targetProfile);
         return new ResultsResponse(finalScoreTheory, finalScoreTechnique, recommendations);
     }
+
+    public QuizSession createSession(OnboardingRequest request) {
+        QuizSession newSession = new QuizSession();
+        newSession.setAge(request.age());
+        newSession.setSelfEvalTheory(request.selfEvalTheory());
+        newSession.setSelfEvalTechnique(request.selfEvalTechnique());
+
+        if (request.userId() != null) {
+            userRepository.findById(request.userId()).ifPresent(user -> {
+                newSession.setUser(user);
+            });
+        }
+
+        return quizSessionRepository.save(newSession);
+    }
+    
+
+    public List<com.cyberscale.backend.dto.HistoryDTO> getUserHistory(Long userId) {
+        List<com.cyberscale.backend.dto.HistoryDTO> history = new java.util.ArrayList<>();
+
+        // 1. Récupérer les QUIZ
+        List<QuizSession> quizzes = quizSessionRepository.findByUserIdOrderByCreatedAtDesc(userId);
+        for (QuizSession q : quizzes) {
+            // Protection NULLS pour les quiz
+            Double theory = q.getFinalScoreTheory() != null ? q.getFinalScoreTheory() : 0.0;
+            Double tech = q.getFinalScoreTechnique() != null ? q.getFinalScoreTechnique() : 0.0;
+            
+            history.add(new com.cyberscale.backend.dto.HistoryDTO(
+                q.getId(),
+                "QUIZ",
+                "Évaluation Initiale",
+                (int) ((theory + tech) / 2),
+                10,
+                q.getCreatedAt(),
+                "Terminé"
+            ));
+        }
+
+        // 2. Récupérer les EXAMENS
+        List<ExamSession> exams = examSessionRepository.findByUserId(userId);
+        for (ExamSession e : exams) {
+            // --- A. PROTECTION ET CALCULS (C'est ce qu'il vous manquait !) ---
+            Integer finalScore = e.getFinalScore() != null ? e.getFinalScore() : 0;
+            Integer maxScore = e.getMaxPossibleScore() != null ? e.getMaxPossibleScore() : 0;
+
+            String status = "En cours";
+            if (maxScore > 0) {
+                double percent = (double) finalScore / maxScore;
+                status = percent >= 0.7 ? "Validé ✅" : "Échoué ❌";
+            }
+
+            // --- B. GESTION DES TITRES ---
+            String title = "Certification Blanche";
+            if ("CEH".equals(e.getExamRef())) title = "CEH v12 Simulator";
+            else if ("SEC_PLUS".equals(e.getExamRef())) title = "CompTIA Security+";
+            else if ("CISSP".equals(e.getExamRef())) title = "CISSP Manager";
+
+            // --- C. AJOUT A L'HISTORIQUE ---
+            history.add(new com.cyberscale.backend.dto.HistoryDTO(
+                e.getId(),
+                "EXAMEN",
+                title,      // Utilise la variable 'title'
+                finalScore, // Utilise la variable 'finalScore'
+                maxScore,   // Utilise la variable 'maxScore'
+                e.getStartTime(), 
+                status      // Utilise la variable 'status'
+            ));
+        }
+
+        // 3. Trier par date
+        history.sort((a, b) -> b.date().compareTo(a.date()));
+
+        return history;
+    }
+
 }

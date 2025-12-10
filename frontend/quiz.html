@@ -3,33 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CyberScale - Quiz</title>
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/quiz.css">
+    <title>Quiz en cours - CyberScale</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>body { font-family: 'Inter', sans-serif; }</style>
 </head>
-<body>
-    <div class="container quiz-container">
-        <header>
-            <div class="quiz-header">
-                <h1>Question <span id="questionNumber">1</span> <span class="total">/ 10</span></h1>
-                <div class="category-badge" id="questionCategory">...</div>
-            </div>
-            <div class="progress-bar">
-                <div class="progress-fill" id="progressBar"></div>
-            </div>
-        </header>
+<body class="bg-gray-50 min-h-screen flex flex-col items-center pt-10">
 
-        <main id="quizContent">
-            <h2 id="questionText">Chargement...</h2>
-            
-            <form id="answerForm">
-                <div id="optionsContainer" class="options-grid">
+    <div class="w-full max-w-2xl px-4">
+        
+        <div class="flex justify-between items-end mb-4">
+            <h1 class="text-2xl font-bold text-gray-800">
+                Question <span id="questionNumber" class="text-blue-600">1</span> <span class="text-gray-400 text-lg total">/ 10</span>
+            </h1>
+            <div id="questionCategory" class="bg-blue-100 text-blue-800 text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wide">
+                ...
+            </div>
+        </div>
+
+        <div class="w-full bg-gray-200 rounded-full h-2.5 mb-8">
+            <div id="progressBar" class="bg-blue-600 h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-lg p-8 border border-gray-100">
+            <h2 id="questionText" class="text-xl font-semibold text-gray-800 mb-8 leading-relaxed">Chargement...</h2>
+
+            <form id="answerForm" class="space-y-4">
+                <div id="optionsContainer" class="flex flex-col gap-3">
                     </div>
                 
-                <button type="submit" id="nextButton" disabled>Valider & Suivant</button>
+                <div class="mt-8 pt-4 border-t border-gray-100">
+                    <button type="submit" id="nextButton" disabled 
+                        class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                        Valider et Suivant
+                    </button>
+                </div>
             </form>
-        </main>
+        </div>
     </div>
+
+    <style>
+        /* On garde ce petit bout de CSS car on ne peut pas mettre de classes Tailwind dans le JS facilement sans tout réécrire */
+        .option-input:checked + label {
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+            color: #1d4ed8;
+            font-weight: 600;
+            box-shadow: 0 0 0 2px #3b82f6;
+        }
+        .option-label {
+            display: block;
+            padding: 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .option-label:hover {
+            background-color: #f9fafb;
+            border-color: #d1d5db;
+        }
+        .option-input { display: none; }
+    </style>
 
     <script src="js/quiz.js"></script>
 </body>

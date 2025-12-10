@@ -18,5 +18,7 @@ public record OnboardingRequest(
     @NotNull(message = "L'évaluation technique est requise")
     @Min(value = 0, message = "L'évaluation doit être entre 1 et 10")
     @Max(value = 10, message = "L'évaluation doit être entre 1 et 10")
-    Long selfEvalTechnique
+    Long selfEvalTechnique,
+
+    Long userId
 ) {}
