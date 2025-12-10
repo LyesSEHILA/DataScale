@@ -1,76 +1,216 @@
 @startuml
-!theme plain
-' Affiche les champs mais cache les méthodes (getters/setters inutiles ici)
-hide methods
 
-title Diagramme de Classe Métier (CyberScale v0.1)
+title Diagramme de Classe - DataScale v0.2.0
+skinparam classAttributeIconSize 0
+skinparam style strictuml
 
-class QuizSession {
-  - Long id
-  - Integer age
-  - Integer selfEvalTheory
-  - Integer selfEvalTechnique
-  - Double finalScoreTheory
-  - Double finalScoreTechnique
-  - LocalDateTime createdAt
+package "com.cyberscale.backend.models" {
+    class User {
+        - Long id
+        - String username
+        - String email
+        - String password
+        - Integer points
+        + User()
+        + User(String, String, String)
+        + addPoints(int): void
+    }
+
+    class Challenge {
+        - String id
+        - String name
+        - String description
+        - String flagSecret
+        - Integer pointsReward
+        + Challenge()
+        + Challenge(String, String, String, String, Integer)
+    }
+
+    class UserChallenge {
+        - Long id
+        - LocalDateTime solvedAt
+        + UserChallenge()
+        + UserChallenge(User, Challenge)
+    }
+
+    class Question {
+        - Long id
+        - String text
+        - CategorieQuestion categorie
+        - DifficultyQuestion difficulty
+        - Integer pointsWeight
+        - String examRef
+    }
+
+    class AnswerOption {
+        - Long id
+        - String text
+        - Boolean isCorrect
+    }
+
+    class QuizSession {
+        - Long id
+        - Double finalScoreTheory
+        - Double finalScoreTechnique
+        - LocalDateTime createdAt
+    }
+
+    class ExamSession {
+        - Long id
+        - String examRef
+        - Integer successProbability
+        - String candidateName
+        - LocalDateTime startTime
+        - LocalDateTime endTime
+        - Integer finalScore
+        - Integer maxPossibleScore
+        + isValid(): boolean
+    }
+
+    class UserAnswer {
+        - Long id
+        - LocalDateTime answeredAt
+    }
+
+    class Recommendation {
+        - Long id
+        - String title
+        - String type
+        - String url
+        - String targetProfile
+    }
+
+    interface IQuestion {
+    }
+
+    enum CategorieQuestion {
+        THEORY
+        TECHNIQUE
+    }
+
+    enum DifficultyQuestion {
+        EASY
+        MEDIUM
+        HARD
+    }
 }
 
-class Question {
-  - Long id
-  - String text
-  - CategorieQuestion categorie
-  - DifficultyQuestion difficulty
+package "com.cyberscale.backend.dto" {
+    class LoginRequest
+    class RegisterRequest
+    class OnboardingRequest
+    class ExamAnswerRequest
+    class UserAnswerRequest
+    class ResultsResponse
+    class HistoryDTO
+    class ChallengeDTO {
+        + String id
+        + String title
+        + String description
+        + Integer points
+        + String difficulty
+        + boolean isValidated
+    }
 }
 
-enum CategorieQuestion {
-  THEORY
-  TECHNIQUE
+package "com.cyberscale.backend.repositories" {
+    interface UserRepository extends JpaRepository
+    interface QuestionRepository extends JpaRepository
+    interface AnswerOptionRepository extends JpaRepository
+    interface QuizSessionRepository extends JpaRepository
+    interface ExamSessionRepository extends JpaRepository
+    interface UserAnswerRepository extends JpaRepository
+    interface ChallengeRepository extends JpaRepository
+    interface UserChallengeRepository extends JpaRepository
+    interface RecommendationRepository extends JpaRepository
 }
 
-enum DifficultyQuestion {
-  EASY
-  MEDIUM
-  HARD
+package "com.cyberscale.backend.services" {
+    class AuthService {
+        + login(String, String): String
+        + register(RegisterRequest): User
+    }
+
+    class QuizService {
+        + startQuiz(OnboardingRequest): QuizSession
+        + submitAnswer(Long, UserAnswerRequest): void
+        + finishQuiz(Long): QuizSession
+        + getResults(Long): ResultsResponse
+        + getUserHistory(Long): List<HistoryDTO>
+    }
+
+    class ExamService {
+        + startExam(String, Long, String): ExamSession
+        + submitExamAnswer(Long, Long, Long): void
+        + finishExam(Long): ExamSession
+        + getExamQuestions(Long): List<Question>
+        + getExamStatus(Long): Map
+    }
+
+    class ArenaService {
+        + getAllChallenges(Long): List<ChallengeDTO>
+        + getChallengeById(String): ChallengeDTO
+        + validateFlag(Long, String, String): boolean
+    }
+
+    class AdaptiveQuestionGenerator
 }
 
-class AnswerOption {
-  - Long id
-  - String text
-  - Boolean isCorrect
+package "com.cyberscale.backend.controllers" {
+    class AuthController
+    class QuizController
+    class ExamController
+    class UserController
+    class ArenaController
+    class ChallengeController
 }
 
-class UserAnswer {
-  - Long id
-  - LocalDateTime answeredAt
-}
+' --- RELATIONS ---
 
-class Recommendation {
-  - Long id
-  - String title
-  - String type
-  - String url
-  - String targetProfile
-}
+' Modèles
+User "1" -- "*" QuizSession : passe >
+User "1" -- "*" ExamSession : passe >
+User "1" -- "*" UserChallenge : valide >
+User "1" -- "*" UserAnswer : répond >
 
-' --- Relations Fortes (Base de données) ---
+Challenge "1" -- "*" UserChallenge : est validé par >
 
-' Une question a plusieurs options
-Question "1" *-down- "2..*" AnswerOption : contient >
+QuizSession "1" -- "*" UserAnswer : contient >
+ExamSession "1" -- "*" UserAnswer : contient >
 
-' Une session contient plusieurs réponses utilisateur
-QuizSession "1" *-- "*" UserAnswer : contient >
+Question "1" *-- "*" AnswerOption : possède >
+Question -- CategorieQuestion
+Question -- DifficultyQuestion
 
-' Une réponse utilisateur pointe vers une Question et une Option
-UserAnswer "*" --> "1" Question : répond à >
-UserAnswer "*" --> "1" AnswerOption : choisit >
+UserAnswer "*" --> "1" Question : concerne >
+UserAnswer "*" --> "1" AnswerOption : a choisi >
 
-' Les Enums
-Question +-- CategorieQuestion
-Question +-- DifficultyQuestion
+' Services & Repositories
+AuthService ..> UserRepository : utilise >
+AuthService ..> LoginRequest : utilise >
 
-' --- Relations Logiques (Calculées) ---
+QuizService ..> QuizSessionRepository : utilise >
+QuizService ..> QuestionRepository : utilise >
+QuizService ..> AnswerOptionRepository : utilise >
+QuizService ..> UserAnswerRepository : utilise >
+QuizService ..> RecommendationRepository : utilise >
+QuizService ..> AdaptiveQuestionGenerator : utilise >
 
-' Une session aboutit à des recommandations (Lien logique, non BDD)
-QuizSession "." ..> "*" Recommendation : génère (selon score) >
+ExamService ..> ExamSessionRepository : utilise >
+ExamService ..> QuestionRepository : utilise >
+ExamService ..> UserAnswerRepository : utilise >
+ExamService ..> AnswerOptionRepository : utilise >
+
+ArenaService ..> ChallengeRepository : utilise >
+ArenaService ..> UserChallengeRepository : utilise >
+ArenaService ..> UserRepository : utilise >
+
+' Contrôleurs
+AuthController ..> AuthService : appelle >
+QuizController ..> QuizService : appelle >
+ExamController ..> ExamService : appelle >
+UserController ..> QuizService : appelle >
+ArenaController ..> ArenaService : appelle >
+ChallengeController ..> ArenaService : appelle >
 
 @enduml
