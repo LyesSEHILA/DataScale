@@ -1,50 +1,137 @@
-# 🛡️ CyberScale - Plateforme de Positionnement en Cybersécurité
+# 🛡️ CyberScale - Plateforme de Training Cybersécurité
 
-[![CI Pipeline](https://github.com/LyesSEHILA/DataScale/actions/workflows/ci.yml/badge.svg)](https://github.com/LyesSEHILA/DataScale/actions/workflows/ci.yml)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=LyesSEHILA_DataScale&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=LyesSEHILA_DataScale)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![CI Build](https://github.com/LyesSEHILA/DataScale/actions/workflows/ci.yml/badge.svg)](https://github.com/LyesSEHILA/DataScale/actions/workflows/ci.yml)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=LyesSEHILA_DataScale&metric=alert_status)](https://sonarcloud.io/dashboard?id=LyesSEHILA_DataScale)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=LyesSEHILA_DataScale&metric=coverage)](https://sonarcloud.io/dashboard?id=LyesSEHILA_DataScale)
+[![Tests](https://img.shields.io/badge/Tests-Passing-success)](https://github.com/LyesSEHILA/DataScale/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Release](https://img.shields.io/github/v/release/LyesSEHILA/DataScale)](https://github.com/LyesSEHILA/DataScale/releases)
 
-**CyberScale** est une application web permettant d'évaluer ses compétences en cybersécurité sur deux axes : **Théorique** et **Technique**.
+![Java](https://img.shields.io/badge/java-%23ED8B00.svg?style=flat&logo=openjdk&logoColor=white)
+![Spring](https://img.shields.io/badge/spring-%236DB33F.svg?style=flat&logo=spring&logoColor=white)
+![Hibernate](https://img.shields.io/badge/Hibernate-59666C?style=flat&logo=Hibernate&logoColor=white)
+![HTML5](https://img.shields.io/badge/html5-%23E34F26.svg?style=flat&logo=html5&logoColor=white)
+![TailwindCSS](https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=flat&logo=tailwind-css&logoColor=white)
+![Xterm.js](https://img.shields.io/badge/Xterm.js-Terminal-black)
 
-## 🚀 Fonctionnalités (v0.1)
+---
 
-- **F1 - Onboarding :** Formulaire d'auto-évaluation initial.
-- **F2 - Quiz Adaptatif :** Moteur de questions intelligent qui s'adapte au niveau déclaré.
-- **F3 - Visualisation :** Restitution des résultats sous forme de nuage de points (Scatter Plot).
-- **F4 - Recommandations :** Suggestions de ressources (Livres, Certifications) basées sur le score.
+## 📖 À propos
+
+**CyberScale** est une plateforme éducative innovante permettant d'évaluer et d'améliorer ses compétences en cybersécurité. Contrairement aux plateformes classiques, elle positionne l'utilisateur sur deux axes :
+1.  **Théorie :** Connaissances normatives (ISO 27001, RGPD) et concepts.
+2.  **Technique :** Maîtrise des outils (Nmap, Wireshark) et pratique.
+
+🚀 **Version actuelle : v0.2.0 (Release "Arena & Gamification")**
+
+---
+
+## ✨ Fonctionnalités Clés
+
+### 🎮 Cyber Arena (Nouveau !)
+Un **terminal Linux simulé** directement dans le navigateur pour s'entraîner sans risques.
+* Commandes réelles : `ls`, `cat`, `sudo`, etc.
+* Système de fichiers virtuel avec missions cachées.
+* **Mode CTF (Capture The Flag) :** Trouvez les flags cachés et validez-les via la commande `submit <flag>`.
+
+### 🎓 Mode Certification
+Préparez-vous aux examens réels avec nos simulateurs :
+* **CEH (Certified Ethical Hacker)**
+* **CompTIA Security+**
+* **CISSP**
+* Algorithme prédictif estimant votre probabilité de réussite.
+
+### 📊 Dashboard & Gamification
+* Suivi du score en temps réel.
+* Badges de difficulté (Facile, Moyen, Hardcore).
+* Historique détaillé des tentatives.
+
+---
 
 ## 🛠️ Stack Technique
 
-* **Backend :** Java 21, Spring Boot 3, Gradle, H2 Database (Dev).
-* **Frontend :** HTML5, CSS3, JavaScript (Vanilla), Chart.js.
-* **DevOps :** GitHub Actions (CI), SonarCloud (Qualité).
+* **Backend :** Java 21, Spring Boot 3.4, Spring Security, JPA/Hibernate.
+* **Base de Données :** H2 (Développement / Mémoire), PostgreSQL (Production).
+* **Frontend :** HTML5, JavaScript (ES6+), Tailwind CSS, Xterm.js.
+* **Tests :** JUnit 5, Mockito, MockMvc, Selenium (E2E), Cucumber (BDD).
+* **DevOps :** Gradle, GitHub Actions, Docker.
 
-## 📦 Installation et Lancement
+---
 
-### Prérequis
-* Java 21 (ou laisser Gradle l'installer)
-* Navigateur Web récent
+## 🚀 Guide de Démarrage (Débutant)
 
-### 1. Lancer le Backend (API)
+Suivez ces étapes pour lancer le projet sur votre machine locale en moins de 5 minutes.
+
+### 1️⃣ Prérequis
+Assurez-vous d'avoir installé :
+* **Java 21 (JDK)** : [Télécharger ici](https://adoptium.net/)
+* **Git** : [Télécharger ici](https://git-scm.com/)
+* Un navigateur web moderne (Chrome, Firefox).
+
+### 2️⃣ Récupérer le projet
+Ouvrez votre terminal (Invite de commande ou PowerShell) et tapez :
+
+```bash
+git clone [https://github.com/LyesSEHILA/DataScale.git](https://github.com/LyesSEHILA/DataScale.git)
+cd DataScale
+```
+### 3️⃣ Lancer le Backend (Serveur)
+Le backend gère la base de données et l'API
+
+* **Sur Windows** : 
 ```bash
 cd backend
-./gradlew bootRun 
+.\gradlew.bat bootrun
 ```
+* **Sur Mac/Linux** : 
+```bash
+cd backend
+./gradlew bootRun
+```
+⏳ Attendez que le message suivant apparaisse : Started BackendApplication in X.XXX seconds. Ne fermez pas cette fenêtre !
 
-* L'API sera disponible sur : (http://localhost:8080) Console H2 (BDD) : (http://localhost:8080/h2-console)
+### 4️⃣ Lancer le Frontend (Interface)
+Ouvrez une nouvelle fenêtre de terminal ou naviguez dans vos dossiers.
+1. Allez dans le dossier DataScale/frontend.
+2. Ouvrez le fichier `index.html` dans votre navigateur.
+* **Recommandé** : Utilisez l'extension "Live Server" de VS Code pour éviter les problèmes de CORS.
+* **Sinon** : Double-cliquez simplement sur `index.html`.
 
-### 2. Lancer le Frontend (UI)
+### 5️⃣ Premier Test
 
-- Il n'y a pas d'installation npm nécessaire.
+1. Cliquez sur "S'inscrire".
 
-    * Ouvrez le dossier frontend dans VS Code.
+2. Créez un compte (ex: admin / admin@test.com / password).
 
-    * Utilisez l'extension "Live Server" pour ouvrir index.html. (Ou lancez un serveur python : ```python python3 -m http.server``` dans le dossier frontend).
+3. Connectez-vous.
 
-## 👥 L'Équipe
+4. Allez dans "Training Arena" et tapez ls !
 
-    * **Lyes SEHILA :** Lead DevOps & Architecte
+### ✅ Lancer les Tests
+Pour vérifier que tout le code est robuste (Couverture > 80%), nous utilisons une suite de tests complète.
+```bash
+# Dans le dossier backend/
+./gradlew clean test
+```
+Cela exécutera :
 
-    * **Hassan Jatta :** Lead Backend
+   * Les tests unitaires (JUnit).
 
-    * **Abdoulaye :** Lead Frontend
+   * Les tests d'intégration (MockMvc).
+
+   * Les tests E2E (Selenium - Nécessite Firefox installé).
+
+   * La génération du rapport de couverture JaCoCo (build/reports/jacoco/test/html/index.html).
+
+
+### 👥 Auteurs
+
+    Lyes SEHILA - Lead DevOps & Architecte
+
+    Hassan Jatta - Lead Backend
+
+    Abdoulaye - Lead Frontend
+
+### 📄 Licence
+
+Ce projet est sous licence MIT. Voir le fichier `LICENSE` pour plus de détails.

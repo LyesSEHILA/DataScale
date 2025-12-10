@@ -1,11 +1,7 @@
-name: CI Pipeline (Build, Test, Analyze)
-
 on:
   push:
     branches:
-      - develop
-  pull_request:
-    types: [opened, synchronize, reopened]
+      - main
 
 jobs:
   build-and-analyze:
