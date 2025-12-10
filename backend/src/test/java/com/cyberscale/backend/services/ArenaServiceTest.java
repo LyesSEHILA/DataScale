@@ -1,8 +1,6 @@
 package com.cyberscale.backend.services;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -94,5 +92,28 @@ class ArenaServiceTest {
         assertTrue(result.get(0).isValidated());
         assertEquals("C2", result.get(1).id());
         assertFalse(result.get(1).isValidated());
+    }
+
+    @Test
+    void getAllChallenges_ShouldCategorizeDifficulty() {
+        // Créer 3 challenges avec points différents
+        Challenge cEasy = new Challenge("1", "E", "D", "F", 10);
+        Challenge cMed = new Challenge("2", "M", "D", "F", 60);
+        Challenge cHard = new Challenge("3", "H", "D", "F", 150);
+
+        when(challengeRepository.findAll()).thenReturn(List.of(cEasy, cMed, cHard));
+        
+        // Appel avec userId null pour simplifier
+        List<ChallengeDTO> result = arenaService.getAllChallenges(null);
+
+        assertEquals("FACILE", result.get(0).difficulty());
+        assertEquals("MOYEN", result.get(1).difficulty());
+        assertEquals("HARDCORE", result.get(2).difficulty());
+    }
+    
+    @Test
+    void getChallengeById_ShouldWork() {
+        when(challengeRepository.findById("1")).thenReturn(Optional.of(mockChallenge));
+        assertNotNull(arenaService.getChallengeById("1"));
     }
 }

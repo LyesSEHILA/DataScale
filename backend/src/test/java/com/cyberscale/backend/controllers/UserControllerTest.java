@@ -58,4 +58,14 @@ class UserControllerTest {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound());
     }
+
+    @Test
+    void getUser_ShouldThrow404_WhenUserNotFound() throws Exception {
+        // Ce test couvre le .orElseThrow(...)
+        mockMvc.perform(get("/api/user/999999") // ID inexistant
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound());
+    }
+
+    
 }
