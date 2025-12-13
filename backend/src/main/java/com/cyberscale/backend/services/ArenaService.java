@@ -22,9 +22,10 @@ public class ArenaService {
 
     @Autowired private ChallengeRepository challengeRepository;
     @Autowired private UserRepository userRepository;
-    @Autowired private UserChallengeRepository userChallengeRepository; // Injection du nouveau repo
-
-    // --- LISTE DES CHALLENGES (Avec statut ✅) ---
+    @Autowired private UserChallengeRepository userChallengeRepository;
+    @Autowired private ContainerService containerService;
+    
+    // Liste des Challenge
     public List<ChallengeDTO> getAllChallenges(Long userId) {
         List<Challenge> challenges = challengeRepository.findAll();
         
@@ -51,7 +52,7 @@ public class ArenaService {
                 c.getDescription(),
                 c.getPointsReward(),
                 diff,
-                isDone // <-- C'est ici que la magie opère !
+                isDone
             );
         }).collect(Collectors.toList());
     }
@@ -81,16 +82,33 @@ public class ArenaService {
         userRepository.save(user);
 
         UserChallenge victory = new UserChallenge(user, challenge);
-        userChallengeRepository.save(victory); // <-- On enregistre la preuve
+        userChallengeRepository.save(victory);
 
         return true;
     }
     
-    // --- NOUVEAU : Récupérer UN challenge (pour l'Arena) ---
+    // Récupérer un challenge
     public ChallengeDTO getChallengeById(String challengeId) {
         Challenge c = challengeRepository.findById(challengeId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Challenge introuvable"));
             
         return new ChallengeDTO(c.getId(), c.getName(), c.getDescription(), c.getPointsReward(), "N/A", false);
+    }
+
+    public String startChallengeEnvironment(String challengeId) {
+        Challenge challenge = challengeRepository.findById(challengeId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Challenge inconnu"));
+
+        String imageName = "nginx:alpine"; 
+        
+        String containerId = containerService.createContainer(imageName);
+        containerService.startContainer(containerId);
+
+        return containerId;
+    }
+
+    // Arrête un environnement
+    public void stopChallengeEnvironment(String containerId) {
+        containerService.stopAndRemoveContainer(containerId);
     }
 }
