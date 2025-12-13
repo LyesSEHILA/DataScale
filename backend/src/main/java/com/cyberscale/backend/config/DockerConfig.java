@@ -15,12 +15,12 @@ public class DockerConfig {
 
     @Bean
     public DockerClient dockerClient() {
-        // 1. Configuration de la connexion (Socket Unix pour Linux)
+        // Configuration de la connexion (Socket Unix pour Linux)
         DefaultDockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder()
                 .withDockerHost("unix:///var/run/docker.sock") 
                 .build();
 
-        // 2. Configuration du client HTTP (Transport)
+        // Configuration du client HTTP (Transport)
         DockerHttpClient httpClient = new ApacheDockerHttpClient.Builder()
                 .dockerHost(config.getDockerHost())
                 .sslConfig(config.getSSLConfig())
@@ -29,7 +29,7 @@ public class DockerConfig {
                 .responseTimeout(Duration.ofSeconds(45))
                 .build();
 
-        // 3. Création de l'instance finale
+        // Création de l'instance finale
         return DockerClientImpl.getInstance(config, httpClient);
     }
 }
