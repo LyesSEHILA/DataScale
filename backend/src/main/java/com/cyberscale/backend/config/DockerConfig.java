@@ -17,8 +17,7 @@ public class DockerConfig {
     public DockerClient dockerClient() {
         // 1. Configuration de la connexion (Socket Unix pour Linux)
         DefaultDockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder()
-                .withDockerHost("unix:///var/run/docker.sock") // Le socket standard sur Linux
-                // .withDockerTlsVerify(false) // Décommentez si besoin de désactiver TLS (rare en local socket)
+                .withDockerHost("unix:///var/run/docker.sock") 
                 .build();
 
         // 2. Configuration du client HTTP (Transport)
