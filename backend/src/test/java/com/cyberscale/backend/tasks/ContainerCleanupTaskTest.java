@@ -21,44 +21,49 @@ class ContainerCleanupTaskTest {
     @Mock private DockerClient dockerClient;
     @Mock private ContainerService containerService;
     @Mock private ListContainersCmd listContainersCmd;
-    @Mock private Container oldContainer;
-    @Mock private Container newContainer;
-    @Mock private Container otherContainer;
+    
+    @Mock private Container oldValidContainer;
+    @Mock private Container youngContainer;
+    @Mock private Container otherImageContainer;
 
-    @InjectMocks
-    private ContainerCleanupTask cleanupTask;
+    @InjectMocks private ContainerCleanupTask cleanupTask;
 
     @Test
-    void cleanupOldContainers_ShouldRemoveOnlyExpiredContainers() {
-        // 1. SETUP - On prépare nos faux conteneurs
+    void cleanupOldContainers_FullCoverage() {
         long now = Instant.now().getEpochSecond();
-        
-        // Conteneur vieux (> 30 min) et valide (cyberscale)
-        when(oldContainer.getId()).thenReturn("old-123");
-        when(oldContainer.getImage()).thenReturn("cyberscale/base-challenge");
-        when(oldContainer.getCreated()).thenReturn(now - 4000); // Il y a 4000s (> 1800s)
 
-        // Conteneur récent (< 30 min)
-        when(newContainer.getImage()).thenReturn("cyberscale/base-challenge");
-        when(newContainer.getCreated()).thenReturn(now - 100);
+        // 1. Cas : Vieux conteneur CyberScale (Doit être supprimé)
+        when(oldValidContainer.getId()).thenReturn("c1");
+        when(oldValidContainer.getImage()).thenReturn("cyberscale/challenge");
+        when(oldValidContainer.getCreated()).thenReturn(now - 4000); // > 30min
 
-        // Conteneur vieux MAIS qui n'est pas à nous (ex: base de données)
-        when(otherContainer.getImage()).thenReturn("postgres:latest");
-        // Pas besoin de mocker le temps car il doit être filtré par le nom avant
+        // 2. Cas : Jeune conteneur (Ne doit PAS être supprimé)
+        when(youngContainer.getImage()).thenReturn("cyberscale/challenge");
+        when(youngContainer.getCreated()).thenReturn(now - 100);
 
-        // Mock de la commande Docker "docker ps -a"
+        // 3. Cas : Vieux conteneur mais pas à nous (Postgres...)
+        when(otherImageContainer.getImage()).thenReturn("postgres:latest");
+        // Pas besoin de mocker le temps, le if(name) doit échouer avant
+
+        // Mock de la liste
         when(dockerClient.listContainersCmd()).thenReturn(listContainersCmd);
         when(listContainersCmd.withShowAll(true)).thenReturn(listContainersCmd);
-        when(listContainersCmd.exec()).thenReturn(List.of(oldContainer, newContainer, otherContainer));
+        when(listContainersCmd.exec()).thenReturn(List.of(oldValidContainer, youngContainer, otherImageContainer));
 
-        // 2. EXECUTION
+        // Action
         cleanupTask.cleanupOldContainers();
 
-        // 3. VERIFICATION
-        // Doit supprimer le vieux conteneur cyberscale
-        verify(containerService, times(1)).stopAndRemoveContainer("old-123");
-        
-        // Ne doit PAS supprimer les autres
-        verify(containerService, never()).stopAndRemoveContainer("new-456");
+        // Vérifications
+        verify(containerService).stopAndRemoveContainer("c1"); // Appel unique
+        verify(containerService, never()).stopAndRemoveContainer("c2");
+    }
+
+    @Test
+    void cleanupOldContainers_ExceptionHandling() {
+        // Teste le bloc catch(Exception e) global
+        when(dockerClient.listContainersCmd()).thenThrow(new RuntimeException("Docker Down"));
+
+        // Ne doit pas planter l'appli
+        cleanupTask.cleanupOldContainers();
     }
 }
