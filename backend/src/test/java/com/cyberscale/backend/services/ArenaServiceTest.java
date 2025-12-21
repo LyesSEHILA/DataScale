@@ -116,4 +116,22 @@ class ArenaServiceTest {
         when(challengeRepository.findById("1")).thenReturn(Optional.of(mockChallenge));
         assertNotNull(arenaService.getChallengeById("1"));
     }
+
+    @Test
+    void testStartChallengeEnvironment_ShouldThrowException_WhenChallengeNotFound() {
+        // Préparation
+        String invalidId = "Mauvais id";
+        
+        // On dit au Mock Repository : "Si on te demande l'ID 'bad-id', renvoie vide"
+        when(challengeRepository.findById(invalidId)).thenReturn(Optional.empty());
+
+        // Action & Vérification
+        ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> {
+            arenaService.startChallengeEnvironment(invalidId);
+        });
+
+        // Vérifications supplémentaires (Optionnel)
+        assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
+        assertEquals("Challenge inconnu", exception.getReason());
+    }
 }
