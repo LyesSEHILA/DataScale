@@ -25,6 +25,9 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-security")
+    implementation("org.springframework.boot:spring-boot-starter-websocket")
+    implementation("com.github.docker-java:docker-java-core:3.7.0")
+    implementation("com.github.docker-java:docker-java-transport-httpclient5:3.7.0")
     runtimeOnly("com.h2database:h2")
     runtimeOnly("org.postgresql:postgresql")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
@@ -35,9 +38,6 @@ dependencies {
     testImplementation("org.junit.platform:junit-platform-suite:1.10.1")
     testImplementation("org.seleniumhq.selenium:selenium-java:4.18.1")
     testImplementation("io.github.bonigarcia:webdrivermanager:5.7.0")
-
-    implementation("com.github.docker-java:docker-java-core:3.7.0")
-    implementation("com.github.docker-java:docker-java-transport-httpclient5:3.7.0")
 }
 
 // --- Configuration JaCoCo en Kotlin DSL ---
