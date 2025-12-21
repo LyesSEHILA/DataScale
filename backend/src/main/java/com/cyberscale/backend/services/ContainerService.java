@@ -1,15 +1,18 @@
 package com.cyberscale.backend.services;
 
+import org.springframework.stereotype.Service;
+
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.exception.DockerException;
-import com.github.dockerjava.api.model.HostConfig;
-import com.github.dockerjava.api.model.PortBinding;
-import com.github.dockerjava.api.model.Ports;
-import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 @Service
 public class ContainerService {
+
+    private static final Logger logger = LoggerFactory.getLogger(ContainerService.class);
 
     private final DockerClient dockerClient;
 
@@ -26,7 +29,8 @@ public class ContainerService {
     public String createContainer(String imageId) {
         try {
             CreateContainerResponse container = dockerClient.createContainerCmd(imageId)
-                    .withTty(true) 
+                    .withTty(true)
+                    .withStdinOpen(true)
                     .exec();
 
             return container.getId();
@@ -57,7 +61,7 @@ public class ContainerService {
             
             dockerClient.removeContainerCmd(containerId).exec();
         } catch (DockerException e) {
-            System.err.println("Erreur lors du nettoyage du conteneur " + containerId + ": " + e.getMessage());
+            logger.error("Erreur lors du nettoyage du conteneur {}", containerId, e);
         }
     }
 }
