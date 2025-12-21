@@ -6,6 +6,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.never;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -24,8 +27,10 @@ import com.cyberscale.backend.repositories.ChallengeRepository;
 import com.cyberscale.backend.repositories.UserChallengeRepository;
 import com.cyberscale.backend.repositories.UserRepository;
 
+
+
 @ExtendWith(MockitoExtension.class)
-class ArenaServiceTest {
+public class ArenaServiceTest {
 
     @Mock private ChallengeRepository challengeRepository;
     @Mock private UserRepository userRepository;
@@ -115,5 +120,23 @@ class ArenaServiceTest {
     void getChallengeById_ShouldWork() {
         when(challengeRepository.findById("1")).thenReturn(Optional.of(mockChallenge));
         assertNotNull(arenaService.getChallengeById("1"));
+    }
+
+    @Test
+    void testStartChallengeEnvironment_ShouldThrowException_WhenChallengeNotFound() {
+        // Préparation
+        String invalidId = "bad id";
+        
+        // On dit au Mock Repository : "Si on te demande l'ID 'bad-id', renvoie vide"
+        when(challengeRepository.findById(invalidId)).thenReturn(Optional.empty());
+
+        // Action & Vérification
+        ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> {
+            arenaService.startChallengeEnvironment(invalidId);
+        });
+
+        // Vérifications supplémentaires (Optionnel)
+        assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
+        assertEquals("Challenge inconnu", exception.getReason());
     }
 }
