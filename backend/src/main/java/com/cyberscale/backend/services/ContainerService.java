@@ -1,12 +1,10 @@
 package com.cyberscale.backend.services;
 
+import org.springframework.stereotype.Service;
+
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.exception.DockerException;
-import com.github.dockerjava.api.model.HostConfig;
-import com.github.dockerjava.api.model.PortBinding;
-import com.github.dockerjava.api.model.Ports;
-import org.springframework.stereotype.Service;
 
 @Service
 public class ContainerService {
@@ -26,7 +24,8 @@ public class ContainerService {
     public String createContainer(String imageId) {
         try {
             CreateContainerResponse container = dockerClient.createContainerCmd(imageId)
-                    .withTty(true) 
+                    .withTty(true)
+                    .withStdinOpen(true)
                     .exec();
 
             return container.getId();

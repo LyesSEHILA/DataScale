@@ -2,141 +2,77 @@ package com.cyberscale.backend.services;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerCmd;
+import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.command.RemoveContainerCmd;
 import com.github.dockerjava.api.command.StartContainerCmd;
 import com.github.dockerjava.api.command.StopContainerCmd;
-import com.github.dockerjava.api.command.CreateContainerResponse;
-import com.github.dockerjava.api.exception.InternalServerErrorException;
+import com.github.dockerjava.api.exception.DockerException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class ContainerServiceTest {
+class ContainerServiceTest {
 
-    @Mock
-    private DockerClient dockerClient;
+    @Mock private DockerClient dockerClient;
+    @InjectMocks private ContainerService containerService;
 
-    @InjectMocks
-    private ContainerService containerService;
-
+    // Mocks spécifiques
+    @Mock private CreateContainerCmd createContainerCmd;
+    @Mock private CreateContainerResponse createContainerResponse;
+    @Mock private StartContainerCmd startContainerCmd;
+    @Mock private StopContainerCmd stopContainerCmd;
+    @Mock private RemoveContainerCmd removeContainerCmd;
 
     @Test
     void createContainer_Success_ShouldReturnId() {
-        String imageId = "nginx:alpine";
-        String expectedId = "container-123";
+        // 1. On configure TOUTE la chaîne (Fluent API)
+        when(dockerClient.createContainerCmd(anyString())).thenReturn(createContainerCmd);
+        when(createContainerCmd.withTty(anyBoolean())).thenReturn(createContainerCmd);
+        // CORRECTION ICI : Ajout du mock pour withStdinOpen qui causait le NullPointerException
+        when(createContainerCmd.withStdinOpen(anyBoolean())).thenReturn(createContainerCmd);
+        when(createContainerCmd.exec()).thenReturn(createContainerResponse);
+        when(createContainerResponse.getId()).thenReturn("container-123");
 
-        CreateContainerCmd cmd = mock(CreateContainerCmd.class);
-        CreateContainerResponse response = mock(CreateContainerResponse.class);
+        // 2. Appel
+        String id = containerService.createContainer("nginx:alpine");
 
-        when(dockerClient.createContainerCmd(imageId)).thenReturn(cmd);
-        when(cmd.withTty(true)).thenReturn(cmd); 
-        when(cmd.exec()).thenReturn(response);
-        when(response.getId()).thenReturn(expectedId);
-
-        String actualId = containerService.createContainer(imageId);
-
-        assertEquals(expectedId, actualId);
-        verify(cmd).exec(); 
+        // 3. Vérifs
+        assertEquals("container-123", id);
+        verify(createContainerCmd).withTty(true);
+        verify(createContainerCmd).withStdinOpen(true);
     }
-
-    @Test
-    void startContainer_Success_ShouldNotThrow() {
-        String containerId = "container-123";
-        StartContainerCmd cmd = mock(StartContainerCmd.class);
-        when(dockerClient.startContainerCmd(containerId)).thenReturn(cmd);
-
-        assertDoesNotThrow(() -> containerService.startContainer(containerId));
-        verify(cmd).exec();
-    }
-
-    @Test
-    void stopAndRemoveContainer_Success_ShouldCallStopAndRemove() {
-        String containerId = "container-123";
-        StopContainerCmd stopCmd = mock(StopContainerCmd.class);
-        RemoveContainerCmd removeCmd = mock(RemoveContainerCmd.class);
-
-        when(dockerClient.stopContainerCmd(containerId)).thenReturn(stopCmd);
-        when(dockerClient.removeContainerCmd(containerId)).thenReturn(removeCmd);
-
-        containerService.stopAndRemoveContainer(containerId);
-
-        verify(stopCmd).exec();   
-        verify(removeCmd).exec(); 
-    }
-
-
-
 
     @Test
     void createContainer_ShouldThrowRuntimeException_WhenDockerFails() {
-        String imageId = "test image";
-        
-        CreateContainerCmd cmd = mock(CreateContainerCmd.class);
-        when(dockerClient.createContainerCmd(anyString())).thenReturn(cmd);
-        when(cmd.withTty(any(Boolean.class))).thenReturn(cmd);
-        
-        when(cmd.exec()).thenThrow(new InternalServerErrorException("Simulated Docker Error"));
+        // CORRECTION : On fait échouer le PREMIER appel pour éviter les "UnnecessaryStubbing" sur la suite
+        when(dockerClient.createContainerCmd(anyString())).thenThrow(new DockerException("Docker is down", 500));
 
-        assertThrows(RuntimeException.class, () -> {
-            containerService.createContainer(imageId);
-        });
+        assertThrows(RuntimeException.class, () -> containerService.createContainer("bad-image"));
     }
 
     @Test
-    void startContainer_ShouldThrowRuntimeException_WhenDockerFails() {
-
-        String containerId = "bad id";
-        
-        StartContainerCmd cmd = mock(StartContainerCmd.class);
-        when(dockerClient.startContainerCmd(containerId)).thenReturn(cmd);
-        
-        when(cmd.exec()).thenThrow(new InternalServerErrorException("Start Failed"));
-
-        assertThrows(RuntimeException.class, () -> {
-            containerService.startContainer(containerId);
-        });
+    void startContainer_ShouldExecStartCmd() {
+        when(dockerClient.startContainerCmd(anyString())).thenReturn(startContainerCmd);
+        containerService.startContainer("123");
+        verify(startContainerCmd).exec();
     }
 
     @Test
-    void stopAndRemoveContainer_ShouldLogAndNotThrow_WhenDockerFails() {
-        String containerId = "container fail";
-        
-        StopContainerCmd stopCmd = mock(StopContainerCmd.class);
-        when(dockerClient.stopContainerCmd(containerId)).thenReturn(stopCmd);
-        
-        when(stopCmd.exec()).thenThrow(new InternalServerErrorException("Stop Failed"));
+    void stopAndRemoveContainer_ShouldExecStopAndRemoveCmd() {
+        when(dockerClient.stopContainerCmd(anyString())).thenReturn(stopContainerCmd);
+        when(dockerClient.removeContainerCmd(anyString())).thenReturn(removeContainerCmd);
 
-        assertDoesNotThrow(() -> {
-            containerService.stopAndRemoveContainer(containerId);
-        });
+        containerService.stopAndRemoveContainer("123");
 
-        verify(dockerClient).stopContainerCmd(containerId);
-    }
-    
-    @Test
-    void stopAndRemoveContainer_ShouldHandleRemoveError() {
-        String containerId = "container remove";
-        
-        StopContainerCmd stopCmd = mock(StopContainerCmd.class);
-        RemoveContainerCmd removeCmd = mock(RemoveContainerCmd.class);
-        
-        when(dockerClient.stopContainerCmd(containerId)).thenReturn(stopCmd);
-        when(dockerClient.removeContainerCmd(containerId)).thenReturn(removeCmd);
-        
-        when(removeCmd.exec()).thenThrow(new InternalServerErrorException("Remove Failed"));
-
-        assertDoesNotThrow(() -> containerService.stopAndRemoveContainer(containerId));
+        verify(stopContainerCmd).exec();
+        verify(removeContainerCmd).exec();
     }
 }

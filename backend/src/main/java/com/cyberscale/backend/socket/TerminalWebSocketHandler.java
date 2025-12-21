@@ -13,7 +13,6 @@ import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.nio.charset.StandardCharsets;
@@ -106,15 +105,17 @@ public class TerminalWebSocketHandler extends TextWebSocketHandler {
                     int rows = json.get("rows").asInt();
                     int cols = json.get("cols").asInt();
                     
-                    // Commande Docker pour redimensionner le TTY
+                    // --- CORRECTION ICI ---
+                    // Utilisation de .withSize(width, height) pour docker-java 3.7.0
                     dockerClient.resizeContainerCmd(containerId)
-                            .withHeight(rows)
-                            .withWidth(cols)
+                            .withSize(cols, rows)
                             .exec();
+                            
                     return; // On ne l'écrit pas dans le terminal
                 }
             } catch (Exception e) {
                 // Ce n'était pas un JSON valide, on traite comme du texte normal
+                // (On continue l'exécution pour écrire le payload dans le terminal)
             }
         }
 

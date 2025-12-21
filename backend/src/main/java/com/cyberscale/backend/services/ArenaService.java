@@ -99,7 +99,7 @@ public class ArenaService {
         Challenge challenge = challengeRepository.findById(challengeId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Challenge inconnu"));
 
-        String imageName = "nginx:alpine"; 
+        String imageName = "cyberscale/base-challenge";
         
         String containerId = containerService.createContainer(imageName);
         containerService.startContainer(containerId);
