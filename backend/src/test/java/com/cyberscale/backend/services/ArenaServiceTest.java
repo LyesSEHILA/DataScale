@@ -25,7 +25,7 @@ import com.cyberscale.backend.repositories.UserChallengeRepository;
 import com.cyberscale.backend.repositories.UserRepository;
 
 @ExtendWith(MockitoExtension.class)
-class ArenaServiceTest {
+public class ArenaServiceTest {
 
     @Mock private ChallengeRepository challengeRepository;
     @Mock private UserRepository userRepository;
@@ -120,7 +120,7 @@ class ArenaServiceTest {
     @Test
     void testStartChallengeEnvironment_ShouldThrowException_WhenChallengeNotFound() {
         // Préparation
-        String invalidId = "Mauvais id";
+        String invalidId = "bad id";
         
         // On dit au Mock Repository : "Si on te demande l'ID 'bad-id', renvoie vide"
         when(challengeRepository.findById(invalidId)).thenReturn(Optional.empty());
