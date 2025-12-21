@@ -23,9 +23,9 @@ public class ContainerCleanupTask {
     @Autowired
     private ContainerService containerService;
 
-
     // Seuil : 30 minutes (en secondes)
-    private static final long MAX_AGE_SECONDS = 30 * 60;
+    // CORRECTION ICI : Ajout du 'L' pour forcer le calcul en long (30L * 60)
+    private static final long MAX_AGE_SECONDS = 30L * 60;
 
     // S'exécute toutes les 600 000 ms (10 minutes)
     @Scheduled(fixedRate = 600000)
