@@ -20,10 +20,20 @@ import com.cyberscale.backend.repositories.UserRepository;
 @Service
 public class ArenaService {
 
-    @Autowired private ChallengeRepository challengeRepository;
-    @Autowired private UserRepository userRepository;
-    @Autowired private UserChallengeRepository userChallengeRepository;
-    @Autowired private ContainerService containerService;
+    private final ChallengeRepository challengeRepository;
+    private final UserRepository userRepository;
+    private final UserChallengeRepository userChallengeRepository;
+    private final ContainerService containerService;
+
+    public ArenaService(ChallengeRepository challengeRepository, 
+                        UserRepository userRepository,
+                        UserChallengeRepository userChallengeRepository,
+                        ContainerService containerService) {
+        this.challengeRepository = challengeRepository;
+        this.userRepository = userRepository;
+        this.userChallengeRepository = userChallengeRepository;
+        this.containerService = containerService;
+    }
     
     // Liste des Challenge
     public List<ChallengeDTO> getAllChallenges(Long userId) {

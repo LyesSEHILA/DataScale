@@ -9,15 +9,20 @@ import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Component
 public class ContainerCleanupTask {
 
+    private static final Logger logger = LoggerFactory.getLogger(ContainerCleanupTask.class);
+    
     @Autowired
     private DockerClient dockerClient;
 
     @Autowired
     private ContainerService containerService;
+
 
     // Seuil : 30 minutes (en secondes)
     private static final long MAX_AGE_SECONDS = 30 * 60;
@@ -25,7 +30,7 @@ public class ContainerCleanupTask {
     // S'exécute toutes les 600 000 ms (10 minutes)
     @Scheduled(fixedRate = 600000)
     public void cleanupOldContainers() {
-        System.out.println("🧹 [Cleanup] Vérification des conteneurs expirés...");
+        logger.info("🧹 [Cleanup] Vérification des conteneurs expirés...");
 
         try {
             // 1. Lister tous les conteneurs (actifs ou arrêtés)
@@ -44,7 +49,7 @@ public class ContainerCleanupTask {
                     // 3. Vérifier l'âge
                     // c.getCreated() retourne un timestamp en secondes
                     if ((now - c.getCreated()) > MAX_AGE_SECONDS) {
-                        System.out.println("🗑️ Suppression du conteneur expiré : " + c.getId() + " (" + imageName + ")");
+                        logger.info("🗑️ Suppression du conteneur expiré : {} ({})", c.getId(), imageName);
                         
                         // Appel à votre service existant pour nettoyer proprement
                         containerService.stopAndRemoveContainer(c.getId());
@@ -52,7 +57,7 @@ public class ContainerCleanupTask {
                 }
             }
         } catch (Exception e) {
-            System.err.println("⚠️ Erreur lors du nettoyage Docker : " + e.getMessage());
+            logger.error("⚠️ Erreur lors du nettoyage Docker", e);
         }
     }
 }

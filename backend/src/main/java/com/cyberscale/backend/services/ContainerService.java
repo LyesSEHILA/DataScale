@@ -5,9 +5,14 @@ import org.springframework.stereotype.Service;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.exception.DockerException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 @Service
 public class ContainerService {
+
+    private static final Logger logger = LoggerFactory.getLogger(ContainerService.class);
 
     private final DockerClient dockerClient;
 
@@ -56,7 +61,7 @@ public class ContainerService {
             
             dockerClient.removeContainerCmd(containerId).exec();
         } catch (DockerException e) {
-            System.err.println("Erreur lors du nettoyage du conteneur " + containerId + ": " + e.getMessage());
+            logger.error("Erreur lors du nettoyage du conteneur {}", containerId, e);
         }
     }
 }

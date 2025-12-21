@@ -11,6 +11,8 @@ import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.PipedInputStream;
@@ -20,6 +22,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class TerminalWebSocketHandler extends TextWebSocketHandler {
+
+    private static final Logger logger = LoggerFactory.getLogger(TerminalWebSocketHandler.class);
 
     @Autowired
     private DockerClient dockerClient;
@@ -44,22 +48,17 @@ public class TerminalWebSocketHandler extends TextWebSocketHandler {
             return;
         }
 
-        // 2. Préparer la "Tuyauterie" pour l'INPUT (Web -> Docker)
-        // PipedOutputStream (on écrit dedans) -> connectée à -> PipedInputStream (Docker lit dedans)
         PipedOutputStream wsToDocker = new PipedOutputStream();
         PipedInputStream dockerInputStream = new PipedInputStream(wsToDocker);
         
-        // On stocke le côté "écriture" pour pouvoir écrire dedans quand le user tape au clavier
         activeOutputStreams.put(session.getId(), wsToDocker);
 
-        // 3. Lancer l'attachement au conteneur (C'est bloquant/asynchrone, donc géré par docker-java)
         AttachContainerCmd attachCmd = dockerClient.attachContainerCmd(containerId)
                 .withStdErr(true)
                 .withStdOut(true)
                 .withFollowStream(true)
-                .withStdIn(dockerInputStream); // On connecte notre tuyau d'entrée
+                .withStdIn(dockerInputStream); 
 
-        // 4. Callback pour gérer l'OUTPUT (Docker -> Web)
         ResultCallback.Adapter<Frame> callback = new ResultCallback.Adapter<>() {
             @Override
             public void onNext(Frame item) {
@@ -69,7 +68,7 @@ public class TerminalWebSocketHandler extends TextWebSocketHandler {
                         session.sendMessage(new TextMessage(new String(item.getPayload(), StandardCharsets.UTF_8)));
                     }
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    logger.error("Erreur lors de l'envoi du flux Docker vers WebSocket", e);
                 }
             }
             
@@ -83,7 +82,6 @@ public class TerminalWebSocketHandler extends TextWebSocketHandler {
             }
         };
 
-        // On démarre l'écoute
         attachCmd.exec(callback);
         activeCallbacks.put(session.getId(), callback);
     }
@@ -95,8 +93,6 @@ public class TerminalWebSocketHandler extends TextWebSocketHandler {
 
         if (dockerInput == null) return;
 
-        // --- GESTION DU RESIZE ---
-        // Le frontend enverra parfois un JSON spécial pour dire "j'ai redimensionné la fenêtre"
         if (payload.startsWith("{") && payload.contains("cols")) {
             try {
                 JsonNode json = objectMapper.readTree(payload);
@@ -104,23 +100,17 @@ public class TerminalWebSocketHandler extends TextWebSocketHandler {
                     String containerId = getQueryParam(session.getUri().getQuery(), "containerId");
                     int rows = json.get("rows").asInt();
                     int cols = json.get("cols").asInt();
-                    
-                    // --- CORRECTION ICI ---
-                    // Utilisation de .withSize(width, height) pour docker-java 3.7.0
+
                     dockerClient.resizeContainerCmd(containerId)
                             .withSize(cols, rows)
                             .exec();
                             
-                    return; // On ne l'écrit pas dans le terminal
+                    return; 
                 }
             } catch (Exception e) {
-                // Ce n'était pas un JSON valide, on traite comme du texte normal
-                // (On continue l'exécution pour écrire le payload dans le terminal)
+
             }
         }
-
-        // --- GESTION DU CLAVIER ---
-        // On écrit directement les touches dans le tuyau relié au Docker
         dockerInput.write(payload.getBytes(StandardCharsets.UTF_8));
         dockerInput.flush();
     }
@@ -129,7 +119,6 @@ public class TerminalWebSocketHandler extends TextWebSocketHandler {
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
         String sessionId = session.getId();
         
-        // Nettoyage des ressources
         if (activeOutputStreams.containsKey(sessionId)) {
             activeOutputStreams.get(sessionId).close();
             activeOutputStreams.remove(sessionId);

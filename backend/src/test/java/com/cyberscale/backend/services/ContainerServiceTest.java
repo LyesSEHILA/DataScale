@@ -36,7 +36,6 @@ class ContainerServiceTest {
         // 1. On configure TOUTE la chaîne (Fluent API)
         when(dockerClient.createContainerCmd(anyString())).thenReturn(createContainerCmd);
         when(createContainerCmd.withTty(anyBoolean())).thenReturn(createContainerCmd);
-        // CORRECTION ICI : Ajout du mock pour withStdinOpen qui causait le NullPointerException
         when(createContainerCmd.withStdinOpen(anyBoolean())).thenReturn(createContainerCmd);
         when(createContainerCmd.exec()).thenReturn(createContainerResponse);
         when(createContainerResponse.getId()).thenReturn("container-123");

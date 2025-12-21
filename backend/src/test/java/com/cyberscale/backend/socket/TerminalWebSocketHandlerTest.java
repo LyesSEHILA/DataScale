@@ -31,30 +31,28 @@ class TerminalWebSocketHandlerTest {
     private TerminalWebSocketHandler handler;
 
     @Test
-    void handleTextMessage_ShouldResizeOnJsonCommand() throws Exception {
-        // 1. Mock de la session
-        String sessionId = "session-1";
+    void handleTextMessage_ShouldResize() throws Exception {
+        // 1. Simuler une session
+        String sessionId = "s1";
         when(session.getId()).thenReturn(sessionId);
-        when(session.getUri()).thenReturn(new URI("ws://localhost/ws/terminal?containerId=abc-123"));
+        when(session.getUri()).thenReturn(new URI("ws://localhost?containerId=c1"));
 
-        // 2. Mock Docker
-        when(dockerClient.resizeContainerCmd(anyString())).thenReturn(resizeCmd);
-        // Attention : on utilise .withSize(w, h) car c'est la méthode que nous avons corrigée ensemble
-        when(resizeCmd.withSize(anyInt(), anyInt())).thenReturn(resizeCmd);
-
-        // 3. CORRECTION MAJEURE : On injecte un stream dans la map privée "activeOutputStreams"
-        // Sinon le handler retourne immédiatement car il croit la session invalide
+        // 2. Injecter le stream manuellement (car on ne lance pas la connexion réelle)
         Map<String, PipedOutputStream> streams = new ConcurrentHashMap<>();
         streams.put(sessionId, new PipedOutputStream());
+        // On utilise ReflectionTestUtils pour accéder au champ privé
         ReflectionTestUtils.setField(handler, "activeOutputStreams", streams);
 
-        // 4. Action
-        String jsonResize = "{\"type\":\"resize\", \"cols\":100, \"rows\":50}";
-        handler.handleTextMessage(session, new TextMessage(jsonResize));
+        // 3. Mocker Docker
+        when(dockerClient.resizeContainerCmd(anyString())).thenReturn(resizeCmd);
+        when(resizeCmd.withSize(anyInt(), anyInt())).thenReturn(resizeCmd);
+
+        // 4. Action : Envoyer le JSON de resize
+        handler.handleTextMessage(session, new TextMessage("{\"type\":\"resize\", \"cols\":80, \"rows\":24}"));
 
         // 5. Vérif
-        verify(dockerClient).resizeContainerCmd("abc-123");
-        verify(resizeCmd).withSize(100, 50); // cols=100, rows=50
+        verify(dockerClient).resizeContainerCmd("c1");
+        verify(resizeCmd).withSize(80, 24);
         verify(resizeCmd).exec();
     }
 }

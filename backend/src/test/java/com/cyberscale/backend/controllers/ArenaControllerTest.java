@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean; // Spring Boot 3.4+
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.TestPropertySource;
@@ -23,8 +23,6 @@ import com.cyberscale.backend.repositories.ChallengeRepository;
 import com.cyberscale.backend.repositories.UserRepository;
 import com.cyberscale.backend.services.ArenaService;
 import com.cyberscale.backend.config.SecurityConfig;
-import com.cyberscale.backend.controllers.ArenaController.FlagRequest; 
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 @SpringBootTest
 @AutoConfigureMockMvc(addFilters = false)
@@ -36,22 +34,19 @@ class ArenaControllerTest {
     @Autowired private MockMvc mockMvc;
     @Autowired private UserRepository userRepository;
     @Autowired private ChallengeRepository challengeRepository;
-    @MockitoBean private ArenaService arenaService;
+    
+    @MockitoBean // Remplace @MockBean dans Spring Boot 3.4
+    private ArenaService arenaService;
 
     @Test
-    void testValidateFlag_Integration() throws Exception {
+    void testValidateFlag_Success() throws Exception {
         // 1. Setup Données
-        // On sauvegarde l'user pour avoir un ID valide généré par la BDD
         User user = userRepository.saveAndFlush(new User("Tester", "test@arena.com", "pass"));
-        // (Le challenge en base est inutile pour le Mock, mais on peut le laisser)
-        challengeRepository.saveAndFlush(new Challenge("TEST_CTF", "Test", "Desc", "FLAG123", 50));
+        
+        // 2. Mock du service
+        when(arenaService.validateFlag(eq(user.getId()), eq("TEST_CTF"), eq("FLAG123"))).thenReturn(true);
 
-        // --- CORRECTION ICI ---
-        // On "programme" le Mock pour qu'il dise OUI quand on lui envoie les bonnes infos
-        when(arenaService.validateFlag(user.getId(), "TEST_CTF", "FLAG123")).thenReturn(true);
-        // ----------------------
-
-        // --- CAS 1 : BON FLAG ---
+        // 3. Appel API
         String jsonRequest = String.format("{\"userId\": %d, \"challengeId\": \"TEST_CTF\", \"flag\": \"FLAG123\"}", user.getId());
 
         mockMvc.perform(post("/api/arena/validate")
@@ -59,12 +54,18 @@ class ArenaControllerTest {
                 .content(jsonRequest))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
-                
-        // --- CAS 2 : MAUVAIS FLAG ---
-        User user2 = userRepository.saveAndFlush(new User("Loser", "loser@arena.com", "pass"));
+    }
 
-        // Pas besoin de stubber le mock ici : par défaut il renvoie false, ce qui est parfait pour le test d'échec
-        String badRequest = String.format("{\"userId\": %d, \"challengeId\": \"TEST_CTF\", \"flag\": \"WRONG\"}", user2.getId());
+    @Test
+    void testValidateFlag_Failure() throws Exception {
+        // 1. Setup Données
+        User user = userRepository.saveAndFlush(new User("Loser", "loser@arena.com", "pass"));
+        
+        // 2. Mock du service (renvoie false par défaut, ou explicite)
+        when(arenaService.validateFlag(any(), any(), any())).thenReturn(false);
+
+        // 3. Appel API
+        String badRequest = String.format("{\"userId\": %d, \"challengeId\": \"TEST_CTF\", \"flag\": \"WRONG\"}", user.getId());
 
         mockMvc.perform(post("/api/arena/validate")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -75,7 +76,6 @@ class ArenaControllerTest {
 
     @Test
     void startArena_ShouldReturnContainerId() throws Exception {
-        // Quand on appelle le service, il renvoie un ID fictif
         when(arenaService.startChallengeEnvironment("CTF_1")).thenReturn("docker-id-123");
 
         mockMvc.perform(post("/api/arena/start/CTF_1")
@@ -91,35 +91,5 @@ class ArenaControllerTest {
         mockMvc.perform(post("/api/arena/stop/docker-id-123")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
-    }
-
-    @Test
-    void validateFlag_ShouldReturnSuccess() throws Exception {
-        // 1. Setup du Mock : Le service doit dire "Oui c'est bon" (true)
-        when(arenaService.validateFlag(eq(1L), eq("CTF_1"), eq("FLAG{123}"))).thenReturn(true);
-
-        // 2. Création du corps de la requête JSON
-        String jsonRequest = "{\"userId\":1, \"challengeId\":\"CTF_1\", \"flag\":\"FLAG{123}\"}";
-
-        // 3. Appel & Vérif
-        mockMvc.perform(post("/api/arena/validate")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(jsonRequest))
-                .andExpect(status().isOk()) // On attend 200 OK
-                .andExpect(jsonPath("$.success").value(true));
-    }
-
-    @Test
-    void validateFlag_ShouldReturn400_WhenWrong() throws Exception {
-        // Cas d'échec
-        when(arenaService.validateFlag(any(), any(), any())).thenReturn(false);
-
-        String jsonRequest = "{\"userId\":1, \"challengeId\":\"CTF_1\", \"flag\":\"WRONG\"}";
-
-        mockMvc.perform(post("/api/arena/validate")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(jsonRequest))
-                .andExpect(status().isBadRequest()) // On attend 400
-                .andExpect(jsonPath("$.success").value(false));
     }
 }
