@@ -6,6 +6,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*; // Import global pour simplifier
 import com.cyberscale.backend.services.ArenaService;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.handler.annotation.SendTo;
 
 @RestController
 @RequestMapping("/api/arena")
@@ -14,6 +16,12 @@ public class ArenaController {
 
     @Autowired private ArenaService arenaService;
 
+    @MessageMapping("/arena") // Écoute les messages envoyés sur "/app/arena"
+    @SendTo("/topic/arena")   // Renvoie la réponse sur "/topic/arena"
+    public String handleInput(String message) {
+        // Pour l'instant, on fait un simple écho : le serveur renvoie ce qu'il reçoit.
+        return message;
+    }
     
     public record FlagRequest(
         @JsonProperty("userId") Long userId,
