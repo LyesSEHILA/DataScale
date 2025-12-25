@@ -1,0 +1,197 @@
+/* Reset & Font Google */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: 'Roboto', Arial, sans-serif;
+    background-color: #f6f8fc;
+    color: #202124;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Header */
+.gb_header {
+    background-color: #fff;
+    height: 64px;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #eaecf0; /* Optionnel selon version Gmail */
+}
+
+.gb_left { display: flex; align-items: center; gap: 15px; width: 230px; padding-left: 10px; }
+.menu-icon { color: #5f6368; cursor: pointer; padding: 12px; border-radius: 50%; }
+.menu-icon:hover { background-color: #f0f2f5; }
+.gmail-logo { height: 40px; margin-top: -3px; }
+
+.gb_center { flex: 1; max-width: 720px; }
+.search-container {
+    background: #eaf1fb;
+    border-radius: 8px; /* Plus carré dans la version récente */
+    height: 48px;
+    display: flex;
+    align-items: center;
+    padding: 0 15px;
+    transition: background 0.2s, box-shadow 0.2s;
+}
+.search-container:focus-within { background: #fff; box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3), 0 2px 6px 2px rgba(60,64,67,0.15); }
+.search-container input {
+    border: none;
+    background: transparent;
+    flex: 1;
+    height: 100%;
+    margin: 0 10px;
+    font-size: 16px;
+    outline: none;
+    color: #202124;
+}
+.search-icon, .tune-icon { color: #5f6368; cursor: pointer; }
+
+.gb_right { display: flex; align-items: center; gap: 10px; padding-right: 15px; }
+.action-icon { color: #5f6368; padding: 10px; cursor: pointer; border-radius: 50%; }
+.action-icon:hover { background-color: #f0f2f5; }
+.user-avatar {
+    width: 32px; height: 32px;
+    background-color: #a142f4; /* Couleur Google violet */
+    color: white;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    cursor: pointer;
+    margin-left: 5px;
+}
+
+/* Layout Principal */
+.main-container { display: flex; flex: 1; overflow: hidden; }
+
+/* Sidebar */
+.sidebar { width: 256px; padding-right: 16px; background: #f6f8fc; }
+.compose-btn-container { padding: 8px 0 16px 8px; }
+.btn-compose {
+    background-color: #c2e7ff;
+    color: #001d35;
+    border: none;
+    height: 56px;
+    min-width: 56px; /* Devient carré si responsive */
+    width: 145px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding-left: 18px;
+    font-family: 'Roboto', sans-serif;
+    font-weight: 500;
+    font-size: 14px;
+    cursor: pointer;
+    transition: box-shadow .08s linear,min-width .15s cubic-bezier(0.4,0.0,0.2,1);
+}
+.btn-compose:hover { box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15); background-color: #b3d7ef; }
+
+.nav-list { list-style: none; }
+.nav-list li {
+    display: flex;
+    align-items: center;
+    height: 32px;
+    padding-left: 26px;
+    margin-right: 16px; /* Marge à droite pour l'arrondi */
+    border-top-right-radius: 16px;
+    border-bottom-right-radius: 16px;
+    cursor: pointer;
+    color: #202124;
+    font-size: 14px;
+}
+.nav-list li:hover { background-color: #eaecf0; }
+.nav-list li.active { background-color: #d3e3fd; color: #001d35; font-weight: 700; }
+.nav-list li.active .material-icons { color: #001d35; }
+.nav-list .material-icons { font-size: 20px; margin-right: 18px; color: #444746; }
+.nav-list .badge { margin-left: auto; padding-right: 12px; font-weight: bold; font-size: 12px; }
+
+/* Zone de contenu (Liste mails) */
+.content-area {
+    flex: 1;
+    background: #fff;
+    border-radius: 16px 16px 0 0; /* Arrondi typique du nouveau Gmail */
+    display: flex;
+    flex-direction: column;
+    margin-right: 12px;
+}
+
+/* Toolbar */
+.toolbar {
+    height: 48px;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    border-bottom: 1px solid #f2f2f2;
+    color: #444746;
+}
+.checkbox-wrapper { display: flex; align-items: center; margin-right: 15px; cursor: pointer; }
+.checkbox-wrapper .arrow { font-size: 18px; margin-left: -4px; }
+.tool-icon { padding: 8px; border-radius: 50%; cursor: pointer; margin-right: 5px; font-size: 20px; }
+.tool-icon:hover { background-color: #f0f2f5; }
+.pagination { margin-left: auto; display: flex; align-items: center; font-size: 12px; color: #5f6368; }
+.pagination span { margin: 0 5px; cursor: pointer; }
+
+/* Onglets */
+.tabs { display: flex; border-bottom: 1px solid #f2f2f2; }
+.tab {
+    flex: 1;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start; /* Align gauche */
+    padding-left: 16px;
+    gap: 15px;
+    cursor: pointer;
+    color: #5f6368;
+    font-size: 14px;
+    font-weight: 500;
+    max-width: 250px;
+}
+.tab:hover { background-color: #fbfbfb; }
+.tab.active { color: #0b57d0; border-bottom: 3px solid #0b57d0; }
+.tab .material-icons { font-size: 20px; }
+
+/* Liste emails */
+.email-list { overflow-y: auto; }
+.email-row {
+    display: flex;
+    align-items: center;
+    height: 40px;
+    border-bottom: 1px solid #f2f2f2;
+    cursor: pointer;
+    padding: 0 16px;
+    font-size: 14px;
+}
+.email-row:hover { box-shadow: inset 1px 0 0 #dadce0, inset -1px 0 0 #dadce0, 0 1px 2px 0 rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15); z-index: 1; border-bottom: none; }
+.email-row.unread { background-color: #fff; font-weight: 700; color: #202124; }
+.email-row.read { background-color: #f4f7fc; color: #5f6368; font-weight: 400; } /* Fond légèrement gris pour lu */
+.email-row.read { background-color: #fff; } /* Gmail garde le fond blanc, change juste le gras */
+
+/* Colonnes */
+.col-check, .col-star { width: 40px; display: flex; align-items: center; color: #b3b3b3; }
+.col-star .material-icons.active { color: #f4b400; } /* Étoile jaune */
+.col-check:hover, .col-star:hover { color: #444746; }
+
+.col-sender { width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 15px; }
+.unread .col-sender { color: #202124; font-weight: bold; }
+
+.col-content { flex: 1; display: flex; align-items: center; white-space: nowrap; overflow: hidden; }
+.subject { color: #202124; }
+.unread .subject { font-weight: bold; }
+.separator { margin: 0 5px; color: #5f6368; }
+.snippet { color: #5f6368; font-weight: normal; overflow: hidden; text-overflow: ellipsis; }
+
+.col-date { width: 80px; text-align: right; font-size: 12px; font-weight: bold; color: #202124; }
+.read .col-date { font-weight: normal; color: #5f6368; }
+
+/* Responsive basique */
+@media (max-width: 1000px) {
+    .sidebar { width: 72px; padding-right: 0; }
+    .btn-compose { width: 56px; padding: 0; justify-content: center; border-radius: 16px; }
+    .btn-compose span:last-child { display: none; } /* Cache le texte */
+    .nav-text, .badge { display: none; }
+    .nav-list li { padding-left: 24px; }
+}

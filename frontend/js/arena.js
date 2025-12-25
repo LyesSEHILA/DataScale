@@ -2,6 +2,26 @@
 const socketUrl = 'http://localhost:8080/ws-cyberscale'; // L'adresse RÉELLE de votre config
 
 document.addEventListener("DOMContentLoaded", () => {
+
+    const userId = localStorage.getItem('userId');
+    const username = localStorage.getItem('userName') || "Utilisateur";
+    const sidebarUser = document.getElementById('sidebarUsername');
+
+    if (!userId) {
+        window.location.href = 'login.html';
+        return;
+    }
+
+    if(sidebarUser) sidebarUser.textContent = username;
+
+    const logoutBtn = document.getElementById('logoutBtn');
+    if(logoutBtn) {
+        logoutBtn.addEventListener('click', () => {
+            localStorage.clear();
+            window.location.href = 'index.html';
+        });
+    }
+    
     // 1. Initialisation Terminal (Votre code était bon ici)
     const term = new Terminal({
         cursorBlink: true,
