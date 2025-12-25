@@ -1,59 +1,41 @@
-// Configuration du Terminal (inchangée)
-const term = new Terminal({
-    cursorBlink: true,
-    fontSize: 14,
-    fontFamily: 'Consolas, "Courier New", monospace',
-    theme: { background: '#1e1e1e', foreground: '#00ff00', cursor: '#00ff00' }
-});
-const terminalContainer = document.getElementById('terminal');
-term.open(terminalContainer);
+// Configuration
+const socketUrl = 'http://localhost:8080/ws-cyberscale'; // L'adresse RÉELLE de votre config
 
-term.write('Initializing CyberScale Environment... \r\n');
+document.addEventListener("DOMContentLoaded", () => {
+    // 1. Initialisation Terminal (Votre code était bon ici)
+    const term = new Terminal({
+        cursorBlink: true,
+        fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+        theme: { background: '#1a1b26', foreground: '#a9b1d6' }
+    });
+    const fitAddon = new FitAddon.FitAddon();
+    term.loadAddon(fitAddon);
+    term.open(document.getElementById('terminal'));
+    fitAddon.fit();
 
-// --- LOGIQUE DYNAMIQUE ---
+    term.write('Connexion au système CyberScale...\r\n');
 
-async function startChallenge() {
-    try {
-        // 1. Appel API pour lancer le conteneur (Challenge ID "1" pour l'exemple)
-        // Dans le futur, on récupèrera l'ID depuis l'URL ou le bouton cliqué
-        const challengeId = "CTF_LINUX_1"; 
-        const response = await fetch(`http://localhost:8080/api/arena/start/${challengeId}`, {
-            method: 'POST'
+    // 2. Connexion Compatible STOMP (C'est ICI que ça change)
+    const socket = new SockJS(socketUrl);
+    const stompClient = Stomp.over(socket);
+    stompClient.debug = null; // Enlever le bruit dans la console
+
+    stompClient.connect({}, function (frame) {
+        term.write('\r\n\x1b[1;32m[SYSTEM] Connexion établie.\x1b[0m\r\n$ ');
+
+        // A. Écouter les réponses du serveur (Echo)
+        stompClient.subscribe('/topic/arena', function (message) {
+            term.write(message.body);
         });
 
-        if (!response.ok) throw new Error("Impossible de démarrer le challenge");
-
-        const data = await response.json();
-        const containerId = data.containerId;
-
-        term.write(`\r\nContainer spawned successfully. ID: ${containerId.substring(0, 8)}...\r\n`);
-        term.write('Establishing WebSocket Uplink... \r\n');
-
-        // 2. Connexion WebSocket avec l'ID reçu
-        connectWebSocket(containerId);
-
-    } catch (error) {
-        term.write(`\r\n\x1b[1;31m[ERROR] ${error.message}\x1b[0m`);
-        console.error(error);
-    }
-}
-
-function connectWebSocket(containerId) {
-    const socket = new WebSocket(`ws://localhost:8080/ws/terminal?containerId=${containerId}`);
-
-    socket.onopen = () => {
-        term.write('\r\n\x1b[1;32m[SYSTEM] Uplink Established. Access Granted.\x1b[0m\r\n\r\n');
-        socket.send('\n'); // Force le prompt
-    };
-
-    socket.onmessage = (event) => term.write(event.data);
-    
-    socket.onclose = () => term.write('\r\n\x1b[1;31m[SYSTEM] Connection Lost.\x1b[0m');
-
-    term.onData(data => {
-        if (socket.readyState === WebSocket.OPEN) socket.send(data);
+    }, function (error) {
+        term.write('\r\n\x1b[1;31m[ERREUR] Serveur injoignable.\x1b[0m');
     });
-}
 
-// Lancement automatique au chargement de la page
-startChallenge();
+    // 3. Envoi des touches (Compatible STOMP)
+    term.onData(data => {
+        if (stompClient && stompClient.connected) {
+            stompClient.send("/app/arena", {}, data);
+        }
+    });
+});
