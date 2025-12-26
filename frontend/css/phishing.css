@@ -1,14 +1,55 @@
-/* Reset & Font Google */
-* { box-sizing: border-box; margin: 0; padding: 0; }
+/* --- 1. LAYOUT GLOBAL & DATASCALE SIDEBAR --- */
 body {
+    margin: 0;
+    padding: 0;
     font-family: 'Roboto', Arial, sans-serif;
     background-color: #f6f8fc;
-    color: #202124;
     height: 100vh;
-    display: flex;
-    flex-direction: column;
+    display: flex; /* Flex pour mettre Sidebar à gauche et Gmail à droite */
     overflow: hidden;
 }
+
+/* Barre de menu DataScale (Gauche) - Ne touche pas au reste */
+.ds-sidebar {
+    width: 250px;
+    min-width: 250px; /* Force la largeur */
+    background-color: #1e1e1e;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    padding: 20px 0;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.5);
+    z-index: 2000;
+}
+
+.ds-logo {
+    font-size: 1.5rem;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 30px;
+    color: #00ff00;
+}
+
+.ds-menu { list-style: none; padding: 0; margin: 0; }
+.ds-menu li a {
+    display: block; padding: 15px 25px; color: #aaa; text-decoration: none; transition: 0.3s;
+    display: flex; align-items: center; gap: 10px;
+}
+.ds-menu li a:hover, .ds-menu li.active a {
+    background-color: #333; color: white; border-left: 4px solid #00ff00;
+}
+
+/* Wrapper pour isoler votre CSS Gmail à droite */
+.gmail-wrapper {
+    flex: 1; /* Prend tout l'espace restant */
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    position: relative;
+}
+
+/* --- 2. VOTRE CSS GMAIL (Intégral) --- */
 
 /* Header */
 .gb_header {
@@ -18,7 +59,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    border-bottom: 1px solid #eaecf0; /* Optionnel selon version Gmail */
+    border-bottom: 1px solid #eaecf0;
 }
 
 .gb_left { display: flex; align-items: center; gap: 15px; width: 230px; padding-left: 10px; }
@@ -29,7 +70,7 @@ body {
 .gb_center { flex: 1; max-width: 720px; }
 .search-container {
     background: #eaf1fb;
-    border-radius: 8px; /* Plus carré dans la version récente */
+    border-radius: 8px;
     height: 48px;
     display: flex;
     align-items: center;
@@ -38,14 +79,8 @@ body {
 }
 .search-container:focus-within { background: #fff; box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3), 0 2px 6px 2px rgba(60,64,67,0.15); }
 .search-container input {
-    border: none;
-    background: transparent;
-    flex: 1;
-    height: 100%;
-    margin: 0 10px;
-    font-size: 16px;
-    outline: none;
-    color: #202124;
+    border: none; background: transparent; flex: 1; height: 100%; margin: 0 10px;
+    font-size: 16px; outline: none; color: #202124;
 }
 .search-icon, .tune-icon { color: #5f6368; cursor: pointer; }
 
@@ -53,54 +88,28 @@ body {
 .action-icon { color: #5f6368; padding: 10px; cursor: pointer; border-radius: 50%; }
 .action-icon:hover { background-color: #f0f2f5; }
 .user-avatar {
-    width: 32px; height: 32px;
-    background-color: #a142f4; /* Couleur Google violet */
-    color: white;
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 18px;
-    cursor: pointer;
-    margin-left: 5px;
+    width: 32px; height: 32px; background-color: #a142f4; color: white; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; margin-left: 5px;
 }
 
-/* Layout Principal */
+/* Layout Principal Gmail */
 .main-container { display: flex; flex: 1; overflow: hidden; }
 
-/* Sidebar */
+/* Sidebar Gmail */
 .sidebar { width: 256px; padding-right: 16px; background: #f6f8fc; }
 .compose-btn-container { padding: 8px 0 16px 8px; }
 .btn-compose {
-    background-color: #c2e7ff;
-    color: #001d35;
-    border: none;
-    height: 56px;
-    min-width: 56px; /* Devient carré si responsive */
-    width: 145px;
-    border-radius: 16px;
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    padding-left: 18px;
-    font-family: 'Roboto', sans-serif;
-    font-weight: 500;
-    font-size: 14px;
-    cursor: pointer;
+    background-color: #c2e7ff; color: #001d35; border: none; height: 56px; min-width: 56px; width: 145px;
+    border-radius: 16px; display: flex; align-items: center; gap: 15px; padding-left: 18px;
+    font-family: 'Roboto', sans-serif; font-weight: 500; font-size: 14px; cursor: pointer;
     transition: box-shadow .08s linear,min-width .15s cubic-bezier(0.4,0.0,0.2,1);
 }
 .btn-compose:hover { box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15); background-color: #b3d7ef; }
 
 .nav-list { list-style: none; }
 .nav-list li {
-    display: flex;
-    align-items: center;
-    height: 32px;
-    padding-left: 26px;
-    margin-right: 16px; /* Marge à droite pour l'arrondi */
-    border-top-right-radius: 16px;
-    border-bottom-right-radius: 16px;
-    cursor: pointer;
-    color: #202124;
-    font-size: 14px;
+    display: flex; align-items: center; height: 32px; padding-left: 26px; margin-right: 16px;
+    border-top-right-radius: 16px; border-bottom-right-radius: 16px; cursor: pointer; color: #202124; font-size: 14px;
 }
 .nav-list li:hover { background-color: #eaecf0; }
 .nav-list li.active { background-color: #d3e3fd; color: #001d35; font-weight: 700; }
@@ -110,22 +119,13 @@ body {
 
 /* Zone de contenu (Liste mails) */
 .content-area {
-    flex: 1;
-    background: #fff;
-    border-radius: 16px 16px 0 0; /* Arrondi typique du nouveau Gmail */
-    display: flex;
-    flex-direction: column;
-    margin-right: 12px;
+    flex: 1; background: #fff; border-radius: 16px 16px 0 0; display: flex; flex-direction: column; margin-right: 12px;
+    position: relative; /* Pour le positionnement du Reading View */
 }
 
 /* Toolbar */
 .toolbar {
-    height: 48px;
-    display: flex;
-    align-items: center;
-    padding: 0 16px;
-    border-bottom: 1px solid #f2f2f2;
-    color: #444746;
+    height: 48px; display: flex; align-items: center; padding: 0 16px; border-bottom: 1px solid #f2f2f2; color: #444746;
 }
 .checkbox-wrapper { display: flex; align-items: center; margin-right: 15px; cursor: pointer; }
 .checkbox-wrapper .arrow { font-size: 18px; margin-left: -4px; }
@@ -137,18 +137,8 @@ body {
 /* Onglets */
 .tabs { display: flex; border-bottom: 1px solid #f2f2f2; }
 .tab {
-    flex: 1;
-    height: 56px;
-    display: flex;
-    align-items: center;
-    justify-content: flex-start; /* Align gauche */
-    padding-left: 16px;
-    gap: 15px;
-    cursor: pointer;
-    color: #5f6368;
-    font-size: 14px;
-    font-weight: 500;
-    max-width: 250px;
+    flex: 1; height: 56px; display: flex; align-items: center; justify-content: flex-start;
+    padding-left: 16px; gap: 15px; cursor: pointer; color: #5f6368; font-size: 14px; font-weight: 500; max-width: 250px;
 }
 .tab:hover { background-color: #fbfbfb; }
 .tab.active { color: #0b57d0; border-bottom: 3px solid #0b57d0; }
@@ -157,41 +147,122 @@ body {
 /* Liste emails */
 .email-list { overflow-y: auto; }
 .email-row {
-    display: flex;
-    align-items: center;
-    height: 40px;
-    border-bottom: 1px solid #f2f2f2;
-    cursor: pointer;
-    padding: 0 16px;
-    font-size: 14px;
+    display: flex; align-items: center; height: 40px; border-bottom: 1px solid #f2f2f2;
+    cursor: pointer; padding: 0 16px; font-size: 14px;
 }
 .email-row:hover { box-shadow: inset 1px 0 0 #dadce0, inset -1px 0 0 #dadce0, 0 1px 2px 0 rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15); z-index: 1; border-bottom: none; }
 .email-row.unread { background-color: #fff; font-weight: 700; color: #202124; }
-.email-row.read { background-color: #f4f7fc; color: #5f6368; font-weight: 400; } /* Fond légèrement gris pour lu */
-.email-row.read { background-color: #fff; } /* Gmail garde le fond blanc, change juste le gras */
+.email-row.read { background-color: #f4f7fc; color: #5f6368; font-weight: 400; }
 
-/* Colonnes */
 .col-check, .col-star { width: 40px; display: flex; align-items: center; color: #b3b3b3; }
-.col-star .material-icons.active { color: #f4b400; } /* Étoile jaune */
-.col-check:hover, .col-star:hover { color: #444746; }
-
+.col-star .material-icons.active { color: #f4b400; }
 .col-sender { width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 15px; }
 .unread .col-sender { color: #202124; font-weight: bold; }
-
 .col-content { flex: 1; display: flex; align-items: center; white-space: nowrap; overflow: hidden; }
 .subject { color: #202124; }
 .unread .subject { font-weight: bold; }
 .separator { margin: 0 5px; color: #5f6368; }
 .snippet { color: #5f6368; font-weight: normal; overflow: hidden; text-overflow: ellipsis; }
-
 .col-date { width: 80px; text-align: right; font-size: 12px; font-weight: bold; color: #202124; }
 .read .col-date { font-weight: normal; color: #5f6368; }
 
-/* Responsive basique */
+/* Responsive basique Gmail */
 @media (max-width: 1000px) {
     .sidebar { width: 72px; padding-right: 0; }
     .btn-compose { width: 56px; padding: 0; justify-content: center; border-radius: 16px; }
-    .btn-compose span:last-child { display: none; } /* Cache le texte */
+    .btn-compose span:last-child { display: none; }
     .nav-text, .badge { display: none; }
     .nav-list li { padding-left: 24px; }
+}
+
+/* --- 3. AJOUTS POUR LA SIMULATION PHISHING --- */
+
+/* Utilitaire */
+.hidden { display: none !important; }
+
+/* Reading Pane (S'affiche par dessus la liste) */
+#reading-view {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: white;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    border-radius: 16px 16px 0 0;
+}
+
+.email-reader-toolbar {
+    height: 48px;
+    border-bottom: 1px solid #f2f2f2;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    justify-content: space-between;
+}
+
+.analysis-hud {
+    background: #fce8e6; color: #c5221f;
+    border: 1px solid #f5c6cb;
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.email-body-content {
+    flex: 1;
+    padding: 20px 40px;
+    overflow-y: auto;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+/* Interactivité */
+.interactive { cursor: help; border: 1px dashed transparent; }
+.interactive:hover { background-color: rgba(255, 0, 0, 0.05); border: 1px dashed red; }
+
+.trap-found {
+    background-color: #e6f4ea !important;
+    border: 1px solid #34a853 !important;
+    color: #137333;
+    pointer-events: none;
+}
+
+.trap-safe {
+    animation: shake 0.4s;
+    background-color: #fce8e6;
+}
+
+/* Feedback Flottant */
+.analysis-alert {
+    position: absolute; top: 60px; left: 50%; transform: translateX(-50%);
+    background: #323232; color: white; padding: 10px 20px; border-radius: 4px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2); z-index: 100;
+}
+.analysis-alert.success { background: #1e8e3e; }
+.analysis-alert.error { background: #d93025; }
+
+/* Animation Secousse */
+@keyframes shake {
+    0% { transform: translateX(0); } 25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); } 100% { transform: translateX(0); }
+}
+
+/* Modal Victoire */
+.modal {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5); z-index: 3000;
+    display: flex; justify-content: center; align-items: center;
+}
+.modal-content {
+    background: white; padding: 30px; border-radius: 8px; width: 400px;
+    text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+}
+.lesson-card {
+    background: #e8f0fe; padding: 15px; border-radius: 8px; margin: 20px 0;
+    text-align: left; color: #1967d2;
+}
+.btn-primary {
+    background: #1a73e8; color: white; border: none; padding: 10px 20px;
+    border-radius: 4px; cursor: pointer; font-weight: bold;
 }
