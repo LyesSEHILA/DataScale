@@ -266,3 +266,100 @@ body {
     background: #1a73e8; color: white; border: none; padding: 10px 20px;
     border-radius: 4px; cursor: pointer; font-weight: bold;
 }
+
+#scan-overlay {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(10, 25, 47, 0.95); /* Fond bleu nuit très sombre */
+    z-index: 2500; /* Au-dessus de tout */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(5px);
+}
+
+/* Le Cercle du Radar */
+.radar-container {
+    position: relative;
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    border: 2px solid #00ff00; /* Vert Hacker */
+    box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+    background: 
+        /* Grille circulaire */
+        repeating-radial-gradient(
+            transparent 0, 
+            transparent 49px, 
+            rgba(0, 255, 0, 0.2) 50px
+        ),
+        /* Lignes croisées */
+        linear-gradient(
+            90deg, 
+            transparent 49.5%, 
+            rgba(0, 255, 0, 0.4) 50%, 
+            transparent 50.5%
+        ),
+        linear-gradient(
+            0deg, 
+            transparent 49.5%, 
+            rgba(0, 255, 0, 0.4) 50%, 
+            transparent 50.5%
+        );
+}
+
+/* Le Faisceau qui tourne (Sweep) */
+.radar-sweep {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    border-radius: 50%;
+    background: conic-gradient(
+        from 0deg, 
+        transparent 0deg, 
+        rgba(0, 255, 0, 0.1) 60deg, 
+        rgba(0, 255, 0, 0.8) 90deg, 
+        transparent 91deg
+    );
+    animation: radar-spin 2s linear infinite;
+    box-shadow: inset 0 0 20px rgba(0, 255, 0, 0.3);
+}
+
+/* Points détectés (Blips) */
+.radar-blip {
+    position: absolute;
+    width: 10px; height: 10px;
+    background: #ff0000; /* Point rouge = menace */
+    border-radius: 50%;
+    box-shadow: 0 0 10px #ff0000;
+    opacity: 0;
+    animation: blip-pulse 2s infinite;
+}
+
+/* Texte sous le radar */
+.scan-text {
+    margin-top: 30px;
+    font-family: 'Courier New', monospace;
+    font-size: 1.5rem;
+    color: #00ff00;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    animation: text-flicker 1.5s infinite alternate;
+}
+
+/* --- KEYFRAMES --- */
+@keyframes radar-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes blip-pulse {
+    0% { opacity: 0; transform: scale(0.5); }
+    50% { opacity: 1; transform: scale(1.5); }
+    100% { opacity: 0; transform: scale(0.5); }
+}
+
+@keyframes text-flicker {
+    0% { opacity: 1; text-shadow: 0 0 10px #00ff00; }
+    100% { opacity: 0.5; text-shadow: none; }
+}

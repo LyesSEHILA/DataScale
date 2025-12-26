@@ -61,8 +61,6 @@ async function startChallengeAndConnect(term) {
 
         if (!response.ok) throw new Error("Erreur lors du démarrage du conteneur (API).");
 
-        // --- CORRECTION ICI ---
-        // Le backend renvoie du JSON {"containerId": "..."} et non du texte brut
         const data = await response.json(); 
         const containerId = data.containerId; 
 
@@ -71,17 +69,26 @@ async function startChallengeAndConnect(term) {
         term.write(`Conteneur prêt. ID: ${containerId.substring(0, 8)}...\r\n`);
         term.write('Connexion WebSocket sécurisée... \r\n');
 
-        // 4. Connexion WebSocket
         const socket = new WebSocket(`ws://localhost:8080/ws/terminal?containerId=${containerId}`);
+        
+        // Déclaration unique de l'écouteur de messages
+        socket.onmessage = (event) => {
+            const text = event.data;
+            
+            // 1. On écrit dans le terminal
+            term.write(text);
+
+            // 2. ESPION : On détecte la victoire
+            // Note: Assurez-vous d'avoir reconstruit l'image Docker avec le script verify.sh qui fait cet echo
+            if (text.includes("::VICTORY_DETECTED::")) {
+                handleVictory(term, challengeId);
+            }
+        };
 
         socket.onopen = () => {
             term.write('\r\n\x1b[1;32m[SYSTEM] Liaison établie. Accès autorisé.\x1b[0m\r\n\r\n');
             term.focus();
             socket.send('\n'); // Force l'affichage du prompt
-        };
-
-        socket.onmessage = (event) => {
-            term.write(event.data);
         };
 
         socket.onclose = () => {
@@ -93,7 +100,7 @@ async function startChallengeAndConnect(term) {
             term.write('\r\n\x1b[1;31m[ERREUR] Impossible de joindre le serveur WebSocket.\x1b[0m');
         };
 
-        // 5. Gestion de l'écriture
+        // Gestion de l'écriture (Clavier -> WebSocket)
         term.onData(data => {
             if (socket.readyState === WebSocket.OPEN) {
                 socket.send(data);
@@ -103,5 +110,51 @@ async function startChallengeAndConnect(term) {
     } catch (error) {
         term.write(`\r\n\x1b[1;31m[ERREUR CRITIQUE] ${error.message}\x1b[0m`);
         console.error(error);
+    }
+}
+
+async function handleVictory(term, challengeId) {
+    term.write('\r\n\x1b[1;33m[SYSTEM] Validation du challenge en cours...\x1b[0m\r\n');
+
+    try {
+        // CORRECTION MAJEURE ICI : On récupère l'ID utilisateur
+        const userIdStr = localStorage.getItem('userId');
+        
+        if (!userIdStr) {
+            term.write('\x1b[1;31m[ERREUR] Utilisateur non identifié.\x1b[0m');
+            return;
+        }
+
+        const userId = parseInt(userIdStr); // Conversion en entier pour le Backend
+        const flagSecret = "CTF{LINUX_MASTER_2025}"; 
+
+        const response = await fetch('http://localhost:8080/api/arena/validate', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 
+                userId: userId,        // <-- C'était le chaînon manquant !
+                challengeId: challengeId, 
+                flag: flagSecret 
+            })
+        });
+
+        if (response.ok) {
+            term.write('\x1b[1;32m[SYSTEM] Challenge validé ! Redirection...\x1b[0m');
+            
+            // Petite pause pour laisser l'utilisateur lire le message vert
+            setTimeout(() => {
+                window.location.href = "challenges.html?success=true";
+            }, 2000);
+        } else {
+            const errorData = await response.json();
+            console.error("Erreur validation:", errorData);
+            term.write(`\x1b[1;31m[ERREUR] Validation refusée par le serveur : ${errorData.message}\x1b[0m`);
+        }
+
+    } catch (e) {
+        console.error(e);
+        term.write('\x1b[1;31m[ERREUR] Problème de connexion au serveur.\x1b[0m');
     }
 }

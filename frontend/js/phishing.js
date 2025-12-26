@@ -159,8 +159,22 @@ function updateCounterUI() {
 function checkVictory() {
     // La victoire n'est possible que si totalTraps a été chargé (> 0)
     if (totalTraps > 0 && trapsFound >= totalTraps) {
+        
+        // 1. Afficher l'animation Radar
+        const scanOverlay = document.getElementById('scan-overlay');
+        scanOverlay.classList.remove('hidden');
+
+        // 2. Attendre 3 secondes avant d'afficher le résultat final
         setTimeout(() => {
+            // Cacher le radar
+            scanOverlay.classList.add('hidden');
+            
+            // Afficher la modale de victoire
             document.getElementById('victory-modal').classList.remove('hidden');
-        }, 800);
+            
+            // Son de succès (optionnel)
+            // new Audio('assets/sounds/success.mp3').play().catch(() => {}); 
+            
+        }, 3000); 
     }
 }
