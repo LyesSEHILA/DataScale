@@ -6,21 +6,24 @@ import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.AttachContainerCmd;
 import com.github.dockerjava.api.model.Frame;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+@Component
 public class TerminalWebSocketHandler extends TextWebSocketHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(TerminalWebSocketHandler.class);
@@ -30,7 +33,6 @@ public class TerminalWebSocketHandler extends TextWebSocketHandler {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    // On garde une map pour stocker les Streams d'entrée de chaque session active
     // SessionID -> OutputStream vers Docker
     private final Map<String, PipedOutputStream> activeOutputStreams = new ConcurrentHashMap<>();
     
@@ -39,9 +41,7 @@ public class TerminalWebSocketHandler extends TextWebSocketHandler {
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
-        // 1. Récupérer l'ID du conteneur depuis l'URL (ex: ws://localhost:8080/ws/terminal?containerId=xxx)
-        String query = session.getUri().getQuery();
-        String containerId = getQueryParam(query, "containerId");
+        String containerId = getContainerId(session);
 
         if (containerId == null) {
             session.close(CloseStatus.BAD_DATA);
@@ -53,6 +53,7 @@ public class TerminalWebSocketHandler extends TextWebSocketHandler {
         
         activeOutputStreams.put(session.getId(), wsToDocker);
 
+        // On branche le tuyau d'entrée (Stdin) ICI
         AttachContainerCmd attachCmd = dockerClient.attachContainerCmd(containerId)
                 .withStdErr(true)
                 .withStdOut(true)
@@ -63,7 +64,6 @@ public class TerminalWebSocketHandler extends TextWebSocketHandler {
             @Override
             public void onNext(Frame item) {
                 try {
-                    // On envoie le texte brut au Frontend
                     if (session.isOpen()) {
                         session.sendMessage(new TextMessage(new String(item.getPayload(), StandardCharsets.UTF_8)));
                     }
@@ -87,32 +87,44 @@ public class TerminalWebSocketHandler extends TextWebSocketHandler {
     }
 
     @Override
-    protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
+    protected void handleTextMessage(WebSocketSession session, TextMessage message) {
         String payload = message.getPayload();
         PipedOutputStream dockerInput = activeOutputStreams.get(session.getId());
 
         if (dockerInput == null) return;
 
-        if (payload.startsWith("{") && payload.contains("cols")) {
-            try {
-                JsonNode json = objectMapper.readTree(payload);
-                if (json.has("type") && "resize".equals(json.get("type").asText())) {
-                    String containerId = getQueryParam(session.getUri().getQuery(), "containerId");
-                    int rows = json.get("rows").asInt();
-                    int cols = json.get("cols").asInt();
+        try {
+            boolean isCommand = false;
 
-                    dockerClient.resizeContainerCmd(containerId)
-                            .withSize(cols, rows)
-                            .exec();
+            // 1. On regarde si ça ressemble à une commande JSON (resize)
+            if (payload.trim().startsWith("{")) {
+                try {
+                    JsonNode node = objectMapper.readTree(payload);
+                    if (node.has("type") && "resize".equals(node.get("type").asText())) {
+                        String containerId = getContainerId(session);
+                        if (containerId != null) {
+                            int rows = node.has("rows") ? node.get("rows").asInt() : 24;
+                            int cols = node.has("cols") ? node.get("cols").asInt() : 80;
                             
-                    return; 
+                            // CORRECTION ICI : Inversion rows/cols -> withSize(cols, rows)
+                            dockerClient.resizeContainerCmd(containerId).withSize(cols, rows).exec();
+                        }
+                        isCommand = true; 
+                    }
+                } catch (Exception ignored) {
+                    // Pas du JSON valide, on ignore
                 }
-            } catch (Exception e) {
-
             }
+
+            // 2. Si ce n'était pas une commande système, on envoie au conteneur
+            if (!isCommand) {
+                dockerInput.write(payload.getBytes(StandardCharsets.UTF_8));
+                dockerInput.flush();
+            }
+
+        } catch (IOException e) {
+            logger.error("Erreur écriture vers Docker", e);
         }
-        dockerInput.write(payload.getBytes(StandardCharsets.UTF_8));
-        dockerInput.flush();
     }
 
     @Override
@@ -120,17 +132,32 @@ public class TerminalWebSocketHandler extends TextWebSocketHandler {
         String sessionId = session.getId();
         
         if (activeOutputStreams.containsKey(sessionId)) {
-            activeOutputStreams.get(sessionId).close();
+            try {
+                activeOutputStreams.get(sessionId).close();
+            } catch (IOException e) {
+                // ignore
+            }
             activeOutputStreams.remove(sessionId);
         }
         
         if (activeCallbacks.containsKey(sessionId)) {
-            activeCallbacks.get(sessionId).close();
+            try {
+                activeCallbacks.get(sessionId).close();
+            } catch (IOException e) {
+                // ignore
+            }
             activeCallbacks.remove(sessionId);
         }
     }
 
-    // Utilitaire simple pour parser la Query String (?containerId=123)
+    private String getContainerId(WebSocketSession session) {
+        try {
+            return getQueryParam(session.getUri().getQuery(), "containerId");
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     private String getQueryParam(String query, String param) {
         if (query == null) return null;
         for (String pair : query.split("&")) {
