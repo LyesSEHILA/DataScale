@@ -14,10 +14,11 @@ import java.util.Locale;
 @Service
 public class LogGenerator {
 
-    public static final int TOTAL_LOGS = 500;
-    public static final int ANOMALY_LOGS = 50;
-    public static final String TARGET_URL = "/admin/secret_config.php";
-    public static final int ANOMALY_STATUS = 404;
+    static final int TOTAL_LOGS = 500;
+    static final int ANOMALY_LOGS = 50;
+    static final String DEFAULT_ATTACKER_IP = "192.168.1.66";
+    static final String TARGET_URL = "/admin/secret_config.php";
+    static final int ANOMALY_STATUS = 404;
 
     private static final int HISTORY_WINDOW_MINUTES = 30;
     private static final int ATTACK_DELAY_MINUTES = 15;
@@ -68,7 +69,8 @@ public class LogGenerator {
             String timestamp = formatApacheDate(logTime);
             
             String anomalyLog = String.format("%s - - [%s] \"GET %s HTTP/1.1\" %d %d",
-                    attackerIp, timestamp, TARGET_URL, ANOMALY_STATUS, ANOMALY_PACKET_SIZE);
+                    attackerIp != null ? attackerIp : DEFAULT_ATTACKER_IP, 
+                    timestamp, TARGET_URL, ANOMALY_STATUS, ANOMALY_PACKET_SIZE);
             
             logs.add(anomalyLog);
         }

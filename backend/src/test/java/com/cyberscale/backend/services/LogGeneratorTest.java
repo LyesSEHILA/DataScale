@@ -17,7 +17,7 @@ class LogGeneratorTest {
     @BeforeEach
     void setUp() {
         logGenerator = new LogGenerator();
-        logGenerator.setAttackerIp("192.168.1.66");
+        logGenerator.setAttackerIp(LogGenerator.DEFAULT_ATTACKER_IP);
     }
 
     @Test
@@ -32,7 +32,6 @@ class LogGeneratorTest {
     void generateLogs_ShouldContainAnomalySequence() {
         List<String> logs = logGenerator.generateLogs();
 
-        // On récupère l'IP configurée dynamiquement
         String currentAttackerIp = logGenerator.getAttackerIp();
 
         long anomalyCount = logs.stream()
