@@ -17,7 +17,7 @@ class LogGeneratorTest {
     @BeforeEach
     void setUp() {
         logGenerator = new LogGenerator();
-        logGenerator.setAttackerIp("192.168.1.66"); 
+        logGenerator.setAttackerIp("192.168.1.66");
     }
 
     @Test
@@ -32,11 +32,11 @@ class LogGeneratorTest {
     void generateLogs_ShouldContainAnomalySequence() {
         List<String> logs = logGenerator.generateLogs();
 
-        // On utilise le getter car l'IP n'est plus une constante statique
-        String expectedIp = logGenerator.getAttackerIp();
+        // On récupère l'IP configurée dynamiquement
+        String currentAttackerIp = logGenerator.getAttackerIp();
 
         long anomalyCount = logs.stream()
-                .filter(line -> line.contains(expectedIp))
+                .filter(line -> line.contains(currentAttackerIp))
                 .filter(line -> line.contains(String.valueOf(LogGenerator.ANOMALY_STATUS)))
                 .filter(line -> line.contains(LogGenerator.TARGET_URL))
                 .count();
@@ -48,7 +48,6 @@ class LogGeneratorTest {
     void generateLogs_ShouldBeValidApacheFormat() {
         List<String> logs = logGenerator.generateLogs();
         String firstLog = logs.get(0);
-
 
         String safeRegex = "^\\d{1,3}(\\.\\d{1,3}){3} - - \\[[^\\]]*\\] \"[^\"]*\" \\d{3} \\d+$";
         

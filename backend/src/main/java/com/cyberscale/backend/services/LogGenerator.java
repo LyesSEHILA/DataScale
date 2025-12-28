@@ -1,6 +1,6 @@
 package com.cyberscale.backend.services;
 
-import org.springframework.beans.factory.annotation.Value; // Import nécessaire
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
@@ -38,10 +38,16 @@ public class LogGenerator {
 
     private final SecureRandom random = new SecureRandom();
 
-    // Injection de la valeur depuis application.properties
-    // Valeur par défaut : 192.168.1.66 si non trouvée
-    @Value("${cyberscale.logs.attacker-ip:192.168.1.66}")
+    @Value("${cyberscale.simulation.attacker-ip:192.168.1.66}") 
     private String attackerIp;
+
+    public void setAttackerIp(String attackerIp) {
+        this.attackerIp = attackerIp;
+    }
+    
+    public String getAttackerIp() {
+        return attackerIp;
+    }
 
     public List<String> generateLogs() {
         List<String> logs = new ArrayList<>();
@@ -61,7 +67,6 @@ public class LogGenerator {
             LocalDateTime logTime = attackStartTime.plusSeconds(i + (long)random.nextInt(2));
             String timestamp = formatApacheDate(logTime);
             
-            // Utilisation de la variable injectée 'attackerIp' au lieu de la constante
             String anomalyLog = String.format("%s - - [%s] \"GET %s HTTP/1.1\" %d %d",
                     attackerIp, timestamp, TARGET_URL, ANOMALY_STATUS, ANOMALY_PACKET_SIZE);
             
@@ -70,14 +75,6 @@ public class LogGenerator {
 
         logs.sort(Comparator.comparing(this::extractDateFromLog));
         return logs;
-    }
-
-    public String getAttackerIp() {
-        return attackerIp;
-    }
-
-    public void setAttackerIp(String attackerIp) {
-        this.attackerIp = attackerIp;
     }
 
     private String generateRandomLogEntry(LocalDateTime time) {
