@@ -21,24 +21,28 @@ class LogGeneratorTest {
 
     @Test
     void generateLogs_ShouldReturnCorrectNumberOfLogs() {
+        // WHEN
         List<String> logs = logGenerator.generateLogs();
         
+        // THEN
         assertNotNull(logs);
-        assertEquals(500, logs.size());
+        // Accès autorisé car package-private
+        assertEquals(LogGenerator.TOTAL_LOGS, logs.size());
     }
 
     @Test
     void generateLogs_ShouldContainAnomalySequence() {
+        // WHEN
         List<String> logs = logGenerator.generateLogs();
 
-        // On compte combien de lignes correspondent exactement au scénario d'attaque
+        // THEN
         long anomalyCount = logs.stream()
-                .filter(line -> line.contains("192.168.1.66")) // IP Attaquant
-                .filter(line -> line.contains("404"))          // Code Erreur
-                .filter(line -> line.contains("/admin/secret_config.php")) // Cible
+                .filter(line -> line.contains(LogGenerator.ATTACKER_IP))
+                .filter(line -> line.contains(String.valueOf(LogGenerator.ANOMALY_STATUS)))
+                .filter(line -> line.contains(LogGenerator.TARGET_URL))
                 .count();
 
-        assertEquals(50, anomalyCount);
+        assertEquals(LogGenerator.ANOMALY_LOGS, anomalyCount);
     }
 
     @Test
@@ -46,8 +50,6 @@ class LogGeneratorTest {
         List<String> logs = logGenerator.generateLogs();
         String firstLog = logs.get(0);
 
-        // Regex basique pour vérifier la structure : IP - - [Date] "REQ" Status Size
-        // Ex: 10.0.0.1 - - [10/Oct/2000:13:55:36 +0000] "GET /foo HTTP/1.1" 200 123
         boolean matches = firstLog.matches("^\\d{1,3}(\\.\\d{1,3}){3} - - \\[.*\\] \".*\" \\d{3} \\d+$");
         
         assertTrue(matches);
