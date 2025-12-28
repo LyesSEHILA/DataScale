@@ -16,7 +16,9 @@ public class LogGenerator {
 
     static final int TOTAL_LOGS = 500;
     static final int ANOMALY_LOGS = 50;
-    static final String DEFAULT_ATTACKER_IP = "192.168.1.66";
+    
+    static final String DEFAULT_ATTACKER_IP = "192.0.2.66"; 
+    
     static final String TARGET_URL = "/admin/secret_config.php";
     static final int ANOMALY_STATUS = 404;
 
@@ -39,7 +41,7 @@ public class LogGenerator {
 
     private final SecureRandom random = new SecureRandom();
 
-    @Value("${cyberscale.simulation.attacker-ip:192.168.1.66}") 
+    @Value("${cyberscale.simulation.attacker-ip:192.0.2.66}") 
     private String attackerIp;
 
     public void setAttackerIp(String attackerIp) {
@@ -68,9 +70,10 @@ public class LogGenerator {
             LocalDateTime logTime = attackStartTime.plusSeconds(i + (long)random.nextInt(2));
             String timestamp = formatApacheDate(logTime);
             
+            String currentIp = (attackerIp != null) ? attackerIp : DEFAULT_ATTACKER_IP;
+
             String anomalyLog = String.format("%s - - [%s] \"GET %s HTTP/1.1\" %d %d",
-                    attackerIp != null ? attackerIp : DEFAULT_ATTACKER_IP, 
-                    timestamp, TARGET_URL, ANOMALY_STATUS, ANOMALY_PACKET_SIZE);
+                    currentIp, timestamp, TARGET_URL, ANOMALY_STATUS, ANOMALY_PACKET_SIZE);
             
             logs.add(anomalyLog);
         }
