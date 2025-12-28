@@ -1,5 +1,6 @@
 package com.cyberscale.backend.services;
 
+import org.springframework.beans.factory.annotation.Value; // Import nécessaire
 import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
@@ -13,11 +14,10 @@ import java.util.Locale;
 @Service
 public class LogGenerator {
 
-    static final int TOTAL_LOGS = 500;
-    static final int ANOMALY_LOGS = 50;
-    static final String ATTACKER_IP = "192.168.1.66";
-    static final String TARGET_URL = "/admin/secret_config.php";
-    static final int ANOMALY_STATUS = 404;
+    public static final int TOTAL_LOGS = 500;
+    public static final int ANOMALY_LOGS = 50;
+    public static final String TARGET_URL = "/admin/secret_config.php";
+    public static final int ANOMALY_STATUS = 404;
 
     private static final int HISTORY_WINDOW_MINUTES = 30;
     private static final int ATTACK_DELAY_MINUTES = 15;
@@ -38,10 +38,14 @@ public class LogGenerator {
 
     private final SecureRandom random = new SecureRandom();
 
+    // Injection de la valeur depuis application.properties
+    // Valeur par défaut : 192.168.1.66 si non trouvée
+    @Value("${cyberscale.logs.attacker-ip:192.168.1.66}")
+    private String attackerIp;
+
     public List<String> generateLogs() {
         List<String> logs = new ArrayList<>();
 
-        // Bruit de fond
         int noiseLogs = TOTAL_LOGS - ANOMALY_LOGS;
         LocalDateTime baseTime = LocalDateTime.now().minusMinutes(HISTORY_WINDOW_MINUTES);
         
@@ -51,23 +55,29 @@ public class LogGenerator {
             logs.add(generateRandomLogEntry(logTime));
         }
 
-        // Anomalie
         LocalDateTime attackStartTime = LocalDateTime.now().minusMinutes(ATTACK_DELAY_MINUTES);
 
         for (int i = 0; i < ANOMALY_LOGS; i++) {
             LocalDateTime logTime = attackStartTime.plusSeconds(i + (long)random.nextInt(2));
             String timestamp = formatApacheDate(logTime);
             
+            // Utilisation de la variable injectée 'attackerIp' au lieu de la constante
             String anomalyLog = String.format("%s - - [%s] \"GET %s HTTP/1.1\" %d %d",
-                    ATTACKER_IP, timestamp, TARGET_URL, ANOMALY_STATUS, ANOMALY_PACKET_SIZE);
+                    attackerIp, timestamp, TARGET_URL, ANOMALY_STATUS, ANOMALY_PACKET_SIZE);
             
             logs.add(anomalyLog);
         }
 
-        // Tri
         logs.sort(Comparator.comparing(this::extractDateFromLog));
-
         return logs;
+    }
+
+    public String getAttackerIp() {
+        return attackerIp;
+    }
+
+    public void setAttackerIp(String attackerIp) {
+        this.attackerIp = attackerIp;
     }
 
     private String generateRandomLogEntry(LocalDateTime time) {

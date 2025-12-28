@@ -17,27 +17,26 @@ class LogGeneratorTest {
     @BeforeEach
     void setUp() {
         logGenerator = new LogGenerator();
+        logGenerator.setAttackerIp("192.168.1.66"); 
     }
 
     @Test
     void generateLogs_ShouldReturnCorrectNumberOfLogs() {
-        // WHEN
         List<String> logs = logGenerator.generateLogs();
         
-        // THEN
         assertNotNull(logs);
-        // Accès autorisé car package-private
         assertEquals(LogGenerator.TOTAL_LOGS, logs.size());
     }
 
     @Test
     void generateLogs_ShouldContainAnomalySequence() {
-        // WHEN
         List<String> logs = logGenerator.generateLogs();
 
-        // THEN
+        // On utilise le getter car l'IP n'est plus une constante statique
+        String expectedIp = logGenerator.getAttackerIp();
+
         long anomalyCount = logs.stream()
-                .filter(line -> line.contains(LogGenerator.ATTACKER_IP))
+                .filter(line -> line.contains(expectedIp))
                 .filter(line -> line.contains(String.valueOf(LogGenerator.ANOMALY_STATUS)))
                 .filter(line -> line.contains(LogGenerator.TARGET_URL))
                 .count();
@@ -50,7 +49,10 @@ class LogGeneratorTest {
         List<String> logs = logGenerator.generateLogs();
         String firstLog = logs.get(0);
 
-        boolean matches = firstLog.matches("^\\d{1,3}(\\.\\d{1,3}){3} - - \\[.*\\] \".*\" \\d{3} \\d+$");
+
+        String safeRegex = "^\\d{1,3}(\\.\\d{1,3}){3} - - \\[[^\\]]*\\] \"[^\"]*\" \\d{3} \\d+$";
+        
+        boolean matches = firstLog.matches(safeRegex);
         
         assertTrue(matches);
         assertFalse(firstLog.isEmpty());
