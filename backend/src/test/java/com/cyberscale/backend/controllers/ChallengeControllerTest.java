@@ -37,6 +37,8 @@ class ChallengeControllerTest {
     @MockitoBean 
     private LogGenerator logGenerator;
 
+    private static final String TEST_IP = "192.168.1.1";
+
     @Test
     void testGetAllChallenges() throws Exception {
         ChallengeDTO c1 = new ChallengeDTO("C1", "Intro", "Desc", 10, "FACILE", true);
@@ -75,7 +77,7 @@ class ChallengeControllerTest {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(2)))
-                .andExpect(jsonPath("$[0]", containsString("192.168.1.1")));
+                .andExpect(jsonPath("$[0]", containsString("TEST_IP")));
     }
 
     @Test
