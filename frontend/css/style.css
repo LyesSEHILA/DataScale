@@ -1,39 +1,35 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f0f2f5;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    margin: 0;
+    font-family: 'Inter', sans-serif;
+    background-color: #0f172a; /* Slate 900 */
+    color: #e2e8f0; /* Slate 200 */
 }
 
-.container {
-    background: white;
-    padding: 2rem;
-    border-radius: 10px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    width: 100%;
-    max-width: 400px;
-    text-align: center;
+/* Scrollbar personnalisée "Cyber" */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: #0f172a; 
+}
+::-webkit-scrollbar-thumb {
+    background: #334155; 
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #475569; 
 }
 
-h1 { color: #2c3e50; margin-bottom: 0.5rem; }
-p { color: #7f8c8d; margin-bottom: 2rem; }
-
-.form-group { margin-bottom: 1.5rem; text-align: left; }
-label { display: block; margin-bottom: 0.5rem; font-weight: bold; }
-input[type="number"], input[type="range"] { width: 100%; }
-
-button {
-    background-color: #3498db;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 5px;
-    cursor: pointer;
-    width: 100%;
-    font-size: 1rem;
-    transition: background 0.3s;
+/* Classes utilitaires pour le texte "Code" */
+.font-mono {
+    font-family: 'JetBrains Mono', monospace;
 }
-button:hover { background-color: #2980b9; }
+
+/* Effet Glassmorphism pour les cartes */
+.glass-panel {
+    background: rgba(30, 41, 59, 0.7); /* Slate 800 avec transparence */
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}

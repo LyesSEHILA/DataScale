@@ -3,133 +3,148 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mon Dashboard - CyberScale</title>
+    <title>Dashboard - CyberScale</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Inter', sans-serif; }
-        /* Scrollbar personnalisée pour le tableau */
-        .custom-scrollbar::-webkit-scrollbar { height: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
-    </style>
+    <link rel="stylesheet" href="css/style.css">
 </head>
-<body class="bg-gray-50 h-screen flex overflow-hidden">
+<body class="bg-slate-900 h-screen flex overflow-hidden text-slate-200">
 
-    <aside class="w-64 bg-white border-r border-gray-200 hidden md:flex flex-col">
-        <div class="p-6 border-b border-gray-100">
-            <div class="flex items-center gap-2 text-blue-600">
+    <aside class="w-64 bg-slate-800 border-r border-slate-700 hidden md:flex flex-col">
+        <div class="p-6 border-b border-slate-700">
+            <div class="flex items-center gap-3 text-blue-400">
                 <i class="fas fa-shield-alt text-2xl"></i>
-                <span class="text-xl font-bold">CyberScale</span>
+                <span class="text-xl font-bold tracking-wider text-white">CyberScale</span>
             </div>
         </div>
         
-        <nav class="flex-1 p-4 space-y-1">
-            <a href="#" class="flex items-center gap-3 px-4 py-3 text-blue-600 bg-blue-50 rounded-xl font-medium transition">
+        <nav class="flex-1 p-4 space-y-2">
+            <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 bg-blue-600/10 text-blue-400 border border-blue-600/20 rounded-xl font-medium transition-all">
                 <i class="fas fa-chart-pie w-5"></i> Tableau de bord
             </a>
-            <a href="quiz-intro.html" class="flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition">
-                <i class="fas fa-play-circle w-5"></i> Nouveau Quiz
+            
+            <p class="px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider mt-6 mb-2">Entraînement</p>
+            
+            <a href="challenges.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-700/50 hover:text-white rounded-xl transition-all">
+                <i class="fas fa-flag w-5"></i> Challenges CTF
             </a>
-            <a href="certifs.html" class="flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition">
+            <a href="arena.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-700/50 hover:text-white rounded-xl transition-all">
+                <i class="fas fa-terminal w-5"></i> Terminal Arena
+            </a>
+            <a href="investigation.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-700/50 hover:text-white rounded-xl transition-all">
+                <i class="fas fa-search w-5"></i> Investigation
+            </a>
+            <a href="phishing.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-700/50 hover:text-white rounded-xl transition-all">
+                <i class="fas fa-envelope w-5"></i> Phishing Sim
+            </a>
+
+            <p class="px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider mt-6 mb-2">Évaluation</p>
+
+            <a href="quiz-intro.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-700/50 hover:text-white rounded-xl transition-all">
+                <i class="fas fa-graduation-cap w-5"></i> Quiz
+            </a>
+            <a href="certifs.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-700/50 hover:text-white rounded-xl transition-all">
                 <i class="fas fa-certificate w-5"></i> Certifications
             </a>
-            <a href="arena.html" class="flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition">
-                <i class="fas fa-laptop-code w-5"></i> Training Arena
-            </a>
-            <a href="challenges.html" class="flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition">
-                <i class="fas fa-flag w-5"></i> Challenges
-            </a>
-            <a href="phishing.html" class="flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition">
-                <i class="fas fa-envelope-open-text"></i> Phishing Simulation
-            </a>
-
         </nav>
 
-        <div class="p-4 border-t border-gray-100">
-            <div class="flex items-center gap-3 px-4 py-3">
-                <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
-                    <i class="fas fa-user"></i>
+        <div class="p-4 border-t border-slate-700 bg-slate-800/50">
+            <div class="flex items-center gap-3 px-2">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold shadow-lg">
+                    <i class="fas fa-user-astronaut"></i>
                 </div>
                 <div class="flex-1 min-w-0">
-                    <p class="text-sm font-medium text-gray-900 truncate" id="sidebarUsername">Utilisateur</p>
-                    <p class="text-xs text-gray-500 truncate">Membre</p>
+                    <p class="text-sm font-medium text-white truncate" id="sidebarUsername">Agent</p>
+                    <p class="text-xs text-slate-400 truncate">En ligne</p>
                 </div>
-                <button id="logoutBtn" class="text-gray-400 hover:text-red-500 transition" title="Déconnexion">
-                    <i class="fas fa-sign-out-alt"></i>
+                <button id="logoutBtn" class="text-slate-400 hover:text-red-400 transition-colors p-2" title="Déconnexion">
+                    <i class="fas fa-power-off"></i>
                 </button>
             </div>
         </div>
     </aside>
 
-    <div class="flex-1 flex flex-col overflow-hidden">
+    <div class="flex-1 flex flex-col overflow-hidden bg-slate-900">
         
-        <header class="bg-white shadow-sm md:hidden flex items-center justify-between p-4">
-            <span class="font-bold text-blue-600">CyberScale</span>
-            <button id="mobileMenuBtn" class="text-gray-600"><i class="fas fa-bars"></i></button>
+        <header class="bg-slate-800 border-b border-slate-700 md:hidden flex items-center justify-between p-4">
+            <span class="font-bold text-white">CyberScale</span>
+            <button id="mobileMenuBtn" class="text-slate-300"><i class="fas fa-bars"></i></button>
         </header>
 
-        <main class="flex-1 overflow-y-auto p-4 md:p-8">
+        <main class="flex-1 overflow-y-auto p-6 md:p-8">
             
             <div class="mb-8">
-                <h1 class="text-2xl md:text-3xl font-bold text-gray-800">
-                    Bonjour, <span class="text-blue-600" id="headerPseudo">...</span> 👋
+                <h1 class="text-3xl font-bold text-white">
+                    Rapport de situation <span class="text-blue-500 text-base font-normal ml-2 font-mono" id="headerPseudo">...</span>
                 </h1>
-                <p class="text-gray-500 mt-1">Voici un aperçu de votre progression en cybersécurité.</p>
+                <p class="text-slate-400 mt-2">Vue d'ensemble de vos performances et activités récentes.</p>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-medium text-gray-500">Total Quiz</p>
-                        <p class="text-3xl font-bold text-gray-900 mt-1" id="totalTests">0</p>
+                
+                <div class="glass-panel p-6 rounded-2xl relative overflow-hidden group hover:border-blue-500/30 transition-all">
+                    <div class="absolute right-0 top-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl -mr-16 -mt-16 transition-all group-hover:bg-blue-500/20"></div>
+                    <div class="relative z-10">
+                        <p class="text-sm font-medium text-slate-400 uppercase tracking-wide">Quiz Complétés</p>
+                        <div class="flex items-baseline gap-2 mt-2">
+                            <p class="text-4xl font-bold text-white" id="totalTests">0</p>
+                            <span class="text-sm text-green-400"><i class="fas fa-arrow-up"></i> +2</span>
+                        </div>
                     </div>
-                    <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center text-xl">
+                    <div class="absolute bottom-4 right-4 text-blue-500/20 text-4xl transform group-hover:scale-110 transition-transform">
                         <i class="fas fa-list-check"></i>
                     </div>
                 </div>
 
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-medium text-gray-500">Moyenne Théorie</p>
-                        <p class="text-3xl font-bold text-gray-900 mt-1" id="avgTheory">-</p>
+                <div class="glass-panel p-6 rounded-2xl relative overflow-hidden group hover:border-purple-500/30 transition-all">
+                    <div class="absolute right-0 top-0 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl -mr-16 -mt-16 transition-all group-hover:bg-purple-500/20"></div>
+                    <div class="relative z-10">
+                        <p class="text-sm font-medium text-slate-400 uppercase tracking-wide">Score Théorique</p>
+                        <div class="flex items-baseline gap-2 mt-2">
+                            <p class="text-4xl font-bold text-white" id="avgTheory">-</p>
+                            <span class="text-sm text-purple-400">%</span>
+                        </div>
                     </div>
-                    <div class="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center text-xl">
-                        <i class="fas fa-book"></i>
+                    <div class="absolute bottom-4 right-4 text-purple-500/20 text-4xl transform group-hover:scale-110 transition-transform">
+                        <i class="fas fa-brain"></i>
                     </div>
                 </div>
 
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-medium text-gray-500">Moyenne Technique</p>
-                        <p class="text-3xl font-bold text-gray-900 mt-1" id="avgTech">-</p>
+                <div class="glass-panel p-6 rounded-2xl relative overflow-hidden group hover:border-teal-500/30 transition-all">
+                    <div class="absolute right-0 top-0 w-32 h-32 bg-teal-500/10 rounded-full blur-2xl -mr-16 -mt-16 transition-all group-hover:bg-teal-500/20"></div>
+                    <div class="relative z-10">
+                        <p class="text-sm font-medium text-slate-400 uppercase tracking-wide">Score Technique</p>
+                        <div class="flex items-baseline gap-2 mt-2">
+                            <p class="text-4xl font-bold text-white" id="avgTech">-</p>
+                            <span class="text-sm text-teal-400">%</span>
+                        </div>
                     </div>
-                    <div class="w-12 h-12 bg-teal-50 text-teal-600 rounded-xl flex items-center justify-center text-xl">
-                        <i class="fas fa-code"></i>
+                    <div class="absolute bottom-4 right-4 text-teal-500/20 text-4xl transform group-hover:scale-110 transition-transform">
+                        <i class="fas fa-terminal"></i>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                <div class="p-6 border-b border-gray-100 flex justify-between items-center">
-                    <h2 class="text-lg font-bold text-gray-800">Historique des Sessions</h2>
-                    <a href="quiz-intro.html" class="text-sm font-medium text-blue-600 hover:text-blue-800 transition">
-                        + Nouveau Test
+            <div class="glass-panel rounded-2xl overflow-hidden shadow-lg">
+                <div class="p-6 border-b border-slate-700/50 flex justify-between items-center bg-slate-800/30">
+                    <h2 class="text-lg font-bold text-white"><i class="fas fa-history mr-2 text-slate-400"></i>Historique des opérations</h2>
+                    <a href="quiz-intro.html" class="px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors shadow-lg shadow-blue-600/20">
+                        Lancer une opération
                     </a>
                 </div>
                 
-                <div class="overflow-x-auto custom-scrollbar">
+                <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
                         <thead>
-                                <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
+                            <tr class="bg-slate-800/50 text-slate-400 text-xs uppercase tracking-wider">
                                 <th class="px-6 py-4 font-semibold">Date</th>
-                                <th class="px-6 py-4 font-semibold">Activité</th> 
+                                <th class="px-6 py-4 font-semibold">Type de Mission</th> 
                                 <th class="px-6 py-4 font-semibold">Score</th>    
-                                <th class="px-6 py-4 font-semibold">Statut</th>   </tr>
+                                <th class="px-6 py-4 font-semibold text-right">Statut</th>
+                            </tr>
                         </thead>
-                        <tbody id="historyBody" class="divide-y divide-gray-100 text-sm">
-                            <tr><td colspan="4" class="px-6 py-8 text-center text-gray-500">Chargement...</td></tr>
+                        <tbody id="historyBody" class="divide-y divide-slate-700/50 text-sm text-slate-300">
+                            <tr><td colspan="4" class="px-6 py-8 text-center text-slate-500 animate-pulse">Récupération des données...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -138,6 +153,6 @@
         </main>
     </div>
 
-    <script src="js/dashboard.js"></script>
+    <script src="js/auth-guard.js"></script> <script src="js/dashboard.js"></script>
 </body>
 </html>

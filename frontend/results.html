@@ -3,72 +3,130 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Résultats - CyberScale</title>
+    <title>Résultats 3D - CyberScale</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <style>body { font-family: 'Inter', sans-serif; }</style>
-</head>
-<body class="bg-gray-50 min-h-screen py-10 px-4">
-
-    <div class="max-w-4xl mx-auto">
-        <div class="text-center mb-10">
-            <h1 class="text-3xl font-extrabold text-gray-900">Vos Résultats 🎯</h1>
-            <p class="text-gray-500 mt-2">Voici votre profil de compétences cybersécurité.</p>
-        </div>
-
-        <div class="bg-white rounded-2xl shadow-md p-6 mb-8 border border-gray-100">
-            <div class="h-80 w-full relative">
-                <canvas id="resultsChart"></canvas>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
-            <div class="bg-blue-600 rounded-xl p-6 text-white text-center shadow-lg">
-                <h3 class="text-blue-100 font-semibold uppercase tracking-wider text-sm">Théorie</h3>
-                <span id="scoreTheoryDisplay" class="text-5xl font-bold block mt-2">-/10</span>
-            </div>
-            <div class="bg-red-500 rounded-xl p-6 text-white text-center shadow-lg">
-                <h3 class="text-red-100 font-semibold uppercase tracking-wider text-sm">Technique</h3>
-                <span id="scoreTechDisplay" class="text-5xl font-bold block mt-2">-/10</span>
-            </div>
-        </div>
-
-        <section class="mb-12">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">Recommandations Ciblées</h2>
-            <div id="recommendationsList" class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <p class="text-gray-500 italic col-span-3 text-center">Chargement des meilleures ressources pour vous...</p>
-            </div>
-        </section>
-
-        <div class="text-center flex justify-center gap-4">
-            <a href="dashboard.html" class="bg-gray-800 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-700 transition">
-                <i class="fas fa-columns mr-2"></i> Aller au Dashboard
-            </a>
-            <a href="quiz-intro.html" class="bg-white text-blue-600 border border-blue-600 px-6 py-3 rounded-lg font-semibold hover:bg-blue-50 transition">
-                Recommencer un test
-            </a>
-        </div>
-    </div>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
     
-    <style>
-        .reco-card {
-            background: white; border: 1px solid #e5e7eb; border-radius: 0.75rem; padding: 1.5rem;
-            transition: transform 0.2s; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            display: flex; flex-direction: column; justify-content: space-between;
-        }
-        .reco-card:hover { transform: translateY(-4px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
-        .reco-type {
-            font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: #6b7280;
-            background-color: #f3f4f6; padding: 0.25rem 0.5rem; border-radius: 9999px; align-self: start; margin-bottom: 0.75rem;
-        }
-        .reco-link {
-            margin-top: 1rem; color: #2563eb; font-weight: 600; text-decoration: none; font-size: 0.9rem;
-        }
-        .reco-link:hover { text-decoration: underline; }
-    </style>
+    <script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts-gl/dist/echarts-gl.min.js"></script>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+    </style>
+</head>
+<body class="bg-slate-900 h-screen flex overflow-hidden text-slate-200">
+
+    <aside class="w-64 bg-slate-800 border-r border-slate-700 hidden md:flex flex-col">
+        <div class="p-6 border-b border-slate-700">
+            <div class="flex items-center gap-3 text-blue-400">
+                <i class="fas fa-shield-alt text-2xl"></i>
+                <span class="text-xl font-bold tracking-wider text-white">CyberScale</span>
+            </div>
+        </div>
+        <nav class="flex-1 p-4 space-y-2">
+            <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-700/50 hover:text-white rounded-xl transition-all">
+                <i class="fas fa-chart-pie w-5"></i> Tableau de bord
+            </a>
+            <a href="quiz-intro.html" class="flex items-center gap-3 px-4 py-3 bg-blue-600/10 text-blue-400 border border-blue-600/20 rounded-xl font-medium transition-all">
+                <i class="fas fa-crosshairs w-5"></i> Quiz
+            </a>
+            <a href="certifs.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-700/50 hover:text-white rounded-xl transition-all">
+                <i class="fas fa-certificate w-5"></i> Certifications
+            </a>
+            <a href="arena.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-700/50 hover:text-white rounded-xl transition-all">
+                <i class="fas fa-laptop-code w-5"></i> Training Arena
+            </a>
+            <a href="challenges.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-700/50 hover:text-white rounded-xl transition-all">
+                <i class="fas fa-flag w-5"></i> Challenges
+            </a>
+            <a href="investigation.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-700/50 hover:text-white rounded-xl transition-all">
+                <i class="fas fa-user-secret w-5"></i> Investigation
+            </a>
+        </nav>
+        <div class="p-4 border-t border-slate-700 bg-slate-800/50">
+            <div class="flex items-center gap-3 px-2">
+                <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold shadow-lg">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-white truncate" id="sidebarUsername">Utilisateur</p>
+                    <p class="text-xs text-slate-400 truncate">Membre</p>
+                </div>
+                <button id="logoutBtn" class="text-slate-400 hover:text-red-400 transition-colors"><i class="fas fa-sign-out-alt"></i></button>
+            </div>
+        </div>
+    </aside>
+
+    <div class="flex-1 flex flex-col overflow-hidden bg-slate-900 relative">
+        <div class="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute bottom-0 left-0 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <main class="flex-1 overflow-y-auto p-8 relative z-10">
+            <div class="max-w-6xl mx-auto">
+                
+                <div class="text-center mb-10">
+                    <h1 class="text-3xl font-bold text-white mb-2">Matrice de Compétences <span class="text-blue-500">3D</span> 🧊</h1>
+                    <p class="text-slate-400">Visualisation holographique de votre profil.</p>
+                </div>
+
+                <div class="bg-slate-800/50 backdrop-blur-sm rounded-2xl shadow-2xl p-2 mb-10 border border-slate-700 relative group">
+                    <div id="resultsChart" style="width: 100%; height: 550px; border-radius: 1rem;"></div>
+                    
+                    <div class="absolute top-4 right-4 flex items-center gap-2 bg-black/60 px-3 py-1 rounded-full border border-green-500/30 backdrop-blur-md">
+                        <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                        <span class="text-xs font-mono text-green-400">INTERACTIVE VIEW</span>
+                    </div>
+                    <div class="absolute bottom-4 left-4 text-xs text-slate-500 italic">
+                        <i class="fas fa-mouse pointer-events-none mr-1"></i> Utilisez la souris pour tourner et zoomer
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+                    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 relative overflow-hidden">
+                        <div class="absolute right-0 top-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
+                        <h3 class="text-blue-400 font-bold uppercase tracking-wider text-sm mb-2">Théorie</h3>
+                        <div class="flex items-end gap-2">
+                            <span id="scoreTheoryDisplay" class="text-5xl font-bold text-white font-mono">-/10</span>
+                            <span class="text-slate-500 mb-2">pts</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 relative overflow-hidden">
+                        <div class="absolute right-0 top-0 w-32 h-32 bg-red-500/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
+                        <h3 class="text-red-400 font-bold uppercase tracking-wider text-sm mb-2">Technique</h3>
+                        <div class="flex items-end gap-2">
+                            <span id="scoreTechDisplay" class="text-5xl font-bold text-white font-mono">-/10</span>
+                            <span class="text-slate-500 mb-2">pts</span>
+                        </div>
+                    </div>
+                </div>
+
+                <section class="mb-12">
+                    <h2 class="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+                        <i class="fas fa-clipboard-list text-green-400"></i> Recommandations Ciblées
+                    </h2>
+                    <div id="recommendationsList" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <p class="text-slate-500 italic col-span-3 text-center">Chargement des meilleures ressources...</p>
+                    </div>
+                </section>
+
+                <div class="text-center flex justify-center gap-4 pb-8">
+                    <a href="dashboard.html" class="bg-slate-700 hover:bg-slate-600 text-white border border-slate-600 px-6 py-3 rounded-xl font-semibold transition">
+                        <i class="fas fa-home mr-2"></i> Dashboard
+                    </a>
+                    <a href="quiz-intro.html" class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-xl font-semibold shadow-lg shadow-blue-500/20 transition">
+                        Recommencer <i class="fas fa-redo ml-2"></i>
+                    </a>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script src="js/auth-guard.js"></script>
     <script src="js/results.js"></script>
 </body>
 </html>

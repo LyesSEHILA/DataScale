@@ -30,7 +30,7 @@ public class ExamController {
     public ResponseEntity<ExamSession> start(
             @RequestParam String candidateName, 
             @RequestParam(required = false) Long userId,
-            @RequestParam(required = false) String examRef) { // Ajout examRef
+            @RequestParam(required = false) String examRef) { 
         return ResponseEntity.ok(examService.startExam(candidateName, userId, examRef));
     }
 

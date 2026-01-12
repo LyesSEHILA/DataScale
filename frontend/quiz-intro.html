@@ -3,62 +3,104 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Paramétrage du Quiz - CyberScale</title>
+    <title>Nouveau Quiz - CyberScale</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <style>body { font-family: 'Inter', sans-serif; }</style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
 </head>
-<body class="bg-gray-50 flex items-center justify-center min-h-screen p-4">
+<body class="bg-slate-900 h-screen flex overflow-hidden text-slate-200">
 
-    <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-gray-100">
-        <div class="text-center mb-8">
-            <span class="text-4xl">🎯</span>
-            <h1 class="text-2xl font-bold text-gray-800 mt-4">Nouveau Quiz</h1>
-            <p class="text-gray-500 text-sm">Configurez votre profil pour adapter les questions.</p>
+    <aside class="w-64 bg-slate-800 border-r border-slate-700 hidden md:flex flex-col">
+        <div class="p-6 border-b border-slate-700">
+            <div class="flex items-center gap-3 text-blue-400">
+                <i class="fas fa-shield-alt text-2xl"></i>
+                <span class="text-xl font-bold tracking-wider text-white">CyberScale</span>
+            </div>
         </div>
-
-        <form id="onboardingForm" class="space-y-6">
-            
-            <div>
-                <label for="ageInput" class="block text-sm font-medium text-gray-700 mb-1">Votre âge</label>
-                <input type="number" id="ageInput" min="1" required value="25"
-                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
-            </div>
-
-            <div>
-                <div class="flex justify-between mb-1">
-                    <label for="theorySlider" class="text-sm font-medium text-gray-700">Niveau Théorique</label>
-                    <span id="theoryValue" class="text-blue-600 font-bold">5</span>
+        <nav class="flex-1 p-4 space-y-2">
+            <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-700/50 hover:text-white rounded-xl transition-all">
+                <i class="fas fa-chart-pie w-5"></i> Tableau de bord
+            </a>
+            <a href="quiz-intro.html" class="flex items-center gap-3 px-4 py-3 bg-blue-600/10 text-blue-400 border border-blue-600/20 rounded-xl font-medium transition-all">
+                <i class="fas fa-crosshairs w-5"></i> Nouveau Quiz
+            </a>
+            <a href="certifs.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-700/50 hover:text-white rounded-xl transition-all">
+                <i class="fas fa-certificate w-5"></i> Certifications
+            </a>
+            <a href="arena.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-700/50 hover:text-white rounded-xl transition-all">
+                <i class="fas fa-laptop-code w-5"></i> Training Arena
+            </a>
+            <a href="challenges.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-700/50 hover:text-white rounded-xl transition-all">
+                <i class="fas fa-flag w-5"></i> Challenges
+            </a>
+            <a href="phishing.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-700/50 hover:text-white rounded-xl transition-all">
+                <i class="fas fa-envelope-open-text w-5"></i> Phishing Sim
+            </a>
+            <a href="investigation.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-700/50 hover:text-white rounded-xl transition-all">
+                <i class="fas fa-user-secret w-5"></i> Investigation
+            </a>
+        </nav>
+        <div class="p-4 border-t border-slate-700 bg-slate-800/50">
+            <div class="flex items-center gap-3 px-2">
+                <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold shadow-lg">
+                    <i class="fas fa-user"></i>
                 </div>
-                <input type="range" id="theorySlider" min="1" max="10" value="5" 
-                    oninput="document.getElementById('theoryValue').textContent = this.value"
-                    class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
-                <p class="text-xs text-gray-400 mt-1">Concepts, lois, normes (ISO, RGPD...)</p>
-            </div>
-
-            <div>
-                <div class="flex justify-between mb-1">
-                    <label for="techSlider" class="text-sm font-medium text-gray-700">Niveau Technique</label>
-                    <span id="techValue" class="text-blue-600 font-bold">5</span>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-white truncate" id="sidebarUsername">Utilisateur</p>
+                    <p class="text-xs text-slate-400 truncate">Membre</p>
                 </div>
-                <input type="range" id="techSlider" min="1" max="10" value="5" 
-                    oninput="document.getElementById('techValue').textContent = this.value"
-                    class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
-                <p class="text-xs text-gray-400 mt-1">Outils, commandes, scripts (Nmap, Linux...)</p>
+                <button id="logoutBtn" class="text-slate-400 hover:text-red-400 transition-colors" title="Déconnexion"><i class="fas fa-sign-out-alt"></i></button>
+            </div>
+        </div>
+    </aside>
+
+    <div class="flex-1 flex flex-col overflow-hidden bg-slate-900 items-center justify-center p-6 relative">
+        <div class="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-500/5 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="bg-slate-800 p-8 rounded-2xl shadow-2xl w-full max-w-md border border-slate-700 relative z-10">
+            <div class="text-center mb-8">
+                <span class="text-4xl filter drop-shadow-lg">🎯</span>
+                <h1 class="text-2xl font-bold text-white mt-4">Configuration du Quiz</h1>
+                <p class="text-slate-400 text-sm mt-1">Adaptez la difficulté à votre profil.</p>
             </div>
 
-            <button type="submit" id="startButton" 
-                class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition transform active:scale-95 shadow-md">
-                Lancer l'évaluation
-            </button>
-        </form>
+            <form id="onboardingForm" class="space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-2">Votre âge</label>
+                    <input type="number" id="ageInput" min="1" required value="25"
+                        class="w-full px-4 py-3 bg-slate-900 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 text-white outline-none transition">
+                </div>
 
-        <div class="mt-6 text-center">
-            <a href="dashboard.html" class="text-sm text-gray-500 hover:text-blue-600 transition">← Annuler et retour au Dashboard</a>
+                <div>
+                    <div class="flex justify-between mb-2">
+                        <label class="text-sm font-medium text-slate-300">Niveau Théorique</label>
+                        <span id="theoryValue" class="text-blue-400 font-bold font-mono">5</span>
+                    </div>
+                    <input type="range" id="theorySlider" min="1" max="10" value="5" 
+                        oninput="document.getElementById('theoryValue').textContent = this.value"
+                        class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500">
+                </div>
+
+                <div>
+                    <div class="flex justify-between mb-2">
+                        <label class="text-sm font-medium text-slate-300">Niveau Technique</label>
+                        <span id="techValue" class="text-blue-400 font-bold font-mono">5</span>
+                    </div>
+                    <input type="range" id="techSlider" min="1" max="10" value="5" 
+                        oninput="document.getElementById('techValue').textContent = this.value"
+                        class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500">
+                </div>
+
+                <button type="submit" id="startButton" 
+                    class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-blue-500/20 transform hover:-translate-y-1">
+                    Lancer l'évaluation
+                </button>
+            </form>
         </div>
     </div>
 
+    <script src="js/auth-guard.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>
