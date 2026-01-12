@@ -37,7 +37,18 @@ class ChallengeControllerTest {
     @MockitoBean 
     private LogGenerator logGenerator;
 
+    // --- CORRECTION SONARCLOUD ICI ---
+    // On définit les IPs en constantes et on supprime l'alerte de sécurité
+    
+    @SuppressWarnings("java:S1313")
     private static final String TEST_IP = "192.168.1.1";
+
+    @SuppressWarnings("java:S1313")
+    private static final String ATTACKER_IP = "192.0.2.66";
+
+    @SuppressWarnings("java:S1313")
+    private static final String WRONG_IP = "10.10.10.10";
+    // ---------------------------------
 
     @Test
     void testGetAllChallenges() throws Exception {
@@ -68,22 +79,27 @@ class ChallengeControllerTest {
 
     @Test
     void testGetChallengeLogs() throws Exception {
+        // Utilisation des constantes pour construire les logs
         List<String> mockLogs = List.of(
-            "192.168.1.1 - - [GET /] 200", 
-            "192.0.2.66 - - [GET /admin] 404"
+            TEST_IP + " - - [GET /] 200", 
+            ATTACKER_IP + " - - [GET /admin] 404"
         );
         given(logGenerator.generateLogs()).willReturn(mockLogs);
+
         mockMvc.perform(get("/api/challenges/logs")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(2)))
+                // Vérification dynamique avec la constante
                 .andExpect(jsonPath("$[0]", containsString(TEST_IP)));
     }
 
     @Test
     void testValidateAttackerIp_Success() throws Exception {
-        given(logGenerator.getAttackerIp()).willReturn("192.0.2.66");
-        String jsonBody = "{\"ip\": \"192.0.2.66\"}";
+        given(logGenerator.getAttackerIp()).willReturn(ATTACKER_IP);
+        
+        // Construction propre du JSON avec l'IP
+        String jsonBody = String.format("{\"ip\": \"%s\"}", ATTACKER_IP);
 
         mockMvc.perform(post("/api/challenges/logs/validate")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -95,8 +111,10 @@ class ChallengeControllerTest {
 
     @Test
     void testValidateAttackerIp_Failure() throws Exception {
-        given(logGenerator.getAttackerIp()).willReturn("192.0.2.66");
-        String jsonBody = "{\"ip\": \"10.10.10.10\"}";
+        given(logGenerator.getAttackerIp()).willReturn(ATTACKER_IP);
+        
+        // On utilise une mauvaise IP (constante) pour tester l'échec
+        String jsonBody = String.format("{\"ip\": \"%s\"}", WRONG_IP);
 
         mockMvc.perform(post("/api/challenges/logs/validate")
                 .contentType(MediaType.APPLICATION_JSON)
