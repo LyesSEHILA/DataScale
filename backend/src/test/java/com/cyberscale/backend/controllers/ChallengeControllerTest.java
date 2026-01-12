@@ -77,7 +77,7 @@ class ChallengeControllerTest {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(2)))
-                .andExpect(jsonPath("$[0]", containsString("TEST_IP")));
+                .andExpect(jsonPath("$[0]", containsString(TEST_IP)));
     }
 
     @Test
