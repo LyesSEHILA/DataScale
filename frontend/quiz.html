@@ -5,67 +5,110 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quiz en cours - CyberScale</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <style>body { font-family: 'Inter', sans-serif; }</style>
-</head>
-<body class="bg-gray-50 min-h-screen flex flex-col items-center pt-10">
-
-    <div class="w-full max-w-2xl px-4">
-        
-        <div class="flex justify-between items-end mb-4">
-            <h1 class="text-2xl font-bold text-gray-800">
-                Question <span id="questionNumber" class="text-blue-600">1</span> <span class="text-gray-400 text-lg total">/ 10</span>
-            </h1>
-            <div id="questionCategory" class="bg-blue-100 text-blue-800 text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wide">
-                ...
-            </div>
-        </div>
-
-        <div class="w-full bg-gray-200 rounded-full h-2.5 mb-8">
-            <div id="progressBar" class="bg-blue-600 h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
-        </div>
-
-        <div class="bg-white rounded-xl shadow-lg p-8 border border-gray-100">
-            <h2 id="questionText" class="text-xl font-semibold text-gray-800 mb-8 leading-relaxed">Chargement...</h2>
-
-            <form id="answerForm" class="space-y-4">
-                <div id="optionsContainer" class="flex flex-col gap-3">
-                    </div>
-                
-                <div class="mt-8 pt-4 border-t border-gray-100">
-                    <button type="submit" id="nextButton" disabled 
-                        class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
-                        Valider et Suivant
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
     <style>
-        /* On garde ce petit bout de CSS car on ne peut pas mettre de classes Tailwind dans le JS facilement sans tout réécrire */
+        body { font-family: 'Inter', sans-serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        
+        /* Styles personnalisés pour les radios (CSS conservé du précédent mais adapté Dark) */
         .option-input:checked + label {
             border-color: #3b82f6;
-            background-color: #eff6ff;
-            color: #1d4ed8;
+            background-color: rgba(59, 130, 246, 0.1);
+            color: #60a5fa;
             font-weight: 600;
-            box-shadow: 0 0 0 2px #3b82f6;
+            box-shadow: 0 0 0 1px #3b82f6;
         }
         .option-label {
             display: block;
             padding: 1rem;
-            border: 2px solid #e5e7eb;
-            border-radius: 0.5rem;
+            border: 1px solid #334155;
+            background-color: #1e293b;
+            border-radius: 0.75rem;
             cursor: pointer;
             transition: all 0.2s;
+            color: #cbd5e1;
         }
         .option-label:hover {
-            background-color: #f9fafb;
-            border-color: #d1d5db;
+            background-color: #334155;
+            border-color: #475569;
         }
         .option-input { display: none; }
     </style>
+</head>
+<body class="bg-slate-900 h-screen flex overflow-hidden text-slate-200">
 
+    <aside class="w-64 bg-slate-800 border-r border-slate-700 hidden md:flex flex-col">
+        <div class="p-6 border-b border-slate-700">
+            <div class="flex items-center gap-3 text-blue-400">
+                <i class="fas fa-shield-alt text-2xl"></i>
+                <span class="text-xl font-bold tracking-wider text-white">CyberScale</span>
+            </div>
+        </div>
+        <nav class="flex-1 p-4 space-y-2">
+            <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-700/50 hover:text-white rounded-xl transition-all">
+                <i class="fas fa-chart-pie w-5"></i> Tableau de bord
+            </a>
+            <a href="quiz-intro.html" class="flex items-center gap-3 px-4 py-3 bg-blue-600/10 text-blue-400 border border-blue-600/20 rounded-xl font-medium transition-all">
+                <i class="fas fa-crosshairs w-5"></i> Quiz en cours
+            </a>
+            <a href="certifs.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-700/50 hover:text-white rounded-xl transition-all"><i class="fas fa-certificate w-5"></i> Certifications</a>
+            <a href="arena.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-700/50 hover:text-white rounded-xl transition-all"><i class="fas fa-laptop-code w-5"></i> Arena</a>
+            <a href="challenges.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-700/50 hover:text-white rounded-xl transition-all"><i class="fas fa-flag w-5"></i> Challenges</a>
+            <a href="investigation.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-700/50 hover:text-white rounded-xl transition-all"><i class="fas fa-user-secret w-5"></i> Investigation</a>
+        </nav>
+        </aside>
+
+    <div class="flex-1 flex flex-col overflow-hidden bg-slate-900 relative">
+        
+        <div class="absolute bottom-0 left-0 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <main class="flex-1 overflow-y-auto p-6 flex items-center justify-center relative z-10">
+            
+            <div class="w-full max-w-2xl">
+                
+                <div class="flex justify-between items-end mb-6">
+                    <div>
+                        <h1 class="text-2xl font-bold text-white flex items-center gap-2">
+                            <span class="bg-blue-500/20 p-1.5 rounded text-blue-400 text-lg"><i class="fas fa-question"></i></span>
+                            Question <span id="questionNumber" class="text-blue-400 ml-1">1</span> 
+                            <span class="text-slate-500 text-lg font-normal total">/ 10</span>
+                        </h1>
+                    </div>
+                    <div id="questionCategory" class="bg-slate-800 border border-slate-700 text-blue-300 text-xs font-bold px-3 py-1.5 rounded-lg uppercase tracking-wider shadow-sm">
+                        Chargement...
+                    </div>
+                </div>
+
+                <div class="w-full bg-slate-800 rounded-full h-2 mb-8 border border-slate-700">
+                    <div id="progressBar" class="bg-blue-500 h-2 rounded-full transition-all duration-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]" style="width: 0%"></div>
+                </div>
+
+                <div id="quizContent" class="bg-slate-800/80 backdrop-blur-md rounded-2xl shadow-xl p-8 border border-slate-700">
+                    
+                    <h2 id="questionText" class="text-xl md:text-2xl font-semibold text-white mb-8 leading-relaxed">
+                        <i class="fas fa-circle-notch fa-spin mr-2 text-blue-500"></i> Chargement de la question...
+                    </h2>
+
+                    <form id="answerForm" class="space-y-4">
+                        <div id="optionsContainer" class="flex flex-col gap-3">
+                            </div>
+                        
+                        <div class="mt-8 pt-6 border-t border-slate-700 flex justify-end">
+                            <button type="submit" id="nextButton" disabled 
+                                class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-8 rounded-xl transition-all shadow-lg shadow-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed transform hover:-translate-y-0.5">
+                                Valider et Suivant <i class="fas fa-arrow-right ml-2"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script src="js/auth-guard.js"></script>
     <script src="js/quiz.js"></script>
 </body>
 </html>

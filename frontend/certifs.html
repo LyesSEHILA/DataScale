@@ -6,122 +6,139 @@
     <title>Certifications - CyberScale</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>body { font-family: 'Inter', sans-serif; }</style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+    </style>
 </head>
-<body class="bg-gray-50 h-screen flex overflow-hidden">
+<body class="bg-slate-900 h-screen flex overflow-hidden text-slate-200">
 
-    <aside class="w-64 bg-white border-r border-gray-200 hidden md:flex flex-col">
-        <div class="p-6 border-b border-gray-100">
-            <div class="flex items-center gap-2 text-blue-600">
+    <aside class="w-64 bg-slate-800 border-r border-slate-700 hidden md:flex flex-col">
+        <div class="p-6 border-b border-slate-700">
+            <div class="flex items-center gap-3 text-blue-400">
                 <i class="fas fa-shield-alt text-2xl"></i>
-                <span class="text-xl font-bold">CyberScale</span>
+                <span class="text-xl font-bold tracking-wider text-white">CyberScale</span>
             </div>
         </div>
         
-        <nav class="flex-1 p-4 space-y-1">
-            <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition">
+        <nav class="flex-1 p-4 space-y-2">
+            <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-700/50 hover:text-white rounded-xl transition-all">
                 <i class="fas fa-chart-pie w-5"></i> Tableau de bord
             </a>
-            <a href="quiz-intro.html" class="flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition">
+            <a href="quiz-intro.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-700/50 hover:text-white rounded-xl transition-all">
                 <i class="fas fa-crosshairs w-5"></i> Nouveau Quiz
             </a>
-            <a href="#" class="flex items-center gap-3 px-4 py-3 text-blue-600 bg-blue-50 rounded-xl font-medium transition">
+            
+            <a href="certifs.html" class="flex items-center gap-3 px-4 py-3 bg-blue-600/10 text-blue-400 border border-blue-600/20 rounded-xl font-medium transition-all">
                 <i class="fas fa-certificate w-5"></i> Certifications
             </a>
-            <a href="arena.html" class="flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition">
+
+            <a href="arena.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-700/50 hover:text-white rounded-xl transition-all">
                 <i class="fas fa-laptop-code w-5"></i> Training Arena
             </a>
-            <a href="challenges.html" class="flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition">
+            <a href="challenges.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-700/50 hover:text-white rounded-xl transition-all">
                 <i class="fas fa-flag w-5"></i> Challenges
             </a>
-            <a href="phishing.html" class="flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition">
-                <i class="fas fa-envelope-open-text"></i> Phishing Simulation
+            <a href="phishing.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-700/50 hover:text-white rounded-xl transition-all">
+                <i class="fas fa-envelope-open-text w-5"></i> Phishing Sim
+            </a>
+            <a href="investigation.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-700/50 hover:text-white rounded-xl transition-all">
+                <i class="fas fa-user-secret w-5"></i> Investigation
             </a>
         </nav>
 
-        <div class="p-4 border-t border-gray-100">
-            <div class="flex items-center gap-3 px-4 py-3">
-                <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
+        <div class="p-4 border-t border-slate-700 bg-slate-800/50">
+            <div class="flex items-center gap-3 px-2">
+                <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold shadow-lg">
                     <i class="fas fa-user"></i>
                 </div>
                 <div class="flex-1 min-w-0">
-                    <p class="text-sm font-medium text-gray-900 truncate" id="sidebarUsername">Utilisateur</p>
-                    <p class="text-xs text-gray-500 truncate">Membre</p>
+                    <p class="text-sm font-medium text-white truncate" id="sidebarUsername">Utilisateur</p>
+                    <p class="text-xs text-slate-400 truncate">Membre</p>
                 </div>
-                <button id="logoutBtn" class="text-gray-400 hover:text-red-500 transition" title="Déconnexion">
+                <button id="logoutBtn" class="text-slate-400 hover:text-red-400 transition-colors" title="Déconnexion">
                     <i class="fas fa-sign-out-alt"></i>
                 </button>
             </div>
         </div>
     </aside>
 
-    <div class="flex-1 flex flex-col overflow-hidden">
-        <main class="flex-1 overflow-y-auto p-8">
+    <div class="flex-1 flex flex-col overflow-hidden bg-slate-900">
+        <main class="flex-1 overflow-y-auto p-8 relative">
             
-            <header class="mb-8">
-                <h1 class="text-3xl font-bold text-gray-900">Certifications Blanches 🎓</h1>
-                <p class="text-gray-500 mt-2">Entraînez-vous en conditions réelles (Temps limité, Score éliminatoire).</p>
+            <div class="absolute top-0 right-0 -mt-20 -mr-20 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+            <header class="mb-8 relative z-10">
+                <h1 class="text-3xl font-bold text-white flex items-center gap-3">
+                    <span class="bg-blue-500/20 p-2 rounded-lg text-blue-400"><i class="fas fa-certificate"></i></span>
+                    Certifications Blanches
+                </h1>
+                <p class="text-slate-400 mt-2 max-w-2xl">
+                    Entraînez-vous en conditions réelles (Temps limité, Score éliminatoire) pour préparer vos examens officiels.
+                </p>
             </header>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 relative z-10">
                 
-                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition">
-                    <div class="h-32 bg-gray-900 flex items-center justify-center relative">
-                        <span class="text-4xl">😈</span>
-                        <div class="absolute top-4 right-4 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">HARD</div>
+                <div class="bg-slate-800 rounded-2xl shadow-lg border border-slate-700 overflow-hidden hover:border-red-500/50 transition group">
+                    <div class="h-32 bg-slate-900 flex items-center justify-center relative border-b border-slate-700 group-hover:bg-red-900/10 transition">
+                        <span class="text-5xl filter drop-shadow-lg">😈</span>
+                        <div class="absolute top-4 right-4 bg-red-500/20 text-red-400 border border-red-500/30 text-xs font-bold px-2 py-1 rounded">HARD</div>
                     </div>
                     <div class="p-6">
-                        <h3 class="text-xl font-bold text-gray-900 mb-2">CEH v12 Simulator</h3>
-                        <p class="text-sm text-gray-500 mb-4">Certified Ethical Hacker. Testez vos compétences en pentest, scanning et exploitation.</p>
+                        <h3 class="text-xl font-bold text-white mb-2 group-hover:text-red-400 transition">CEH v12 Simulator</h3>
+                        <p class="text-sm text-slate-400 mb-4 h-10">Certified Ethical Hacker. Testez vos compétences en pentest et exploitation.</p>
                         
-                        <div class="flex justify-between text-xs text-gray-400 font-medium mb-6">
-                            <span><i class="far fa-clock"></i> 30 min</span>
-                            <span><i class="fas fa-tasks"></i> 20 Questions</span>
+                        <div class="flex justify-between text-xs text-slate-500 font-mono mb-6 bg-slate-900/50 p-3 rounded-lg border border-slate-700/50">
+                            <span><i class="far fa-clock text-red-400 mr-1"></i> 30 min</span>
+                            <span><i class="fas fa-tasks text-blue-400 mr-1"></i> 20 Quest.</span>
                         </div>
 
-                        <button onclick="startExam('CEH')" class="w-full bg-gray-900 text-white font-bold py-3 rounded-xl hover:bg-gray-800 transition shadow-lg">
+                        <button onclick="startExam('CEH')" class="w-full bg-slate-700 hover:bg-red-600 text-white font-bold py-3 rounded-xl transition-all shadow-lg border border-slate-600 hover:border-red-500">
                             Démarrer l'examen
                         </button>
                     </div>
                 </div>
 
-                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition">
-                    <div class="h-32 bg-blue-600 flex items-center justify-center relative">
-                        <span class="text-4xl">🛡️</span>
-                        <div class="absolute top-4 right-4 bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-1 rounded">MEDIUM</div>
+                <div class="bg-slate-800 rounded-2xl shadow-lg border border-slate-700 overflow-hidden hover:border-blue-500/50 transition group">
+                    <div class="h-32 bg-slate-900 flex items-center justify-center relative border-b border-slate-700 group-hover:bg-blue-900/10 transition">
+                        <span class="text-5xl filter drop-shadow-lg">🛡️</span>
+                        <div class="absolute top-4 right-4 bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 text-xs font-bold px-2 py-1 rounded">MEDIUM</div>
                     </div>
                     <div class="p-6">
-                        <h3 class="text-xl font-bold text-gray-900 mb-2">CompTIA Security+</h3>
-                        <p class="text-sm text-gray-500 mb-4">Les fondamentaux de la cybersécurité : réseaux, gestion des risques et cryptographie.</p>
+                        <h3 class="text-xl font-bold text-white mb-2 group-hover:text-blue-400 transition">CompTIA Security+</h3>
+                        <p class="text-sm text-slate-400 mb-4 h-10">Les fondamentaux : réseaux, gestion des risques et cryptographie.</p>
                         
-                        <div class="flex justify-between text-xs text-gray-400 font-medium mb-6">
-                            <span><i class="far fa-clock"></i> 45 min</span>
-                            <span><i class="fas fa-tasks"></i> 30 Questions</span>
+                        <div class="flex justify-between text-xs text-slate-500 font-mono mb-6 bg-slate-900/50 p-3 rounded-lg border border-slate-700/50">
+                            <span><i class="far fa-clock text-yellow-400 mr-1"></i> 45 min</span>
+                            <span><i class="fas fa-tasks text-blue-400 mr-1"></i> 30 Quest.</span>
                         </div>
 
-                        <button onclick="startExam('Security+')" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition shadow-lg">
+                        <button onclick="startExam('Security+')" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition-all shadow-lg hover:shadow-blue-500/20">
                             Démarrer l'examen
                         </button>
                     </div>
                 </div>
 
-                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition opacity-75">
-                    <div class="h-32 bg-purple-700 flex items-center justify-center relative">
-                        <span class="text-4xl">👔</span>
-                        <div class="absolute top-4 right-4 bg-purple-200 text-purple-900 text-xs font-bold px-2 py-1 rounded">EXPERT</div>
+                <div class="bg-slate-800 rounded-2xl shadow-lg border border-slate-700 overflow-hidden opacity-60">
+                    <div class="h-32 bg-slate-900 flex items-center justify-center relative border-b border-slate-700">
+                        <span class="text-5xl filter grayscale">👔</span>
+                        <div class="absolute top-4 right-4 bg-purple-500/20 text-purple-400 border border-purple-500/30 text-xs font-bold px-2 py-1 rounded">EXPERT</div>
                     </div>
                     <div class="p-6">
-                        <h3 class="text-xl font-bold text-gray-900 mb-2">CISSP Manager</h3>
-                        <p class="text-sm text-gray-500 mb-4">Gouvernance et management de la sécurité. Pour les profils confirmés.</p>
+                        <h3 class="text-xl font-bold text-slate-300 mb-2">CISSP Manager</h3>
+                        <p class="text-sm text-slate-500 mb-4 h-10">Gouvernance et management de la sécurité. Profils confirmés.</p>
                         
-                        <div class="flex justify-between text-xs text-gray-400 font-medium mb-6">
-                            <span><i class="far fa-clock"></i> 60 min</span>
-                            <span><i class="fas fa-tasks"></i> 50 Questions</span>
+                        <div class="flex justify-between text-xs text-slate-600 font-mono mb-6 bg-slate-900/30 p-3 rounded-lg">
+                            <span><i class="far fa-clock mr-1"></i> 60 min</span>
+                            <span><i class="fas fa-tasks mr-1"></i> 50 Quest.</span>
                         </div>
 
-                        <button disabled class="w-full bg-gray-100 text-gray-400 font-bold py-3 rounded-xl cursor-not-allowed">
-                            Bientôt disponible
+                        <button disabled class="w-full bg-slate-800 text-slate-500 font-bold py-3 rounded-xl cursor-not-allowed border border-slate-700">
+                            <i class="fas fa-lock mr-2"></i>Bientôt disponible
                         </button>
                     </div>
                 </div>

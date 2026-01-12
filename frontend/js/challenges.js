@@ -1,5 +1,5 @@
 const API_CHALLENGES = "http://localhost:8080/api/challenges";
-const API_USER = "http://localhost:8080/api/user"; // Pour récupérer les points
+const API_USER = "http://localhost:8080/api/user";
 
 document.addEventListener("DOMContentLoaded", () => {
     // 1. Gestion Session
@@ -51,8 +51,6 @@ async function loadChallenges(userId) {
     const grid = document.getElementById("challengesGrid");
 
     try {
-        // CORRECTION IMPORTANTE : Ajout de ?userId=... dans l'URL
-        // Cela permet au backend de savoir quels challenges sont validés par CE user
         const url = `${API_CHALLENGES}?userId=${userId}`;
         
         const response = await fetch(url);

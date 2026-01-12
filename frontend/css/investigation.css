@@ -1,0 +1,109 @@
+/* --- THÈME INVESTIGATION (HACKER MODE) --- */
+
+:root {
+    --hacker-green: #00ff41;
+    --hacker-dark: #0d1117;
+    --hacker-black: #000000;
+    --hacker-dim: rgba(0, 255, 65, 0.1);
+}
+
+body.dark-theme {
+    background-color: var(--hacker-dark);
+    font-family: 'Courier New', Courier, monospace; /* Police Monospace obligatoire */
+}
+
+/* Header & Glitch Effect */
+.siem-header h1 {
+    color: var(--hacker-green);
+    font-weight: bold;
+    letter-spacing: 2px;
+}
+
+.status-indicator {
+    color: var(--hacker-green);
+    font-weight: bold;
+    border: 1px solid var(--hacker-green);
+    padding: 5px 15px;
+    display: inline-block;
+    background: var(--hacker-dim);
+}
+
+.pulse {
+    display: inline-block;
+    width: 10px; height: 10px;
+    background-color: var(--hacker-green);
+    border-radius: 50%;
+    margin-right: 5px;
+    animation: pulse-anim 1.5s infinite;
+}
+
+@keyframes pulse-anim {
+    0% { opacity: 1; box-shadow: 0 0 0 0 rgba(0, 255, 65, 0.7); }
+    70% { opacity: 0; box-shadow: 0 0 0 10px rgba(0, 255, 65, 0); }
+    100% { opacity: 0; }
+}
+
+/* Inputs & Forms */
+.hacker-input {
+    color: var(--hacker-green) !important;
+    background-color: #000 !important;
+}
+.hacker-input::placeholder {
+    color: rgba(0, 255, 65, 0.5);
+}
+.hacker-input:focus {
+    box-shadow: 0 0 10px var(--hacker-green);
+    border-color: var(--hacker-green);
+}
+
+/* Table Styles */
+.siem-table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.siem-table thead th {
+    background-color: #161b22;
+    color: var(--hacker-green);
+    border-bottom: 2px solid var(--hacker-green);
+    text-transform: uppercase;
+}
+
+.siem-table tbody tr {
+    transition: all 0.2s;
+}
+
+.siem-table tbody tr:hover {
+    background-color: var(--hacker-dim);
+    color: #fff;
+    cursor: crosshair;
+}
+
+.siem-table td {
+    color: #c9d1d9;
+    border-color: #30363d;
+    vertical-align: middle;
+}
+
+/* Highlight specific columns */
+.siem-table td:nth-child(5) { /* Status column */
+    font-weight: bold;
+}
+
+/* Status colors */
+.status-200 { color: #00ff41 !important; }
+.status-404 { color: #ffa500 !important; } /* Orange */
+.status-500, .status-403 { color: #ff0000 !important; } /* Rouge */
+
+/* Pagination */
+.hacker-pagination .page-link {
+    background-color: #000;
+    border-color: var(--hacker-green);
+    color: var(--hacker-green);
+}
+
+.hacker-pagination .page-item.active .page-link {
+    background-color: var(--hacker-green);
+    color: #000;
+    border-color: var(--hacker-green);
+}
