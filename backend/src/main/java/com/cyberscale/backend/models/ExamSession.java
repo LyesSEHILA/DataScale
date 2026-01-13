@@ -24,9 +24,10 @@ public class ExamSession {
 
     private String examRef; 
     private Integer successProbability;
-
-
     private String candidateName;
+
+    // --- AJOUT CHAMP STATUS ---
+    private String status;
 
     private LocalDateTime startTime;
     private LocalDateTime endTime;
@@ -38,7 +39,22 @@ public class ExamSession {
         this.startTime = LocalDateTime.now();
         // Par défaut, un examen dure 60 minutes, peut être surchargé
         this.endTime = this.startTime.plusMinutes(60); 
+        this.status = "PENDING"; // Valeur par défaut
     }
+
+    // --- NOUVELLES MÉTHODES POUR LE DASHBOARD ---
+    public Integer getScore() {
+        return this.finalScore;
+    }
+
+    public String getStatus() {
+        return this.status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+    // --------------------------------------------
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }

@@ -24,7 +24,6 @@
             </a>
             
             <p class="px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider mt-6 mb-2">Entraînement</p>
-            
             <a href="challenges.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-700/50 hover:text-white rounded-xl transition-all">
                 <i class="fas fa-flag w-5"></i> Challenges CTF
             </a>
@@ -39,7 +38,6 @@
             </a>
 
             <p class="px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider mt-6 mb-2">Évaluation</p>
-
             <a href="quiz-intro.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-700/50 hover:text-white rounded-xl transition-all">
                 <i class="fas fa-graduation-cap w-5"></i> Quiz
             </a>
@@ -65,94 +63,109 @@
     </aside>
 
     <div class="flex-1 flex flex-col overflow-hidden bg-slate-900">
-        
-        <header class="bg-slate-800 border-b border-slate-700 md:hidden flex items-center justify-between p-4">
-            <span class="font-bold text-white">CyberScale</span>
-            <button id="mobileMenuBtn" class="text-slate-300"><i class="fas fa-bars"></i></button>
-        </header>
-
         <main class="flex-1 overflow-y-auto p-6 md:p-8">
             
-            <div class="mb-8">
-                <h1 class="text-3xl font-bold text-white">
-                    Rapport de situation <span class="text-blue-500 text-base font-normal ml-2 font-mono" id="headerPseudo">...</span>
-                </h1>
-                <p class="text-slate-400 mt-2">Vue d'ensemble de vos performances et activités récentes.</p>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                
-                <div class="glass-panel p-6 rounded-2xl relative overflow-hidden group hover:border-blue-500/30 transition-all">
-                    <div class="absolute right-0 top-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl -mr-16 -mt-16 transition-all group-hover:bg-blue-500/20"></div>
-                    <div class="relative z-10">
-                        <p class="text-sm font-medium text-slate-400 uppercase tracking-wide">Quiz Complétés</p>
-                        <div class="flex items-baseline gap-2 mt-2">
-                            <p class="text-4xl font-bold text-white" id="totalTests">0</p>
-                            <span class="text-sm text-green-400"><i class="fas fa-arrow-up"></i> +2</span>
-                        </div>
-                    </div>
-                    <div class="absolute bottom-4 right-4 text-blue-500/20 text-4xl transform group-hover:scale-110 transition-transform">
-                        <i class="fas fa-list-check"></i>
-                    </div>
+            <div class="mb-8 flex justify-between items-end">
+                <div>
+                    <h1 class="text-3xl font-bold text-white">
+                        Rapport de situation <span class="text-blue-500 font-mono" id="headerPseudo">...</span>
+                    </h1>
+                    <p class="text-slate-400 mt-2">Votre centre de commandement cybersécurité.</p>
                 </div>
-
-                <div class="glass-panel p-6 rounded-2xl relative overflow-hidden group hover:border-purple-500/30 transition-all">
-                    <div class="absolute right-0 top-0 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl -mr-16 -mt-16 transition-all group-hover:bg-purple-500/20"></div>
-                    <div class="relative z-10">
-                        <p class="text-sm font-medium text-slate-400 uppercase tracking-wide">Score Théorique</p>
-                        <div class="flex items-baseline gap-2 mt-2">
-                            <p class="text-4xl font-bold text-white" id="avgTheory">-</p>
-                            <span class="text-sm text-purple-400">%</span>
-                        </div>
-                    </div>
-                    <div class="absolute bottom-4 right-4 text-purple-500/20 text-4xl transform group-hover:scale-110 transition-transform">
-                        <i class="fas fa-brain"></i>
-                    </div>
-                </div>
-
-                <div class="glass-panel p-6 rounded-2xl relative overflow-hidden group hover:border-teal-500/30 transition-all">
-                    <div class="absolute right-0 top-0 w-32 h-32 bg-teal-500/10 rounded-full blur-2xl -mr-16 -mt-16 transition-all group-hover:bg-teal-500/20"></div>
-                    <div class="relative z-10">
-                        <p class="text-sm font-medium text-slate-400 uppercase tracking-wide">Score Technique</p>
-                        <div class="flex items-baseline gap-2 mt-2">
-                            <p class="text-4xl font-bold text-white" id="avgTech">-</p>
-                            <span class="text-sm text-teal-400">%</span>
-                        </div>
-                    </div>
-                    <div class="absolute bottom-4 right-4 text-teal-500/20 text-4xl transform group-hover:scale-110 transition-transform">
-                        <i class="fas fa-terminal"></i>
-                    </div>
+                <div class="hidden md:block">
+                    <span class="bg-blue-900/30 text-blue-400 px-3 py-1 rounded-full text-xs font-mono border border-blue-500/30">
+                        <i class="fas fa-circle text-[8px] mr-2 animate-pulse"></i>SYSTÈME OPÉRATIONNEL
+                    </span>
                 </div>
             </div>
 
-            <div class="glass-panel rounded-2xl overflow-hidden shadow-lg">
-                <div class="p-6 border-b border-slate-700/50 flex justify-between items-center bg-slate-800/30">
-                    <h2 class="text-lg font-bold text-white"><i class="fas fa-history mr-2 text-slate-400"></i>Historique des opérations</h2>
-                    <a href="quiz-intro.html" class="px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors shadow-lg shadow-blue-600/20">
-                        Lancer une opération
-                    </a>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div class="glass-panel p-6 rounded-2xl relative overflow-hidden group hover:border-blue-500/30 transition-all bg-slate-800 border border-slate-700">
+                    <div class="absolute right-0 top-0 w-24 h-24 bg-blue-500/10 rounded-full blur-xl -mr-10 -mt-10"></div>
+                    <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Activités</p>
+                    <p class="text-4xl font-bold text-white" id="totalTests">0</p>
+                    <p class="text-sm text-slate-400 mt-1">Quiz complétés</p>
                 </div>
+
+                <div class="glass-panel p-6 rounded-2xl relative overflow-hidden group hover:border-purple-500/30 transition-all bg-slate-800 border border-slate-700">
+                    <div class="absolute right-0 top-0 w-24 h-24 bg-purple-500/10 rounded-full blur-xl -mr-10 -mt-10"></div>
+                    <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Niveau Théorique</p>
+                    <div class="flex items-end gap-1">
+                        <p class="text-4xl font-bold text-white" id="avgTheory">-</p>
+                        <span class="text-lg text-purple-400 mb-1">%</span>
+                    </div>
+                    <div class="w-full bg-slate-700 h-1 mt-3 rounded-full overflow-hidden">
+                        <div id="barTheory" class="bg-purple-500 h-full transition-all duration-1000" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div class="glass-panel p-6 rounded-2xl relative overflow-hidden group hover:border-teal-500/30 transition-all bg-slate-800 border border-slate-700">
+                    <div class="absolute right-0 top-0 w-24 h-24 bg-teal-500/10 rounded-full blur-xl -mr-10 -mt-10"></div>
+                    <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Niveau Technique</p>
+                    <div class="flex items-end gap-1">
+                        <p class="text-4xl font-bold text-white" id="avgTech">-</p>
+                        <span class="text-lg text-teal-400 mb-1">%</span>
+                    </div>
+                    <div class="w-full bg-slate-700 h-1 mt-3 rounded-full overflow-hidden">
+                        <div id="barTech" class="bg-teal-500 h-full transition-all duration-1000" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div class="glass-panel p-6 rounded-2xl relative overflow-hidden group hover:border-yellow-500/30 transition-all bg-slate-800 border border-slate-700">
+                    <div class="absolute right-0 top-0 w-24 h-24 bg-yellow-500/10 rounded-full blur-xl -mr-10 -mt-10"></div>
+                    <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Certifications</p>
+                    <p class="text-4xl font-bold text-white" id="totalCertifs">0</p>
+                    <p class="text-sm text-yellow-500/80 mt-1">Badges obtenus</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="bg-slate-800/50 text-slate-400 text-xs uppercase tracking-wider">
-                                <th class="px-6 py-4 font-semibold">Date</th>
-                                <th class="px-6 py-4 font-semibold">Type de Mission</th> 
-                                <th class="px-6 py-4 font-semibold">Score</th>    
-                                <th class="px-6 py-4 font-semibold text-right">Statut</th>
-                            </tr>
-                        </thead>
-                        <tbody id="historyBody" class="divide-y divide-slate-700/50 text-sm text-slate-300">
-                            <tr><td colspan="4" class="px-6 py-8 text-center text-slate-500 animate-pulse">Récupération des données...</td></tr>
-                        </tbody>
-                    </table>
+                <div class="lg:col-span-2 glass-panel rounded-2xl overflow-hidden shadow-lg h-fit bg-slate-800 border border-slate-700">
+                    <div class="p-6 border-b border-slate-700/50 flex justify-between items-center bg-slate-800/50">
+                        <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                            <i class="fas fa-history text-blue-400"></i> Dernières Opérations
+                        </h2>
+                        <a href="quiz-intro.html" class="text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white px-3 py-2 rounded-lg transition-colors">
+                            + NOUVEAU
+                        </a>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <tbody id="historyBody" class="divide-y divide-slate-700/50 text-sm text-slate-300">
+                                <tr><td colspan="4" class="p-6 text-center text-slate-500 italic">Chargement...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
+
+                <div class="flex flex-col gap-6">
+                    
+                    <div class="glass-panel p-6 rounded-2xl border-l-4 border-yellow-500 bg-slate-800 border-y border-r border-slate-700">
+                        <h3 class="font-bold text-white mb-4 flex items-center gap-2">
+                            <i class="fas fa-certificate text-yellow-500"></i> Mes Certifications
+                        </h3>
+                        <ul id="certifList" class="space-y-3">
+                            <li class="text-sm text-slate-500 italic">Aucune certification validée.</li>
+                        </ul>
+                    </div>
+
+                    <div class="glass-panel p-6 rounded-2xl bg-slate-800 border border-slate-700">
+                        <h3 class="font-bold text-white mb-4 flex items-center gap-2">
+                            <i class="fas fa-lightbulb text-purple-400"></i> Recommandé pour vous
+                        </h3>
+                        <div id="resourcesList" class="space-y-4">
+                            <p class="text-sm text-slate-500 animate-pulse">Analyse de votre profil...</p>
+                        </div>
+                    </div>
+                </div>
+
             </div>
 
         </main>
     </div>
 
-    <script src="js/auth-guard.js"></script> <script src="js/dashboard.js"></script>
+    <script src="js/auth-guard.js"></script> 
+    <script src="js/dashboard.js"></script>
 </body>
 </html>
