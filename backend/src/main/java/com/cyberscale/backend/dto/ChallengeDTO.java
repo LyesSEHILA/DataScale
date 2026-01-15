@@ -1,10 +1,15 @@
 package com.cyberscale.backend.dto;
 
+/**
+ * DTO représentant un Challenge tel qu'affiché dans la liste des épreuves.
+ * Contient les informations du challenge (sans le flag secret)
+ * ainsi que l'état de progression de l'utilisateur.
+ */
 public record ChallengeDTO(
     String id,
-    String title,        // Correspond à "name" dans l'entité
+    String title,       
     String description,
     Integer points,
-    String difficulty,   // "FACILE", "MOYEN", "HARDCORE" (calculé ou stocké)
-    boolean isValidated  // Si l'user l'a déjà réussi
+    String difficulty,   
+    boolean isValidated 
 ) {}

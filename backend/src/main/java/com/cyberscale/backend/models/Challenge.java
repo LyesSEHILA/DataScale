@@ -4,13 +4,15 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
+/**
+ * Entité représentant une épreuve de type CTF.
+ */
 @Entity
 @Table(name = "challenges")
 public class Challenge {
 
     @Id
     private String id;
-
     private String name;
     private String description;
     private String flagSecret;
@@ -26,11 +28,13 @@ public class Challenge {
         this.pointsReward = pointsReward;
     }
 
-    // Getters
     public String getId() { return id; }
+   
     public String getFlagSecret() { return flagSecret; }
+   
     public Integer getPointsReward() { return pointsReward; }
     
     public String getName() { return name; }
+   
     public String getDescription() { return description; }
 }

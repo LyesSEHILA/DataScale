@@ -10,6 +10,10 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
+/**
+ * Entité représentant une réponse donnée par un utilisateur à une question.
+ * Peut être liée soit à un QuizSession, soit à un ExamSession.
+ */
 @Entity
 @Table(name = "user_answer")
 public class UserAnswer {
@@ -42,7 +46,6 @@ public class UserAnswer {
         this.answeredAt = LocalDateTime.now();
     }
 
-    // Constructeur pratique pour le Service
     public UserAnswer(QuizSession session, Question question, AnswerOption selectedOption) {
         this.session = session;
         this.question = question;
@@ -50,28 +53,32 @@ public class UserAnswer {
         this.answeredAt = LocalDateTime.now();
     }
 
-    // Getters et Setters
     public Long getId() { return id; }
+    
     public void setId(Long id) { this.id = id; }
+    
     public QuizSession getSession() { return session; }
+    
     public void setSession(QuizSession session) { this.session = session; }
+    
     public Question getQuestion() { return question; }
+    
     public ExamSession getExamSession() { return examSession; }
+    
     public void setExamSession(ExamSession examSession) { this.examSession = examSession; }
+    
     public void setQuestion(Question question) { this.question = question; }
+    
     public AnswerOption getSelectedOption() { return selectedOption; }
+    
     public void setSelectedOption(AnswerOption selectedOption) { this.selectedOption = selectedOption; }
+    
     public LocalDateTime getAnsweredAt() { return answeredAt; }
+    
     public void setAnsweredAt(LocalDateTime answeredAt) { this.answeredAt = answeredAt; }
 
-    public boolean isCorrect() {
-        return isCorrect;
-    }
+    public boolean isCorrect() { return isCorrect; }
 
-    public void setCorrect(boolean isCorrect) {
-        this.isCorrect = isCorrect;
-    }
+    public void setCorrect(boolean isCorrect) { this.isCorrect = isCorrect; }
 
-    
-    
 }

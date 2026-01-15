@@ -2,12 +2,17 @@ package com.cyberscale.backend.dto;
 
 import java.time.LocalDateTime;
 
+/**
+ * DTO représentant une entrée dans l'historique d'activité de l'utilisateur.
+ * Est utilisé pour afficher une liste des événements passés,
+ * qu'il s'agisse de Quiz d'entraînement ou d'Examens de certification blanche.
+ */
 public record HistoryDTO(
     Long id,
-    String type,        // "QUIZ" ou "EXAMEN"
-    String title,       // "Positionnement" ou "CEH Simulator"
-    Integer score,      // Score obtenu
-    Integer maxScore,   // Score max (10 ou 100)
-    LocalDateTime date, // Date de passage
-    String status       // "Réussi", "Échoué", "Terminé"
+    String type,        
+    String title,       
+    Integer score,      
+    Integer maxScore,   
+    LocalDateTime date, 
+    String status     
 ) {}

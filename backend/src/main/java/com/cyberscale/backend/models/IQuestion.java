@@ -3,6 +3,9 @@ package com.cyberscale.backend.models;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Interface définissant le contrat pour tout type de question dans l'application.
+ */
 public interface IQuestion {
 
     enum CategorieQuestion { THEORY, TECHNIQUE }

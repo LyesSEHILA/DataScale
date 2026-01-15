@@ -28,7 +28,10 @@ import com.cyberscale.backend.repositories.UserRepository;
 import jakarta.transaction.Transactional;
 import java.util.Map;
 
-
+/**
+ * Service gérant la logique des Quiz d'évaluation initiale et de l'historique utilisateur.
+ * Il orchestre la génération de questions, le calcul des scores et les recommandations.
+ */
 @Service
 public class QuizService {
 
@@ -44,6 +47,11 @@ public class QuizService {
     private QuestionGenerator questionGenerator;
 
 
+    /**
+     * Génère ou récupère les questions pour une session de quiz donnée.
+     * @param sessionId L'ID de la session.
+     * @return Une liste de questions adaptées au profil.
+     */
     public List<Question> getQuestionsForSession(Long sessionId) {
         QuizSession session = quizSessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session introuvable"));
@@ -51,6 +59,10 @@ public class QuizService {
         return questionGenerator.generate(session);
     }
 
+    /**
+     * Enregistre la réponse d'un utilisateur à une question.
+     * @param request DTO contenant l'ID de session, de question et de réponse choisie.
+     */
     public void saveUserAnswer(UserAnswerRequest request) {
         QuizSession session = quizSessionRepository.findById(request.sessionId())
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session introuvable"));
@@ -63,6 +75,11 @@ public class QuizService {
         userAnswerRepository.save(userAnswer);
     }
 
+    /**
+     * Calcule les scores finaux et génère des recommandations.
+     * @param sessionId L'ID de la session à clôturer.
+     * @return Les scores calculés et la liste des recommandations pédagogiques.
+     */
     public ResultsResponse calculateAndGetResults(Long sessionId) {
         QuizSession session = quizSessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session introuvable"));
@@ -107,6 +124,11 @@ public class QuizService {
         return new ResultsResponse(finalScoreTheory, finalScoreTechnique, recommendations);
     }
 
+    /**
+     * Initialise une nouvelle session de quiz.
+     * @param request Données d'auto-évaluation et ID utilisateur.
+     * @return La session créée.
+     */
     public QuizSession createSession(OnboardingRequest request) {
         QuizSession newSession = new QuizSession();
         newSession.setAge(request.age());
@@ -122,14 +144,16 @@ public class QuizService {
         return quizSessionRepository.save(newSession);
     }
     
-
+    /**
+     * Récupère l'historique (Quiz + Examens) d'un utilisateur.
+     * @param userId L'ID de l'utilisateur.
+     * @return Une liste triée par date décroissante d'événements.
+     */
     public List<com.cyberscale.backend.dto.HistoryDTO> getUserHistory(Long userId) {
         List<com.cyberscale.backend.dto.HistoryDTO> history = new java.util.ArrayList<>();
 
-        // 1. Récupérer les QUIZ
         List<QuizSession> quizzes = quizSessionRepository.findByUserIdOrderByCreatedAtDesc(userId);
         for (QuizSession q : quizzes) {
-            // Protection NULLS pour les quiz
             Double theory = q.getFinalScoreTheory() != null ? q.getFinalScoreTheory() : 0.0;
             Double tech = q.getFinalScoreTechnique() != null ? q.getFinalScoreTechnique() : 0.0;
             
@@ -144,38 +168,33 @@ public class QuizService {
             ));
         }
 
-        // 2. Récupérer les EXAMENS
         List<ExamSession> exams = examSessionRepository.findByUserId(userId);
         for (ExamSession e : exams) {
-            // --- A. PROTECTION ET CALCULS (C'est ce qu'il vous manquait !) ---
             Integer finalScore = e.getFinalScore() != null ? e.getFinalScore() : 0;
             Integer maxScore = e.getMaxPossibleScore() != null ? e.getMaxPossibleScore() : 0;
 
             String status = "En cours";
             if (maxScore > 0) {
                 double percent = (double) finalScore / maxScore;
-                status = percent >= 0.7 ? "Validé ✅" : "Échoué ❌";
+                status = percent >= 0.7 ? "Validé" : "Échoué";
             }
 
-            // --- B. GESTION DES TITRES ---
             String title = "Certification Blanche";
             if ("CEH".equals(e.getExamRef())) title = "CEH v12 Simulator";
             else if ("SEC_PLUS".equals(e.getExamRef())) title = "CompTIA Security+";
             else if ("CISSP".equals(e.getExamRef())) title = "CISSP Manager";
 
-            // --- C. AJOUT A L'HISTORIQUE ---
             history.add(new com.cyberscale.backend.dto.HistoryDTO(
                 e.getId(),
                 "EXAMEN",
-                title,      // Utilise la variable 'title'
-                finalScore, // Utilise la variable 'finalScore'
-                maxScore,   // Utilise la variable 'maxScore'
+                title,      
+                finalScore, 
+                maxScore,   
                 e.getStartTime(), 
-                status      // Utilise la variable 'status'
+                status     
             ));
         }
 
-        // 3. Trier par date
         history.sort((a, b) -> b.date().compareTo(a.date()));
 
         return history;

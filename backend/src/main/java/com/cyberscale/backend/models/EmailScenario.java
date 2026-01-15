@@ -7,6 +7,9 @@ import org.hibernate.type.SqlTypes;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Entité représentant un scénario d'email de phishing pour les exercices de sensibilisation.
+ */
 @Entity
 @Table(name = "email_scenarios")
 public class EmailScenario {
@@ -39,6 +42,14 @@ public class EmailScenario {
     public EmailScenario() {
     }
 
+    /**
+     * Constructeur complet pour initialiser un scénario.
+     * @param sender L'expéditeur simulé.
+     * @param subject L'objet de l'email.
+     * @param contentHtml Le contenu HTML.
+     * @param difficulty  La difficulté estimée.
+     * @param traps La liste des pièges.
+     */
     public EmailScenario(String sender, String subject, String contentHtml, IQuestion.DifficultyQuestion difficulty, List<Map<String, Object>> traps) {
         this.sender = sender;
         this.subject = subject;
@@ -47,51 +58,27 @@ public class EmailScenario {
         this.traps = traps;
     }
 
-    public Long getId() {
-        return id;
-    }
+    public Long getId() { return id; }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public void setId(Long id) { this.id = id; }
 
-    public String getSender() {
-        return sender;
-    }
+    public String getSender() { return sender; }
 
-    public void setSender(String sender) {
-        this.sender = sender;
-    }
+    public void setSender(String sender) { this.sender = sender; }
 
-    public String getSubject() {
-        return subject;
-    }
+    public String getSubject() { return subject; }
 
-    public void setSubject(String subject) {
-        this.subject = subject;
-    }
+    public void setSubject(String subject) { this.subject = subject; }
 
-    public String getContentHtml() {
-        return contentHtml;
-    }
+    public String getContentHtml() { return contentHtml; }
 
-    public void setContentHtml(String contentHtml) {
-        this.contentHtml = contentHtml;
-    }
+    public void setContentHtml(String contentHtml) { this.contentHtml = contentHtml; }
 
-    public IQuestion.DifficultyQuestion getDifficulty() {
-        return difficulty;
-    }
+    public IQuestion.DifficultyQuestion getDifficulty() { return difficulty; }
 
-    public void setDifficulty(IQuestion.DifficultyQuestion difficulty) {
-        this.difficulty = difficulty;
-    }
+    public void setDifficulty(IQuestion.DifficultyQuestion difficulty) { this.difficulty = difficulty; }
 
-    public List<Map<String, Object>> getTraps() {
-        return traps;
-    }
+    public List<Map<String, Object>> getTraps() { return traps; }
 
-    public void setTraps(List<Map<String, Object>> traps) {
-        this.traps = traps;
-    }
+    public void setTraps(List<Map<String, Object>> traps) { this.traps = traps; }
 }

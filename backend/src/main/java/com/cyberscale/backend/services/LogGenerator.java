@@ -11,6 +11,11 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
+
+/**
+ * Service responsable de la génération de logs Apache simulés.
+ * Il crée un mélange de trafic "normal" et injecte une anomalie (tentative d'attaque).
+ */
 @Service
 public class LogGenerator {
 
@@ -44,14 +49,27 @@ public class LogGenerator {
     @Value("${cyberscale.simulation.attacker-ip:192.0.2.66}") 
     private String attackerIp;
 
+
+    /**
+     * Permet de modifier l'IP de l'attaquant manuellement.
+     * @param attackerIp L'IP de l'attaquant
+     */
     public void setAttackerIp(String attackerIp) {
         this.attackerIp = attackerIp;
     }
     
+    /**
+     * Récupère l'IP de l'attaquant configurée.
+     * @return L'adresse IP actuelle de l'attaquant.
+     */
     public String getAttackerIp() {
         return attackerIp;
     }
 
+    /**
+     * Génère la liste complète des logs (trafic normal + anomalie).
+     * @return Une liste de chaînes de caractères au format Log Apache.
+     */
     public List<String> generateLogs() {
         List<String> logs = new ArrayList<>();
 
@@ -82,6 +100,11 @@ public class LogGenerator {
         return logs;
     }
 
+    /**
+     * Génère une ligne de log aléatoire "normale".
+     * @param time La date et l'heure à laquelle le log a été généré.
+     * @return Une chaîne formatée représentant une ligne de log Apache standard.
+     */
     private String generateRandomLogEntry(LocalDateTime time) {
         String ip = random.nextInt(IP_MAX_VAL) + "." + random.nextInt(IP_MAX_VAL) + "." + 
                    random.nextInt(IP_MAX_VAL) + "." + random.nextInt(IP_MAX_VAL);
@@ -96,10 +119,20 @@ public class LogGenerator {
                 ip, timestamp, method, url, status, size);
     }
 
+    /**
+     * Formate une date en format date Apache (ex: 10/Oct/2023:13:55:36 +0000).
+     * @param date L'objet LocalDateTime à formater.
+     * @return La date sous forme de chaîne respectant le format Common Log Format.
+     */
     private String formatApacheDate(LocalDateTime date) {
         return date.format(APACHE_FORMATTER) + " +0000";
     }
 
+    /**
+     * Extrait la date d'une ligne de log pour permettre le tri.
+     * @param logLine La ligne de log contenant la date.
+     * @return L'objet LocalDateTime correspondant à la date du log.
+     */
     private LocalDateTime extractDateFromLog(String logLine) {
         int start = logLine.indexOf('[') + 1;
         int end = logLine.indexOf(']');

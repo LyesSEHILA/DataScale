@@ -10,17 +10,24 @@ import org.springframework.context.annotation.Configuration;
 
 import java.time.Duration;
 
+/**
+ * Configuration pour l'interaction avec le daemon Docker.
+ * Instancie le client 'docker-java' qui sera injecte
+ * dans les services pour creer, demarrer et supprimer les conteneurs des challenges.
+ */
 @Configuration
 public class DockerConfig {
 
+    /**
+     * Crée et configure le Bean DockerClient.
+     * @return Une instance prete a l'emploi de DockerClient.
+     */
     @Bean
     public DockerClient dockerClient() {
-        // Configuration de la connexion (Socket Unix pour Linux)
         DefaultDockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder()
                 .withDockerHost("unix:///var/run/docker.sock") 
                 .build();
 
-        // Configuration du client HTTP (Transport)
         DockerHttpClient httpClient = new ApacheDockerHttpClient.Builder()
                 .dockerHost(config.getDockerHost())
                 .sslConfig(config.getSSLConfig())
@@ -29,7 +36,6 @@ public class DockerConfig {
                 .responseTimeout(Duration.ofSeconds(45))
                 .build();
 
-        // Création de l'instance finale
         return DockerClientImpl.getInstance(config, httpClient);
     }
 }

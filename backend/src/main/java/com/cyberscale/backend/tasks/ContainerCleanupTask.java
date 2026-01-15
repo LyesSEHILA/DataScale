@@ -12,6 +12,11 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Tâche planifiée agissant comme un "Garbage Collector" pour les conteneurs Docker.
+ * Scanne périodiquement les conteneurs lancés par l'application et supprime ceux
+ * qui ont dépassé la durée de vie maximale autorisée.
+ */
 @Component
 public class ContainerCleanupTask {
 
@@ -23,17 +28,22 @@ public class ContainerCleanupTask {
     @Autowired
     private ContainerService containerService;
 
-    // Seuil : 30 minutes (en secondes)
-    // CORRECTION ICI : Ajout du 'L' pour forcer le calcul en long (30L * 60)
     private static final long MAX_AGE_SECONDS = 30L * 60;
 
-    // S'exécute toutes les 600 000 ms (10 minutes)
+    /**
+     * Methode de nettoyage executee automatiquement par Spring.
+     * Frequence : Toutes les 10 minutes.
+     * Algorithme :
+     * 1. Lister tous les conteneurs.
+     * 2. Filtrer pour ne cibler que les images liees aux challenges.
+     * 3. Calculer l'age du conteneur.
+     * 4. Si l'age depasse le seuil, demander la suppression au service.
+     */
     @Scheduled(fixedRate = 600000)
     public void cleanupOldContainers() {
-        logger.info("🧹 [Cleanup] Vérification des conteneurs expirés...");
+        logger.info("Vérification des conteneurs expirés...");
 
         try {
-            // 1. Lister tous les conteneurs (actifs ou arrêtés)
             List<Container> containers = dockerClient.listContainersCmd()
                     .withShowAll(true)
                     .exec();
@@ -41,23 +51,17 @@ public class ContainerCleanupTask {
             long now = Instant.now().getEpochSecond();
 
             for (Container c : containers) {
-                // 2. Filtrer pour ne pas supprimer n'importe quoi !
-                // On ne touche qu'aux images de nos challenges (alpine, cyberscale...)
                 String imageName = c.getImage();
                 if (imageName != null && (imageName.contains("cyberscale") || imageName.contains("alpine"))) {
-
-                    // 3. Vérifier l'âge
-                    // c.getCreated() retourne un timestamp en secondes
                     if ((now - c.getCreated()) > MAX_AGE_SECONDS) {
-                        logger.info("🗑️ Suppression du conteneur expiré : {} ({})", c.getId(), imageName);
-                        
-                        // Appel à votre service existant pour nettoyer proprement
+                        logger.info("Suppression du conteneur expiré : {} ({})", c.getId(), imageName);
+                    
                         containerService.stopAndRemoveContainer(c.getId());
                     }
                 }
             }
         } catch (Exception e) {
-            logger.error("⚠️ Erreur lors du nettoyage Docker", e);
+            logger.error("Erreur lors du nettoyage Docker", e);
         }
     }
 }

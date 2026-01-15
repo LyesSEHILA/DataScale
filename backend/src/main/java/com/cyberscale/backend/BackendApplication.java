@@ -4,6 +4,9 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
+/**
+ * Point d'entrée de l'application CyberScale (Backend API).
+ */
 @SpringBootApplication
 @EnableScheduling
 public class BackendApplication {

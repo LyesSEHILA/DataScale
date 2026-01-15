@@ -8,7 +8,10 @@ import com.github.dockerjava.api.exception.DockerException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
+/**
+ * Service gérant le cycle de vie des conteneurs Docker pour les challenges.
+ * Il permet de créer, démarrer et nettoyer des environnements isolés.
+ */
 @Service
 public class ContainerService {
 
@@ -22,9 +25,10 @@ public class ContainerService {
     }
 
     /**
-     * Instancie un conteneur à partir d'une image.
-     * @param imageId L'id ou le nom de l'image
-     * @return L'id du conteneur créé.
+     * Instancie un conteneur Docker à partir d'une image donnée.
+     * @param imageId L'identifiant ou le nom de l'image Docker.
+     * @return L'identifiant unique du conteneur créé.
+     * @throws RuntimeException Si l'API Docker renvoie une erreur lors de la création.
      */
     public String createContainer(String imageId) {
         try {
@@ -40,8 +44,9 @@ public class ContainerService {
     }
 
     /**
-     * Lance un conteneur existant.
-     * @param containerId L'id du conteneur retourné par createContainer.
+     * Démarre un conteneur existant qui a été créé précédemment.
+     * @param containerId L'identifiant du conteneur à démarrer.
+     * @throws RuntimeException Si le démarrage échoue.
      */
     public void startContainer(String containerId) {
         try {
@@ -52,8 +57,8 @@ public class ContainerService {
     }
 
     /**
-     * Arrête et supprime le conteneur.
-     * @param containerId L'id du conteneur à nettoyer.
+     * Arrête et supprime définitivement un conteneur.
+     * @param containerId L'identifiant du conteneur à nettoyer.
      */
     public void stopAndRemoveContainer(String containerId) {
         try {

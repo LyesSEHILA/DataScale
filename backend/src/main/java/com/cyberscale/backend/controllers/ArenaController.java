@@ -3,23 +3,35 @@ package com.cyberscale.backend.controllers;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*; // Import global pour simplifier
+import org.springframework.web.bind.annotation.*;
 import com.cyberscale.backend.services.ArenaService;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
 
+/**
+ * Controleur REST et WebSocket gérant l'arene de jeu.
+ * Responsabilités :
+ * - REST : Démarrer/Arrêter les conteneurs Docker des challenges.
+ * - REST : Valider les Flags soumis par les joueurs.
+ * - WS : Gérer les communications temps réel via STOMP.
+ */
 @RestController
 @RequestMapping("/api/arena")
-@CrossOrigin(origins = "*") // Autorise le frontend
+@CrossOrigin(origins = "*") 
 public class ArenaController {
 
     @Autowired private ArenaService arenaService;
 
-    @MessageMapping("/arena") // Écoute les messages envoyés sur "/app/arena"
-    @SendTo("/topic/arena")   // Renvoie la réponse sur "/topic/arena"
+    /**
+     * Endpoint WebSocket pour l'echo ou le chat de l'arène.
+     * Les messages envoyés à "/app/arena" sont redistribues sur "/topic/arena".
+     * @param message Le message entrant.
+     * @return Le message sortant.
+     */
+    @MessageMapping("/arena") 
+    @SendTo("/topic/arena")  
     public String handleInput(String message) {
-        // Pour l'instant, on fait un simple écho : le serveur renvoie ce qu'il reçoit.
         return message;
     }
     
@@ -29,30 +41,41 @@ public class ArenaController {
         @JsonProperty("flag") String flag
     ) {}
 
-    // --- NOUVEL ENDPOINT : Démarrer l'environnement ---
+    /**
+     * Démarre l'environnement pour un challenge spécifique.
+     * @param challengeId L'ID du challenge à lancer.
+     * @return L'ID du conteneur crée pour permettre au front de s'y connecter.
+     */
     @PostMapping("/start/{challengeId}")
     public ResponseEntity<?> startArena(@PathVariable String challengeId) {
         try {
-            // Appel au service qui lance le Docker et retourne l'ID
             String containerId = arenaService.startChallengeEnvironment(challengeId);
             
-            // On renvoie l'ID au frontend pour qu'il puisse se connecter au WebSocket
             return ResponseEntity.ok(Map.of("containerId", containerId));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
         }
     }
 
-    // --- NOUVEL ENDPOINT : Arrêter l'environnement (Optionnel mais propre) ---
+    /**
+     * Arrête et supprime un conteneur actif.
+     * Appele lorsque l'utilisateur quitte la page du challenge.
+     * @param containerId L'ID du conteneur a detruire.
+     * @return code HTTP 200.
+     */
     @PostMapping("/stop/{containerId}")
     public ResponseEntity<?> stopArena(@PathVariable String containerId) {
         arenaService.stopChallengeEnvironment(containerId);
         return ResponseEntity.ok().build();
     }
 
+    /**
+     * Valide un flag soumis par l'utilisateur.
+     * @param request DTO contenant user, challenge et flag.
+     * @return code HTTP 200 ou 400 .
+     */
     @PostMapping("/validate")
     public ResponseEntity<?> validateFlag(@RequestBody FlagRequest request) {
-        // ... (votre code existant inchangé) ...
         boolean success = arenaService.validateFlag(request.userId(), request.challengeId(), request.flag());
         if (success) {
             return ResponseEntity.ok(Map.of("message", "Flag valide ! Points attribués.", "success", true));
