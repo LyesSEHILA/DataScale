@@ -176,7 +176,7 @@ public class QuizService {
             String status = "En cours";
             if (maxScore > 0) {
                 double percent = (double) finalScore / maxScore;
-                status = percent >= 0.7 ? "Validé" : "Échoué";
+                status = percent >= 0.7 ? "Validé ✅" : "Échoué ❌";
             }
 
             String title = "Certification Blanche";
