@@ -10,6 +10,10 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
+/**
+ * Entité représentant une session de Quiz d'évaluation (Onboarding).
+ * Elle stocke les données du candidat, ses auto-évaluations et les scores calculés.
+ */
 @Entity
 @Table(name = "quiz_session")
 public class QuizSession {
@@ -34,6 +38,10 @@ public class QuizSession {
         this.createdAt = LocalDateTime.now();
     }
 
+    /**
+     * Calcule le score global moyen de la session.
+     * @return La moyenne pondérée ou 0.0 si aucune note n'existe.
+     */
     public Double getScore() {
         if (finalScoreTheory == null && finalScoreTechnique == null) return 0.0;
         if (finalScoreTheory == null) return finalScoreTechnique;

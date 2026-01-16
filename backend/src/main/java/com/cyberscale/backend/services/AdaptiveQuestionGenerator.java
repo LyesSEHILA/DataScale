@@ -12,22 +12,26 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Component // Ce bean sera injecté dans le QuizService
+/**
+ * Générateur de questions adaptatif.
+ * Il sélectionne des questions en fonction du profil d'auto-évaluation de l'utilisateur
+ * et filtre celles qui sont statistiquement trop faciles.
+ */
+@Component
 public class AdaptiveQuestionGenerator implements QuestionGenerator {
 
     @Autowired
     private QuestionRepository questionRepository;
 
     @Autowired
-    private UserAnswerRepository userAnswerRepository; // Pour le compteur
+    private UserAnswerRepository userAnswerRepository;
 
-    private final int SUCCESS_THRESHOLD = 5; // Limite de réussite pour filtrer une question
+    private final int SUCCESS_THRESHOLD = 5;
     private final int TOTAL_QUESTIONS = 10;
 
     @Override
     public List<Question> generate(QuizSession session) {
         
-        // 1. Calcul des Ratios (Logique Adaptative)
         Long theoryScore = session.getSelfEvalTheory();
         Long techniqueScore = session.getSelfEvalTechnique();
         int countTheory, countTechnique;
@@ -42,19 +46,15 @@ public class AdaptiveQuestionGenerator implements QuestionGenerator {
             countTechnique = TOTAL_QUESTIONS - countTheory;
         }
 
-        // 2. Récupération, Filtrage et Application du Compteur
         List<Question> allQuestions = questionRepository.findAll();
 
-        // Application du Compteur : on filtre les questions qui ont été trop souvent réussies
         List<Question> validQuestions = allQuestions.stream()
             .filter(q -> {
-                // Appel de la nouvelle méthode corrigée
                 long successCount = userAnswerRepository.countByQuestionIdAndSelectedOptionIsCorrectTrue(q.getId());
                 return successCount < SUCCESS_THRESHOLD; 
             })
             .collect(Collectors.toList());
 
-        // 3. Sélection Finale (basée sur la liste filtrée et les ratios)
         List<Question> theoryQuestions = validQuestions.stream()
             .filter(q -> q.getCategorie() == IQuestion.CategorieQuestion.THEORY)            
             .limit(countTheory)
@@ -65,7 +65,6 @@ public class AdaptiveQuestionGenerator implements QuestionGenerator {
             .limit(countTechnique)
             .collect(Collectors.toList());
 
-        // 4. Assemblage
         theoryQuestions.addAll(techniqueQuestions);
         Collections.shuffle(theoryQuestions);
 

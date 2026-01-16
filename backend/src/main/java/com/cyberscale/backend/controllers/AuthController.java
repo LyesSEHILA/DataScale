@@ -15,6 +15,12 @@ import com.cyberscale.backend.services.AuthService;
 
 import jakarta.validation.Valid;
 
+/**
+ * Controleur REST gérant l'authentification et l'inscription.
+ * Il expose les endpoints publics pour :
+ * - Créer un nouveau compte.
+ * - Se connecter et récupérer ses informations.
+ */
 @RestController
 @RequestMapping("/api/auth")
 @CrossOrigin(origins = "*") 
@@ -26,7 +32,11 @@ public class AuthController {
         this.authService = authService;
     }
 
-    // Tâche F5: Endpoint POST /api/auth/register
+    /**
+     * Inscrit un nouvel utilisateur.
+     * @param registerRequest DTO contenant username, email, password.
+     * @return code HTTP 201.
+     */
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@Valid @RequestBody RegisterRequest registerRequest) { 
         
@@ -35,6 +45,11 @@ public class AuthController {
         return new ResponseEntity<>("Inscription réussie pour l'utilisateur: " + newUser.getEmail(), HttpStatus.CREATED);
     }
 
+    /**
+     * Authentifie un utilisateur.
+     * @param loginRequest DTO contenant email et password.
+     * @return code HTTP 200 et les informations sur l'utilisateurs.
+     */
     @PostMapping("/login")
     public ResponseEntity<?> loginUser(@Valid @RequestBody LoginRequest loginRequest) { 
         
@@ -43,8 +58,8 @@ public class AuthController {
         return ResponseEntity.ok(
             new LoginResponse(
                 authenticatedUser.getEmail(),
-                authenticatedUser.getUsername(), // Ajout du pseudo
-                authenticatedUser.getId(),       // Ajout de l'ID
+                authenticatedUser.getUsername(), 
+                authenticatedUser.getId(),       
                 "Connexion réussie !"
             )
         );
@@ -52,8 +67,8 @@ public class AuthController {
     
     public static class LoginResponse {
         private String email;
-        private String username; // Nouveau champ
-        private Long id;         // Nouveau champ
+        private String username; 
+        private Long id;         
         private String message;
         
         public LoginResponse(String email, String username, Long id, String message) {
@@ -64,8 +79,8 @@ public class AuthController {
         }
 
         public String getEmail() { return email; }
-        public String getUsername() { return username; } // Getter ajouté
-        public Long getId() { return id; }               // Getter ajouté
+        public String getUsername() { return username; } 
+        public Long getId() { return id; }               
         public String getMessage() { return message; }
     }
 }

@@ -2,6 +2,9 @@ package com.cyberscale.backend.dto;
 
 import java.util.List;
 
+/**
+ * Data Transfer Object représentant les données du tableau de bord utilisateur.
+ */
 public record DashboardResponse(
     Double averageTheory,
     Double averageTechnique,

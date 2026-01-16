@@ -21,6 +21,13 @@ import com.cyberscale.backend.repositories.RecommendationRepository;
 import com.cyberscale.backend.repositories.UserRepository;
 import com.cyberscale.backend.services.QuizService;
 
+/**
+ * Controleur REST gérant les données relatives à l'utilisateur.
+ * Il expose les endpoints pour :
+ * - Récupérer les statistiques du tableau de bord.
+ * - Obtenir le profil utilisateur.
+ * - Consulter l'historique complet.
+ */
 @RestController
 @RequestMapping("/api/user")
 @CrossOrigin(origins = "*")
@@ -37,10 +44,15 @@ public class UserController {
         this.quizService = quizService;
     }
 
+    /**
+     * Agrege les statistiques pour le tableau de bord de l'utilisateur.
+     * Calcule la moyenne des quiz, liste les certifications obtenues et propose des ressources.
+     * @param id L'ID de l'utilisateur.
+     * @return Un DTO DashboardResponse contenant toutes les informations.
+     */
     @GetMapping("/{id}/dashboard")
     public ResponseEntity<DashboardResponse> getDashboardStats(@PathVariable Long id) {
         
-        // 1. Calcul des Moyennes (Utilisation de VOTRE méthode existante)
         List<QuizSession> quizzes = quizSessionRepository.findByUserIdOrderByCreatedAtDesc(id);
         
         double totalScore = 0;
@@ -53,17 +65,14 @@ public class UserController {
             }
         }
 
-        // On calcule une moyenne globale (Théorie/Technique identiques pour l'instant)
         Double avgGlobal = count > 0 ? (totalScore / count) * 10 : 0.0;
 
-        // 2. Liste des Certifications (Examens réussis)
         List<ExamSession> exams = examSessionRepository.findByUserId(id);
         List<String> certifs = exams.stream()
             .filter(e -> "VALIDATED".equals(e.getStatus()) || (e.getScore() != null && e.getScore() >= 80)) 
             .map(e -> "Certification " + (e.getExamRef() != null ? e.getExamRef() : "Sécurité"))
             .collect(Collectors.toList());
 
-        // 3. Ressources Recommandées
         List<Recommendation> allRecos = recommendationRepository.findAll();
         List<DashboardResponse.RecommendationDTO> adaptiveRecos = allRecos.stream()
             .limit(3)
@@ -71,14 +80,19 @@ public class UserController {
             .collect(Collectors.toList());
 
         return ResponseEntity.ok(new DashboardResponse(
-            avgGlobal, // Théorie
-            avgGlobal, // Technique
+            avgGlobal, 
+            avgGlobal, 
             count, 
             certifs, 
             adaptiveRecos
         ));
     }
-    
+
+    /**
+     * Récupère les informations de base d'un utilisateur.
+     * @param id L'ID de l'utilisateur.
+     * @return L'entité User ou une erreur 404.
+     */
     @GetMapping("/{id}")
     public ResponseEntity<User> getUser(@PathVariable Long id) {
         return userRepository.findById(id)
@@ -86,6 +100,11 @@ public class UserController {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Utilisateur introuvable"));
     }
 
+    /**
+     * Récupère l'historique (Quiz + Examens) via le service.
+     * @param userId L'ID de l'utilisateur.
+     * @return Liste d'évènements triés par date.
+     */
     @GetMapping("/{userId}/history")
     public ResponseEntity<List<com.cyberscale.backend.dto.HistoryDTO>> getUserHistory(@PathVariable Long userId) {
         return ResponseEntity.ok(quizService.getUserHistory(userId));

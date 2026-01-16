@@ -4,11 +4,14 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Map;
 
+
+/**
+ * Service gérant la logique des exercices de Phishing.
+ * Il stocke les scénarios, les zones piégées et fournit le feedback pédagogique.
+ */
 @Service
 public class PhishingService {
 
-    // Structure des données : 
-    // ID Scénario -> Map des pièges (ID HTML -> Explication pédagogique)
     private final Map<String, Map<String, String>> scenarioTraps = Map.of(
         "SCENARIO_1", Map.of(
             "sender-email", "L'adresse 'pypal-support.com' est fausse. Le vrai domaine est paypal.com.",
@@ -27,13 +30,18 @@ public class PhishingService {
         )
     );
 
-    // Définitions globales (Le "Cours" à la fin)
     private final Map<String, String> scenarioLessons = Map.of(
         "SCENARIO_1", "Leçon : Le 'Typosquatting' consiste à utiliser des noms de domaine très proches des vrais (ex: pypal au lieu de paypal). Vérifiez toujours l'expéditeur.",
         "SCENARIO_2", "Leçon : Les pièces jointes sont le vecteur n°1 des Ransomwares. N'ouvrez jamais un .exe, .scr ou .js reçu par email.",
         "SCENARIO_3", "Leçon : C'est une 'Fraude au Président'. L'attaquant se fait passer pour un dirigeant pour contourner les procédures de sécurité."
     );
 
+    /**
+     * Analyse un clic utilisateur sur un élément d'un email de phishing.
+     * @param scenarioId L'identifiant du scénario en cours (ex: SCENARIO_1).
+     * @param elementId  L'ID HTML de l'élément cliqué par l'utilisateur.
+     * @return Une Map contenant le résultat ("isTrap": boolean) et l'explication ("message").
+     */
     public Map<String, Object> analyzeClick(String scenarioId, String elementId) {
         if (scenarioId == null || elementId == null) return Map.of("status", "error");
 
@@ -54,6 +62,11 @@ public class PhishingService {
         }
     }
 
+    /**
+     * Récupère les métadonnées d'un scénario (nombre de pièges, leçon finale).
+     * @param scenarioId L'identifiant du scénario.
+     * @return Une Map avec le total des pièges et la leçon, ou null si introuvable.
+     */
     public Map<String, Object> getScenarioInfo(String scenarioId) {
         Map<String, String> traps = scenarioTraps.get(scenarioId);
         if (traps == null) return null;

@@ -8,9 +8,11 @@ import org.springframework.stereotype.Repository;
 import com.cyberscale.backend.models.IQuestion;
 import com.cyberscale.backend.models.Question; 
 
+/**
+ * Interface d'acces aux donnees pour la banque de questions (Table "questions").
+ */
 @Repository
 public interface QuestionRepository extends JpaRepository<Question, Long> {
-    // Signature mise à jour avec IQuestion...
     List<Question> findByCategorieAndDifficulty(IQuestion.CategorieQuestion categorie, IQuestion.DifficultyQuestion difficulty);
     List<Question> findByExamRef(String examRef);
 }

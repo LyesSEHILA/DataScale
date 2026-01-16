@@ -13,10 +13,29 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+/**
+ * Configuration de la securite Spring Security.
+ * Definit :
+ * - Les regles de filtrage HTTP (qui a le droit d'acceder a quoi).
+ * - La configuration CORS (Cross-Origin Resource Sharing).
+ * - L'algorithme de hachage des mots de passe.
+ */
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
+    /**
+     * Definit la chaine de filtres de securite.
+     * Actions effectuees :
+     * - Désactivation CSRF : Inutile pour une API REST stateless utilisee par un front SPA.
+     * - Activation CORS : Utilise la source de configuration definie plus bas.
+     * - Autorisations : Permet l'acces anonyme aux endpoints publics, exige l'authentification pour le reste.
+     * - Headers : Desactive X-Frame-Options pour permettre l'affichage de la console H2.
+     *
+     * @param http Le constructeur de securite HTTP.
+     * @return La chaine de filtres construite.
+     * @throws Exception En cas d'erreur de configuration.
+     */
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
@@ -34,11 +53,21 @@ public class SecurityConfig {
         return http.build();
     }
 
+    /**
+     * Responsable de l'encodage des mots de passe.
+     * Utilise BCrypt, algorithme pour le hachage.
+     * @return Une instance de BCryptPasswordEncoder.
+     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
+    /**
+     * Configuration globale du CORS.
+     * Permet au frontend de communiquer avec ce backend.
+     * @return La source de configuration CORS.
+     */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
