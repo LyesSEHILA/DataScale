@@ -5,15 +5,18 @@ import java.nio.file.Paths;
 import java.time.Duration;
 
 import org.junit.jupiter.api.AfterEach;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor; // <--- Import nécessaire
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.firefox.FirefoxOptions;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
 import io.github.bonigarcia.wdm.WebDriverManager;
 
@@ -30,9 +33,7 @@ public class SeleniumTest {
     void setupTest() {
         FirefoxOptions options = new FirefoxOptions();
         options.addArguments("-headless"); 
-        
         driver = new FirefoxDriver(options);
-        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(5));
     }
 
     @AfterEach
@@ -44,25 +45,53 @@ public class SeleniumTest {
 
     @Test
     void testUserFlow_ShouldStartQuiz() {
-        // CORRECTION ICI : On pointe vers quiz-intro.html au lieu de index.html
-        File frontendDir = Paths.get("..", "frontend", "quiz-intro.html").toAbsolutePath().normalize().toFile();
-        String fileUrl = "file://" + frontendDir.getPath();
-        
-        System.out.println("Test Selenium sur : " + fileUrl);
+        // 1. CHEMIN DU FICHIER
+        File file = Paths.get("..", "frontend", "quiz-intro.html").toAbsolutePath().normalize().toFile();
+        if (!file.exists()) {
+            file = Paths.get("frontend", "quiz-intro.html").toAbsolutePath().normalize().toFile();
+        }
+        if (!file.exists()) fail("❌ ERREUR : Fichier HTML introuvable");
 
-        // 2. Ouvrir la page
+        String fileUrl = "file://" + file.getPath();
+        System.out.println("✅ Navigation vers : " + fileUrl);
+
+        // 2. OUVERTURE INITIALE (Pour charger le contexte)
         driver.get(fileUrl);
 
-        // 3. Remplir le formulaire (qui existe bien sur quiz-intro.html)
-        WebElement ageInput = driver.findElement(By.id("ageInput"));
-        ageInput.clear(); // Bonne pratique : vider avant d'écrire
-        ageInput.sendKeys("25");
+        // --- CORRECTIF AUTHENTIFICATION ---
+        // On injecte le token pour passer le auth-guard.js
+        JavascriptExecutor js = (JavascriptExecutor) driver;
+        js.executeScript("localStorage.setItem('userId', '999');");
+        js.executeScript("localStorage.setItem('userName', 'TestUser');");
+        System.out.println("✅ Token d'authentification injecté.");
 
-        // 4. Vérifier le bouton
-        WebElement startButton = driver.findElement(By.id("startButton"));
-        assertTrue(startButton.isDisplayed(), "Le bouton commencer doit être visible");
-        
-        // On ne clique pas pour éviter l'erreur API si le backend est éteint, 
-        // le but est de valider que la page s'affiche et que les éléments sont là.
+        // On recharge la page pour que le auth-guard nous laisse passer cette fois
+        driver.get(fileUrl);
+        // ----------------------------------
+
+        // 3. ATTENTE ET INTERACTION
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+
+        try {
+            // Maintenant, on devrait rester sur quiz-intro.html
+            WebElement ageInput = wait.until(ExpectedConditions.presenceOfElementLocated(By.id("ageInput")));
+            
+            ageInput.clear();
+            ageInput.sendKeys("25");
+
+            WebElement startButton = driver.findElement(By.id("startButton"));
+            if(startButton.isDisplayed()) {
+                startButton.click();
+                System.out.println("✅ Test réussi : Formulaire rempli et bouton cliqué.");
+            } else {
+                fail("Le bouton n'est pas visible.");
+            }
+            
+        } catch (Exception e) {
+            System.err.println("❌ ÉCHEC : Élément introuvable.");
+            System.err.println("URL actuelle : " + driver.getCurrentUrl()); // Utile pour voir si on est sur login.html
+            System.err.println("Source page :\n" + driver.getPageSource());
+            throw e;
+        }
     }
 }

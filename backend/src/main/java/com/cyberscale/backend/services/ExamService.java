@@ -22,6 +22,10 @@ import com.cyberscale.backend.repositories.UserRepository;
 import jakarta.transaction.Transactional;
 import java.util.Map;
 
+/**
+ * Service gérant le cycle de vie des examens.
+ * Il gère le démarrage, la soumission des réponses et le calcul final des scores.
+ */
 @Service
 public class ExamService {
 
@@ -32,6 +36,13 @@ public class ExamService {
     @Autowired private UserRepository userRepository;
 
 
+    /**
+     * Démarre une nouvelle session d'examen pour un candidat.
+     * @param candidateName Nom affiché du candidat.
+     * @param userId ID de l'utilisateur (optionnel).
+     * @param examRef Référence de l'examen (ex: "CEH").
+     * @return La session créée.
+     */
     public ExamSession startExam(String candidateName, Long userId, String examRef) {
         ExamSession session = new ExamSession();
         session.setCandidateName(candidateName);
@@ -46,7 +57,11 @@ public class ExamService {
     }
 
     /**
-     * Soumettre une réponse avec VALIDATION TEMPORELLE
+     * Enregistre une réponse à une question d'examen.
+     * @param sessionId  ID de la session.
+     * @param questionId ID de la question.
+     * @param optionId   ID de la réponse choisie.
+     * @throws ResponseStatusException Si le temps est écoulé ou les entités introuvables.
      */
     public void submitExamAnswer(Long sessionId, Long questionId, Long optionId) {
         ExamSession session = examSessionRepository.findById(sessionId)
@@ -71,7 +86,9 @@ public class ExamService {
     }
 
     /**
-     * Terminer l'examen et Calculer le Score Pondéré
+     * Clôture l'examen, calcule le score et estime la probabilité de réussite à la vraie certification.
+     * @param sessionId ID de la session à terminer.
+     * @return La session mise à jour avec les scores.
      */
     @Transactional
     public ExamSession finishExam(Long sessionId) {
@@ -110,7 +127,6 @@ public class ExamService {
         } else {
             session.setSuccessProbability(0);
         }
-        // -----------------------------
 
         if (LocalDateTime.now().isBefore(session.getEndTime())) {
             session.setEndTime(LocalDateTime.now());
@@ -119,6 +135,11 @@ public class ExamService {
         return examSessionRepository.save(session);
     }
 
+    /**
+     * Récupère une liste aléatoire de questions pour l'examen.
+     * @param sessionId ID de la session.
+     * @return Liste de questions mélangées.
+     */
     public List<Question> getExamQuestions(Long sessionId) {
         ExamSession session = examSessionRepository.findById(sessionId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session introuvable"));
@@ -134,6 +155,11 @@ public class ExamService {
         return questions.stream().limit(20).toList();
     }
 
+    /**
+     * Renvoie l'état actuel de l'examen (Temps restant, progression).
+     * @param sessionId ID de la session.
+     * @return Map contenant les métadonnées.
+     */
     public Map<String, Object> getExamStatus(Long sessionId) {
     ExamSession session = examSessionRepository.findById(sessionId)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session introuvable"));
@@ -141,14 +167,13 @@ public class ExamService {
     long secondsLeft = java.time.Duration.between(LocalDateTime.now(), session.getEndTime()).getSeconds();
     if (secondsLeft < 0) secondsLeft = 0;
 
-    // ON AJOUTE CECI :
     long answeredCount = userAnswerRepository.countByExamSessionId(sessionId);
 
     return Map.of(
         "secondsLeft", secondsLeft,
         "isFinished", session.getFinalScore() != null,
         "examRef", session.getExamRef() != null ? session.getExamRef() : "EXAM",
-        "currentIndex", answeredCount // On renvoie l'index où reprendre (ex: 3 réponses = index 3, donc 4ème question)
+        "currentIndex", answeredCount
     );
 }
     

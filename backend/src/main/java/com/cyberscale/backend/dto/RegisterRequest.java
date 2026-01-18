@@ -3,6 +3,11 @@ package com.cyberscale.backend.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
+/**
+ * DTO pour la requête d'inscription d'un nouvel utilisateur.
+ * Capture les informations essentielles lors de la création de compte
+ * et applique les règles de validation.
+ */
 public record RegisterRequest(
 
     @NotBlank(message = "Le nom d'utilisateur est requis")

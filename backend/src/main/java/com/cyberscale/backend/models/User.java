@@ -9,6 +9,9 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import com.fasterxml.jackson.annotation.JsonIgnore; 
 
+/**
+ * Entité représentant un utilisateur de la plateforme.
+ */
 @Entity
 @Table(name = "app_user", uniqueConstraints = {
     @UniqueConstraint(columnNames = "email")
@@ -38,39 +41,24 @@ public class User {
         this.password = password; 
     }
 
-    public Long getId() {
-        return id;
-    }
+    public Long getId() { return id; }
 
-    public String getUsername() {
-        return username;
-    }
+    public String getUsername() { return username; }
 
-    public String getEmail() {
-        return email;
-    }
+    public String getEmail() { return email; }
 
-    public String getPassword() {
-        return password;
-    }
+    public String getPassword() { return password; }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public void setId(Long id) { this.id = id; }
 
-    public void setUsername(String username) {
-        this.username = username;
-    }
+    public void setUsername(String username) { this.username = username; }
 
-    public void setEmail(String email) {
-        this.email = email;
-    }
+    public void setEmail(String email) { this.email = email; }
 
-    public void setPassword(String password) {
-        this.password = password;
-    }
+    public void setPassword(String password) { this.password = password; }
 
     public Integer getPoints() { return points != null ? points : 0; }
+    
     public void setPoints(Integer points) { this.points = points; }
 
     public void addPoints(int pointsToAdd) {

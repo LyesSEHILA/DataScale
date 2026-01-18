@@ -17,6 +17,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
+/**
+ * Entité représentant une question d'un quiz.
+ */
 @Entity
 @Table(name = "questions")
 public class Question implements IQuestion { 
@@ -68,9 +71,7 @@ public class Question implements IQuestion {
     public String getExamRef() { return examRef; }
 
     @Override
-    public List<AnswerOption> getOptions() { 
-        return options != null ? new ArrayList<>(options) : new ArrayList<>(); 
-    }
+    public List<AnswerOption> getOptions() {  return options != null ? new ArrayList<>(options) : new ArrayList<>(); }
 
     @Override
     public Map<Long, Boolean> getAnswerKeyMap() {
@@ -83,14 +84,17 @@ public class Question implements IQuestion {
         return correction;
     }
 
-
-    // --- Setters ---
-
     public void setId(Long id) { this.id = id; }
+    
     public void setText(String text) { this.text = text; }
+    
     public void setCategorie(IQuestion.CategorieQuestion categorie) { this.categorie = categorie; }
+    
     public void setDifficulty(IQuestion.DifficultyQuestion difficulty) { this.difficulty = difficulty; }  
+    
     public void setPointsWeight(Integer pointsWeight) { this.pointsWeight = pointsWeight; }  
+    
     public void setExamRef(String examRef) { this.examRef = examRef; }
+   
     public void setOptions(List<AnswerOption> options) { this.options = options; }
 }

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Test WebSocket Terminal</title>
+    <style>
+        body { background: #1e1e1e; color: #0f0; font-family: monospace; padding: 20px; }
+        #output { border: 1px solid #333; height: 300px; overflow-y: scroll; white-space: pre; padding: 10px; margin-bottom: 10px; background: #000; }
+        input { width: 300px; padding: 10px; }
+        button { padding: 10px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h2>Testeur de Terminal WebSocket 🐳</h2>
+    
+    <input type="text" id="containerId" value="f3052acb9ed6" placeholder="Colle l'ID Docker ici">
+    <button onclick="connect()">🔌 Connecter</button>
+    
+    <div id="status">Statut: Déconnecté</div>
+    <div id="output"></div>
+    
+    <input type="text" id="commandInput" placeholder="Tape une commande (ex: ls)" onkeypress="handleEnter(event)">
+    <button onclick="sendCommand()">Envoyer</button>
+
+    <script>
+        let socket;
+
+        function connect() {
+            const id = document.getElementById('containerId').value;
+            if (!id) return alert("Il faut un ID !");
+
+            // Connexion au Backend Java
+            socket = new WebSocket(`ws://localhost:8080/ws/terminal?containerId=${id}`);
+
+            socket.onopen = () => {
+                document.getElementById('status').innerText = "Statut: Connecté ✅";
+                document.getElementById('output').innerText += "--- Connexion établie ---\n";
+            };
+
+            socket.onmessage = (event) => {
+                // Ce que le Docker renvoie s'affiche ici
+                document.getElementById('output').innerText += event.data;
+                const out = document.getElementById('output');
+                out.scrollTop = out.scrollHeight;
+            };
+
+            socket.onclose = (event) => {
+                document.getElementById('status').innerText = "Statut: Déconnecté ❌ (Code: " + event.code + ")";
+                console.log("Fermeture:", event);
+            };
+            
+            socket.onerror = (err) => {
+                console.error("Erreur WebSocket", err);
+                document.getElementById('output').innerText += "\n[ERREUR] Vérifie la console F12\n";
+            };
+        }
+
+        function sendCommand() {
+            const input = document.getElementById('commandInput');
+            const cmd = input.value;
+            // IMPORTANT : On ajoute \n car c'est comme appuyer sur Entrée dans un terminal
+            socket.send(cmd + "\n");
+            input.value = ""; 
+        }
+
+        function handleEnter(e) {
+            if (e.key === 'Enter') sendCommand();
+        }
+    </script>
+</body>
+</html>

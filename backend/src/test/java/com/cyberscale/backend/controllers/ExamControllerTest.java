@@ -1,16 +1,10 @@
 package com.cyberscale.backend.controllers;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.hamcrest.Matchers.hasSize;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-
 import java.time.LocalDateTime;
 
+import static org.hamcrest.Matchers.hasSize;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +14,11 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.cyberscale.backend.models.AnswerOption;
@@ -58,12 +57,12 @@ public class ExamControllerTest {
     void testStartExam_ShouldReturnSessionWithRef() throws Exception {
         mockMvc.perform(post("/api/exam/start")
                 .param("candidateName", "John Doe")
-                .param("examRef", "SEC_PLUS") // On teste le paramètre
+                .param("examRef", "SEC_PLUS") 
                 .accept(MediaType.APPLICATION_JSON))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").exists())
-                .andExpect(jsonPath("$.examRef").value("SEC_PLUS")) // Vérif
+                .andExpect(jsonPath("$.examRef").value("SEC_PLUS")) 
                 .andExpect(jsonPath("$.candidateName").value("John Doe"));
     }
 
@@ -105,7 +104,6 @@ public class ExamControllerTest {
         
         // 5. Vérifications
         assertEquals(5, json.get("finalScore").asInt());
-        // Avec 100% de réussite (5/5), la probabilité devrait être élevée (>80%)
         assertNotNull(json.get("successProbability"));
         int prob = json.get("successProbability").asInt();
         assertEquals(true, prob > 50, "La probabilité doit être positive pour un score parfait");
@@ -194,7 +192,6 @@ public class ExamControllerTest {
     void testFinishExam_SecurityPlus_ShouldUseCorrectThreshold() throws Exception {
         ExamSession session = new ExamSession();
         session.setCandidateName("Admin");
-        // ATTENTION : Le Service attend "Security+", pas "SEC_PLUS" pour le seuil !
         session.setExamRef("Security+"); 
         session = examSessionRepository.save(session);
 
@@ -223,7 +220,6 @@ public class ExamControllerTest {
         // 100% / 0.83 * 80 = ~96%
         String responseBody = result.getResponse().getContentAsString();
         JsonNode json = objectMapper.readTree(responseBody);
-        // On accepte une petite marge d'erreur de calcul
         int prob = json.get("successProbability").asInt();
         assertEquals(true, prob >= 95 && prob <= 97, "Devrait être ~96%");
     }
@@ -231,7 +227,6 @@ public class ExamControllerTest {
     // --- TEST 7 : Couverture du cas Score Vide (0 questions) ---
     @Test
     void testFinishExam_EmptySession_ShouldHaveZeroProbability() throws Exception {
-        // Session sans aucune question répondue (MaxScore = 0)
         ExamSession session = new ExamSession();
         session.setCandidateName("Newbie");
         session = examSessionRepository.save(session);

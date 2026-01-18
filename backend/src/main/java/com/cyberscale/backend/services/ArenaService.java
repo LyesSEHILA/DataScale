@@ -17,18 +17,37 @@ import com.cyberscale.backend.repositories.ChallengeRepository;
 import com.cyberscale.backend.repositories.UserChallengeRepository;
 import com.cyberscale.backend.repositories.UserRepository;
 
+/**
+ * Service gérant la logique métier de l'arène de challenges.
+ * Il s'occupe de la liste des épreuves, de la validation des flags et
+ * de l'orchestration des environnements Docker via ContainerService.
+ */
 @Service
 public class ArenaService {
 
-    @Autowired private ChallengeRepository challengeRepository;
-    @Autowired private UserRepository userRepository;
-    @Autowired private UserChallengeRepository userChallengeRepository; // Injection du nouveau repo
+    private final ChallengeRepository challengeRepository;
+    private final UserRepository userRepository;
+    private final UserChallengeRepository userChallengeRepository;
+    private final ContainerService containerService;
 
-    // --- LISTE DES CHALLENGES (Avec statut ✅) ---
+    public ArenaService(ChallengeRepository challengeRepository, 
+                        UserRepository userRepository,
+                        UserChallengeRepository userChallengeRepository,
+                        ContainerService containerService) {
+        this.challengeRepository = challengeRepository;
+        this.userRepository = userRepository;
+        this.userChallengeRepository = userChallengeRepository;
+        this.containerService = containerService;
+    }
+    
+    /**
+     * Récupère la liste de tous les challenges disponibles.
+     * @param userId L'ID de l'utilisateur connecté.
+     * @return Une liste de DTOs prêts pour l'affichage frontend.
+     */
     public List<ChallengeDTO> getAllChallenges(Long userId) {
         List<Challenge> challenges = challengeRepository.findAll();
         
-        // On récupère les IDs des challenges déjà réussis par cet utilisateur
         Set<String> solvedIds = java.util.Collections.emptySet();
         if (userId != null) {
             solvedIds = userChallengeRepository.findByUserId(userId).stream()
@@ -36,7 +55,7 @@ public class ArenaService {
                 .collect(Collectors.toSet());
         }
         
-        final Set<String> finalSolvedIds = solvedIds; // Pour le lambda
+        final Set<String> finalSolvedIds = solvedIds;
 
         return challenges.stream().map(c -> {
             String diff = "FACILE";
@@ -51,46 +70,79 @@ public class ArenaService {
                 c.getDescription(),
                 c.getPointsReward(),
                 diff,
-                isDone // <-- C'est ici que la magie opère !
+                isDone
             );
         }).collect(Collectors.toList());
     }
 
-    // --- VALIDATION DU FLAG ---
+    /**
+     * Tente de valider un flag soumis par un utilisateur pour un challenge donné.
+     * @param userId L'ID de l'utilisateur.
+     * @param challengeId L'ID du challenge.
+     * @param submittedFlag Le flag entré par l'utilisateur.
+     * @return true si le flag est valide ou déjà validé, false sinon.
+     * @throws ResponseStatusException Si l'utilisateur ou le challenge n'existe pas.
+     */
     public boolean validateFlag(Long userId, String challengeId, String submittedFlag) {
-        // 1. Vérif Utilisateur
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User introuvable"));
 
-        // 2. Vérif Challenge
         Challenge challenge = challengeRepository.findById(challengeId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Challenge introuvable"));
 
-        // 3. Si déjà validé, on ne fait rien (ou on renvoie true sans donner de points)
         if (userChallengeRepository.existsByUserIdAndChallengeId(userId, challengeId)) {
-            return true; // Déjà gagné !
+            return true;
         }
 
-        // 4. Vérif Flag
         if (!challenge.getFlagSecret().equals(submittedFlag.trim())) {
             return false;
         }
 
-        // 5. VICTOIRE : Sauvegarde + Points
         user.addPoints(challenge.getPointsReward());
         userRepository.save(user);
 
         UserChallenge victory = new UserChallenge(user, challenge);
-        userChallengeRepository.save(victory); // <-- On enregistre la preuve
+        userChallengeRepository.save(victory);
 
         return true;
     }
     
-    // --- NOUVEAU : Récupérer UN challenge (pour l'Arena) ---
+    /**
+     * Récupère les détails d'un challenge spécifique.
+     * @param challengeId L'ID du challenge.
+     * @return Le DTO du challenge.
+     * @throws ResponseStatusException Si le challenge est introuvable.
+     */
     public ChallengeDTO getChallengeById(String challengeId) {
         Challenge c = challengeRepository.findById(challengeId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Challenge introuvable"));
             
         return new ChallengeDTO(c.getId(), c.getName(), c.getDescription(), c.getPointsReward(), "N/A", false);
+    }
+
+    /**
+     * Démarre un environnement Docker pour le challenge.
+     * @param challengeId L'ID du challenge.
+     * @return L'ID du conteneur Docker créé.
+     * @throws ResponseStatusException Si le challenge n'existe pas.
+     */
+    public String startChallengeEnvironment(String challengeId) {
+        Challenge challenge = challengeRepository.findById(challengeId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Challenge inconnu"));
+
+        String imageName = "cyberscale/base-challenge";
+        
+        String containerId = containerService.createContainer(imageName);
+        containerService.startContainer(containerId);
+
+        return containerId;
+    }
+
+    /**
+     * Arrête et supprime un environnement de challenge.
+     * @param containerId L'ID du conteneur à nettoyer.
+     */
+    public void stopChallengeEnvironment(String containerId) {
+        containerService.stopAndRemoveContainer(containerId);
     }
 }

@@ -10,17 +10,28 @@ import com.cyberscale.backend.dto.RegisterRequest;
 import com.cyberscale.backend.models.User;
 import com.cyberscale.backend.repositories.UserRepository;
 
+/**
+ * Service responsable de l'authentification et de l'inscription des utilisateurs.
+ * Il gère la vérification des doublons (email/username), le hachage des mots de passe
+ * et la validation des identifiants lors de la connexion.
+ */
 @Service 
 public class AuthService { 
 
     private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder; // On injecte l'encodeur
+    private final PasswordEncoder passwordEncoder;
 
     public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
+    /**
+     * Enregistre un nouvel utilisateur dans la base de données.
+     * @param request DTO contenant les informations d'inscription.
+     * @return L'utilisateur créé et sauvegardé.
+     * @throws ResponseStatusException si l'email ou le username existe déjà.
+     */
     public User registerUser(RegisterRequest request) {
         
         if (userRepository.existsByEmail(request.email())) { 
@@ -31,18 +42,23 @@ public class AuthService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Nom d'utilisateur déjà utilisé");
         }
         
-        // SÉCURITÉ : On hache le mot de passe avant de le sauvegarder
         String hashedPassword = passwordEncoder.encode(request.password());
         
         User newUser = new User(
             request.username(),
             request.email(),
-            hashedPassword // On enregistre le hash crypté
+            hashedPassword
         );
 
         return userRepository.save(newUser);
     }
 
+    /**
+     * Authentifie un utilisateur à partir de son email et de son mot de passe.
+     * @param request DTO contenant les identifiants de connexion.
+     * @return L'utilisateur authentifié si les informations sont correctes.
+     * @throws ResponseStatusException si l'utilisateur n'existe pas ou le mot de passe est incorrect.
+     */
     public User loginUser(LoginRequest request) {
         User user = userRepository.findByEmail(request.email()) 
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Identifiants incorrects"));

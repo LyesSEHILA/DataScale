@@ -22,46 +22,65 @@ import com.cyberscale.backend.services.QuizService;
 
 import jakarta.validation.Valid;
 
-@RestController // Dit à Spring que ceci est un Controller API
-@RequestMapping("/api/quiz") // Toutes les URL de ce fichier commenceront par /api/quiz
-@CrossOrigin(origins = "*") // DoD #7: Autorise les appels du frontend
+/**
+ * Controleur REST gérant le flux du Quiz d'evaluation initiale.
+ * Il expose les endpoints pour :
+ * - Initialiser une session.
+ * - Récupérer les questions adaptées.
+ * - Soumettre les réponses.
+ * - Obtenir les résultats et recommandations.
+ */
+@RestController 
+@RequestMapping("/api/quiz") 
+@CrossOrigin(origins = "*")
 public class QuizController {
 
     @Autowired
-    private QuizService quizService; // Injecte le "cerveau"
+    private QuizService quizService; 
 
     /**
-     * Endpoint pour démarrer une nouvelle session de quiz.
-     * C'est le DoD #5.
+     * Démarre une nouvelle session de quiz baser sur les donnees d'onboarding.
+     * @param request DTO contenant l'âge et les auto-évaluations.
+     * @return La session créée avec le code HTTP 201.
      */
-    @PostMapping("/start") // Se déclenche sur POST /api/quiz/start
+    @PostMapping("/start") 
     public ResponseEntity<QuizSession> startQuiz(@Valid @RequestBody OnboardingRequest request) {
-        
-        // @Valid: active la validation (DoD #1)
-        // @RequestBody: dit à Spring de lire le JSON de la requête
-        
         QuizSession createdSession = quizService.createSession(request);
         
-        // DoD #6: Retourne un statut 201 CREATED et la session créée dans le corps
         return ResponseEntity.status(HttpStatus.CREATED).body(createdSession);
     }
 
+    /**
+     * Enregistre une réponse utilisateur.
+     * @param request DTO contenant l'ID de session, de question et de l'option choisie.
+     * @return code HTTP 200 si l'enregistrement a réussi.
+     */
     @PostMapping("/answer")
     public ResponseEntity<Void> submitAnswer(@Valid @RequestBody UserAnswerRequest request) {
         quizService.saveUserAnswer(request);
-        return ResponseEntity.ok().build(); // Retourne 200 OK sans contenu
+        return ResponseEntity.ok().build();
     }
     
+    /**
+     * Récupère la liste des questions génerées pour une session donnée.
+     * L'algorithme adaptatif du service décide quelles questions renvoyer.
+     * @param sessionId L'ID de la session active.
+     * @return Liste des questions.
+     */
     @GetMapping("/questions")
     public ResponseEntity<List<Question>> getQuestions(@RequestParam Long sessionId) {
         List<Question> questions = quizService.getQuestionsForSession(sessionId);
         return ResponseEntity.ok(questions);
     }
 
+    /**
+     * Clôture la session, calcule les scores finaux et renvoie les recommandations.
+     * @param sessionId L'ID de la session à terminer.
+     * @return Les scores et les ressources pédagogiques suggerées.
+     */
     @GetMapping("/results")
     public ResponseEntity<ResultsResponse> getResults(@RequestParam Long sessionId) {
         ResultsResponse results = quizService.calculateAndGetResults(sessionId);
         return ResponseEntity.ok(results);
     }
-
 }

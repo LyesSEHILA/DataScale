@@ -1,197 +1,160 @@
-const API_ARENA_VALIDATE = "http://localhost:8080/api/arena/validate";
-const API_CHALLENGE_DETAILS = "http://localhost:8080/api/challenges";
-
-document.addEventListener("DOMContentLoaded", async () => {
-    const user = localStorage.getItem('userName') || 'guest';
+document.addEventListener("DOMContentLoaded", () => {
+    // 1. Vérification Authentification
     const userId = localStorage.getItem('userId');
-    const challengeId = localStorage.getItem('currentChallengeId') || 'CTF_LINUX_1';
-    const machine = 'node-alpha'; 
-    
-    // 1. Initialisation Xterm
+    const username = localStorage.getItem('userName') || "Utilisateur";
+    const sidebarUser = document.getElementById('sidebarUsername');
+
+    if (!userId) {
+        window.location.href = 'login.html';
+        return;
+    }
+
+    if(sidebarUser) sidebarUser.textContent = username;
+
+    const logoutBtn = document.getElementById('logoutBtn');
+    if(logoutBtn) {
+        logoutBtn.addEventListener('click', () => {
+            localStorage.clear();
+            window.location.href = 'index.html';
+        });
+    }
+
+    // 2. Initialisation du Terminal Xterm.js
     const term = new Terminal({
         cursorBlink: true,
-        theme: {
-            background: '#0a0a0a',
-            foreground: '#00ff00',
-            cursor: '#00ff00',
-            selection: '#003300'
-        },
         fontSize: 14,
-        fontFamily: 'Menlo, Monaco, "Courier New", monospace'
+        fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+        theme: { 
+            background: '#1e1e1e', 
+            foreground: '#00ff00', 
+            cursor: '#00ff00',
+            selection: 'rgba(0, 255, 0, 0.3)'
+        }
     });
-
+    
+    // Addon pour adapter la taille du terminal
     const fitAddon = new FitAddon.FitAddon();
     term.loadAddon(fitAddon);
-    term.open(document.getElementById('terminal'));
+    
+    const terminalContainer = document.getElementById('terminal');
+    term.open(terminalContainer);
     fitAddon.fit();
+
     window.addEventListener('resize', () => fitAddon.fit());
 
-    window.term = term; 
+    term.write('Initialisation du système CyberScale... \r\n');
 
-    // 2. Chargement des données du challenge
-    let challengeData = { title: "Mission Inconnue", description: "Aucune donnée." };
-    
-    try {
-        const res = await fetch(`${API_CHALLENGE_DETAILS}/${challengeId}`);
-        if(res.ok) challengeData = await res.json();
-    } catch(e) { 
-        console.error("Erreur chargement challenge", e);
-        term.writeln(`\x1b[1;31mErreur de connexion au serveur de challenges.\x1b[0m`);
-    }
-
-    // 3. Système de Fichiers
-    const fileSystem = {
-        "readme.txt": `=== ${challengeData.title} ===\n\nOBJECTIF :\n${challengeData.description}\n\nUne fois le flag trouvé, tapez: submit <flag>`,
-        "config.yaml": "host: 127.0.0.1\nuser: root",
-        "shadow": "ACCESS_DENIED" 
-    };
-
-    const prompt = `\r\n\x1b[1;32m${user}@${machine}\x1b[0m:\x1b[1;34m~\x1b[0m$ `;
-
-    term.writeln(`Connecting to environment for: \x1b[1;36m${challengeData.title}\x1b[0m...`);
-    term.writeln('System ready.');
-    term.writeln('Type "ls" to see available files.');
-    term.write(prompt);
-
-    // 4. Gestion Saisie
-    let currentLine = "";
-
-    term.onKey(e => {
-        const ev = e.domEvent;
-        const printable = !ev.altKey && !ev.altGraphKey && !ev.ctrlKey && !ev.metaKey;
-
-        if (ev.key === "Enter") {
-            term.write('\r\n');
-            processCommand(currentLine);
-            currentLine = "";
-        } 
-        else if (ev.key === "Backspace") {
-            if (currentLine.length > 0) {
-                currentLine = currentLine.slice(0, -1);
-                term.write('\b \b');
-            }
-        } 
-        else if (printable) {
-            currentLine += e.key;
-            term.write(e.key);
-        }
-    });
-
-    // 5. Moteur de Commandes
-    async function processCommand(input) {
-        const args = input.trim().split(/\s+/);
-        const cmd = args[0];
-        const arg1 = args[1];
-
-        switch(cmd) {
-            case '': 
-                term.write(prompt);
-                break;
-            
-            case 'help':
-                term.writeln('Available commands:');
-                term.writeln('  ls       List directory contents');
-                term.writeln('  cat      Read file content');
-                term.writeln('  sudo     Execute as admin');
-                term.writeln('  submit   Validate a captured flag (Ex: submit CTF{...})');
-                term.writeln('  clear    Clear screen');
-                term.write(prompt);
-                break;
-
-            case 'clear':
-                term.clear();
-                term.write(prompt);
-                break;
-
-            case 'ls':
-                const files = Object.keys(fileSystem).map(f => `\x1b[1;36m${f}\x1b[0m`).join('  ');
-                term.writeln(files);
-                term.write(prompt);
-                break;
-
-            case 'cat':
-                if (!arg1) {
-                    term.writeln('cat: missing file operand');
-                } else if (fileSystem.hasOwnProperty(arg1)) {
-                    if (fileSystem[arg1] === "ACCESS_DENIED") {
-                        term.writeln(`cat: ${arg1}: Permission denied`);
-                    } else {
-                        term.writeln(fileSystem[arg1]);
-                    }
-                } else {
-                    term.writeln(`cat: ${arg1}: No such file or directory`);
-                }
-                term.write(prompt);
-                break;
-
-            case 'sudo':
-                if (args[1] === 'cat' && args[2] === 'shadow') {
-                    term.writeln('\x1b[1;33m[sudo] password for ' + user + ': *********\x1b[0m');
-                    setTimeout(() => {
-                        term.writeln('');
-                        term.writeln('------------------------------------------------');
-                        term.writeln('🚩 FLAG: \x1b[1;32mCTF{LINUX_MASTER_2025}\x1b[0m');
-                        term.writeln('------------------------------------------------');
-                        term.writeln('Utilisez "submit <flag>" pour gagner vos points.');
-                        term.write(prompt);
-                    }, 600);
-                } else {
-                    term.writeln('sudo: command not implemented');
-                    term.write(prompt);
-                }
-                break;
-
-            case 'submit':
-                if (!arg1) {
-                    term.writeln('Usage: submit <flag>');
-                    term.write(prompt);
-                    return;
-                }
-
-                if (!userId) {
-                    term.writeln('\x1b[1;31mErreur: Session expirée. Veuillez vous reconnecter.\x1b[0m');
-                    term.write(prompt);
-                    return;
-                }
-
-                term.writeln('Verifying flag with HQ...');
-                
-                try {
-                    const response = await fetch(API_ARENA_VALIDATE, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            userId: userId,
-                            challengeId: challengeId,
-                            flag: arg1
-                        })
-                    });
-
-                    const data = await response.json();
-
-                    if (response.ok) {
-                        // --- SUCCÈS & REDIRECTION ---
-                        term.writeln(`\x1b[1;32m[SUCCESS] ${data.message} (+50 pts)\x1b[0m 🏆`);
-                        term.writeln(`\x1b[1;36mMission accomplie. Retour à la base dans 3 secondes...\x1b[0m`);
-                        
-                        setTimeout(() => {
-                            window.location.href = 'challenges.html';
-                        }, 3000);
-                        // -----------------------------
-                    } else {
-                        term.writeln(`\x1b[1;31m[FAIL] ${data.message}\x1b[0m ❌`);
-                        term.write(prompt); // On redonne la main si échec
-                    }
-                } catch (e) {
-                    term.writeln(`\x1b[1;31m[ERROR] Connection lost.\x1b[0m`);
-                    term.write(prompt);
-                }
-                // Pas de term.write(prompt) ici en cas de succès pour éviter que l'user tape pendant la redirection
-                break;
-
-            default:
-                term.writeln(`\x1b[31mbash: ${cmd}: command not found\x1b[0m`);
-                term.write(prompt);
-        }
-    }
+    // 3. Démarrage du Challenge
+    startChallengeAndConnect(term);
 });
+
+async function startChallengeAndConnect(term) {
+    try {
+        term.write('Démarrage de l\'environnement Docker... \r\n');
+
+        const challengeId = "CTF_LINUX_1"; 
+        
+        // Appel API pour créer le conteneur
+        const response = await fetch(`http://localhost:8080/api/arena/start/${challengeId}`, {
+            method: 'POST'
+        });
+
+        if (!response.ok) throw new Error("Erreur lors du démarrage du conteneur (API).");
+
+        const data = await response.json(); 
+        const containerId = data.containerId; 
+
+        if (!containerId) throw new Error("Aucun ID de conteneur reçu.");
+
+        term.write(`Conteneur prêt. ID: ${containerId.substring(0, 8)}...\r\n`);
+        term.write('Connexion WebSocket sécurisée... \r\n');
+
+        const socket = new WebSocket(`ws://localhost:8080/ws/terminal?containerId=${containerId}`);
+        
+        // Déclaration unique de l'écouteur de messages
+        socket.onmessage = (event) => {
+            const text = event.data;
+            
+            // 1. On écrit dans le terminal
+            term.write(text);
+
+            // 2. ESPION : On détecte la victoire
+            // Note: Assurez-vous d'avoir reconstruit l'image Docker avec le script verify.sh qui fait cet echo
+            if (text.includes("::VICTORY_DETECTED::")) {
+                handleVictory(term, challengeId);
+            }
+        };
+
+        socket.onopen = () => {
+            term.write('\r\n\x1b[1;32m[SYSTEM] Liaison établie. Accès autorisé.\x1b[0m\r\n\r\n');
+            term.focus();
+            socket.send('\n'); // Force l'affichage du prompt
+        };
+
+        socket.onclose = () => {
+            term.write('\r\n\x1b[1;31m[SYSTEM] Connexion interrompue.\x1b[0m');
+        };
+
+        socket.onerror = (error) => {
+            console.error("Erreur WebSocket:", error);
+            term.write('\r\n\x1b[1;31m[ERREUR] Impossible de joindre le serveur WebSocket.\x1b[0m');
+        };
+
+        // Gestion de l'écriture (Clavier -> WebSocket)
+        term.onData(data => {
+            if (socket.readyState === WebSocket.OPEN) {
+                socket.send(data);
+            }
+        });
+
+    } catch (error) {
+        term.write(`\r\n\x1b[1;31m[ERREUR CRITIQUE] ${error.message}\x1b[0m`);
+        console.error(error);
+    }
+}
+
+async function handleVictory(term, challengeId) {
+    term.write('\r\n\x1b[1;33m[SYSTEM] Validation du challenge en cours...\x1b[0m\r\n');
+
+    try {
+        // CORRECTION MAJEURE ICI : On récupère l'ID utilisateur
+        const userIdStr = localStorage.getItem('userId');
+        
+        if (!userIdStr) {
+            term.write('\x1b[1;31m[ERREUR] Utilisateur non identifié.\x1b[0m');
+            return;
+        }
+
+        const userId = parseInt(userIdStr); // Conversion en entier pour le Backend
+        const flagSecret = "CTF{LINUX_MASTER_2025}"; 
+
+        const response = await fetch('http://localhost:8080/api/arena/validate', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 
+                userId: userId,        // <-- C'était le chaînon manquant !
+                challengeId: challengeId, 
+                flag: flagSecret 
+            })
+        });
+
+        if (response.ok) {
+            term.write('\x1b[1;32m[SYSTEM] Challenge validé ! Redirection...\x1b[0m');
+            
+            // Petite pause pour laisser l'utilisateur lire le message vert
+            setTimeout(() => {
+                window.location.href = "challenges.html?success=true";
+            }, 2000);
+        } else {
+            const errorData = await response.json();
+            console.error("Erreur validation:", errorData);
+            term.write(`\x1b[1;31m[ERREUR] Validation refusée par le serveur : ${errorData.message}\x1b[0m`);
+        }
+
+    } catch (e) {
+        console.error(e);
+        term.write('\x1b[1;31m[ERREUR] Problème de connexion au serveur.\x1b[0m');
+    }
+}

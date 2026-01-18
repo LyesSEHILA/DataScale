@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "com.cyberscale"
-version = "0.2.0"
+version = "1.0.0"
 
 
 
@@ -25,6 +25,9 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-security")
+    implementation("org.springframework.boot:spring-boot-starter-websocket")
+    implementation("com.github.docker-java:docker-java-core:3.7.0")
+    implementation("com.github.docker-java:docker-java-transport-httpclient5:3.7.0")
     runtimeOnly("com.h2database:h2")
     runtimeOnly("org.postgresql:postgresql")
     testImplementation("org.springframework.boot:spring-boot-starter-test")

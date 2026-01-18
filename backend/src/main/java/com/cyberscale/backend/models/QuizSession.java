@@ -10,6 +10,10 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
+/**
+ * Entité représentant une session de Quiz d'évaluation (Onboarding).
+ * Elle stocke les données du candidat, ses auto-évaluations et les scores calculés.
+ */
 @Entity
 @Table(name = "quiz_session")
 public class QuizSession {
@@ -22,8 +26,6 @@ public class QuizSession {
     @JoinColumn(name = "user_id")
     private User user;
     
-    // 'prenom' n'était pas dans notre DTO. On devrait l'enlever ou l'ajouter au DTO.
-    // Pour l'instant, je le laisse, mais c'est à revoir.
     private String prenom; 
     private Long age;
     private Long selfEvalTheory;
@@ -32,12 +34,21 @@ public class QuizSession {
     private Double finalScoreTechnique;
     private LocalDateTime createdAt;
 
-    // Constructeur vide (obligatoire pour JPA)
     public QuizSession() {
         this.createdAt = LocalDateTime.now();
     }
 
-    // --- Getters ---
+    /**
+     * Calcule le score global moyen de la session.
+     * @return La moyenne pondérée ou 0.0 si aucune note n'existe.
+     */
+    public Double getScore() {
+        if (finalScoreTheory == null && finalScoreTechnique == null) return 0.0;
+        if (finalScoreTheory == null) return finalScoreTechnique;
+        if (finalScoreTechnique == null) return finalScoreTheory;
+        return (finalScoreTheory + finalScoreTechnique) / 2.0;
+    }
+
     public Long getId() { return id; }
     public String getPrenom() { return prenom; }
     public Long getAge() { return age; }
@@ -47,7 +58,6 @@ public class QuizSession {
     public Double getFinalScoreTechnique() { return finalScoreTechnique; }
     public LocalDateTime getCreatedAt() { return createdAt; }
 
-    // --- Setters ---
     public void setId(Long id) { this.id = id; }
     public void setPrenom(String prenom) { this.prenom = prenom; }
     public void setAge(Long age) { this.age = age; }
@@ -56,11 +66,6 @@ public class QuizSession {
     public void setFinalScoreTheory(Double val) { this.finalScoreTheory = val; }
     public void setFinalScoreTechnique(Double val) { this.finalScoreTechnique = val; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
-    }
+    public User getUser() { return user; }
+    public void setUser(User user) { this.user = user; }
 }

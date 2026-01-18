@@ -4,6 +4,11 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
+/**
+ * DTO contenant les données du formulaire d'entrée.
+ * Il recueille les informations sur l'âge et l'auto-évaluation du candidat
+ * afin de calibrer la difficulté du quiz initial.
+ */
 public record OnboardingRequest(
     
     @NotNull(message = "L'âge est requis")
