@@ -1,21 +1,25 @@
 package com.cyberscale.backend.controllers;
 
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-
 import org.junit.jupiter.api.Test;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.context.annotation.Import; // <--- IMPORT AJOUTÉ
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.cyberscale.backend.config.SecurityConfig; // <--- IMPORT AJOUTÉ
+import com.cyberscale.backend.config.SecurityConfig;
 import com.cyberscale.backend.dto.LoginRequest;
 import com.cyberscale.backend.dto.RegisterRequest;
 import com.cyberscale.backend.models.User;
@@ -38,7 +42,6 @@ class AuthControllerTest {
 
     private final String BASE_URL = "/api/auth";
 
-    // --- Tests pour /api/auth/register ---
 
     /**
      * Teste le cas de succès de l'enregistrement.
@@ -46,24 +49,18 @@ class AuthControllerTest {
      */
     @Test
     void testRegisterUser_Success() throws Exception {
-        // Arrange (Préparation)
         RegisterRequest request = new RegisterRequest("testuser", "test@email.com", "password123");
-        
-        // Simule l'utilisateur qui sera retourné par le service
         User mockUser = new User("testuser", "test@email.com", "password123");
         mockUser.setId(1L);
 
-        // Configure le mock : QUAND authService.registerUser EST APPELÉ, ALORS RETOURNER mockUser
         when(authService.registerUser(any(RegisterRequest.class))).thenReturn(mockUser);
 
-        // Act (Action) & Assert (Vérification)
         mockMvc.perform(post(BASE_URL + "/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
-            .andExpect(status().isCreated()) // Vérifie le statut 201
+            .andExpect(status().isCreated()) 
             .andExpect(content().string("Inscription réussie pour l'utilisateur: test@email.com"));
 
-        // Verify (Vérification que le service a été appelé)
         verify(authService, times(1)).registerUser(any(RegisterRequest.class));
     }
 
@@ -73,10 +70,8 @@ class AuthControllerTest {
      */
     @Test
     void testRegisterUser_Conflict() throws Exception {
-        // Arrange
         RegisterRequest request = new RegisterRequest("existinguser", "existing@email.com", "password123");
         
-        // Configure le mock : QUAND authService.registerUser EST APPELÉ, ALORS LEVER UNE EXCEPTION
         when(authService.registerUser(any(RegisterRequest.class)))
             .thenThrow(new ResponseStatusException(HttpStatus.CONFLICT, "Email déjà utilisé"));
 
@@ -84,7 +79,7 @@ class AuthControllerTest {
         mockMvc.perform(post(BASE_URL + "/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
-            .andExpect(status().isConflict()); // Vérifie le statut 409
+            .andExpect(status().isConflict()); 
             
         verify(authService, times(1)).registerUser(any(RegisterRequest.class));
     }
@@ -95,21 +90,16 @@ class AuthControllerTest {
      */
     @Test
     void testRegisterUser_InvalidData() throws Exception {
-        // Arrange
-        // Supposons que le DTO a une validation @Size(min=8) sur le mot de passe
         RegisterRequest request = new RegisterRequest("testuser", "test@email.com", "123"); // Mot de passe invalide
 
-        // Act & Assert
         mockMvc.perform(post(BASE_URL + "/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isBadRequest()); // Vérifie le statut 400
 
-        // Vérifie que le service n'a JAMAIS été appelé car la validation a échoué avant
         verify(authService, never()).registerUser(any());
     }
 
-    // --- Tests pour /api/auth/login ---
 
     /**
      * Teste le cas de succès de la connexion.
@@ -117,18 +107,15 @@ class AuthControllerTest {
      */
     @Test
     void testLoginUser_Success() throws Exception {
-        // Arrange
         LoginRequest request = new LoginRequest("testuser", "password123");
         User mockUser = new User("testuser", "test@email.com", "password123");
 
-        // Configure le mock
         when(authService.loginUser(any(LoginRequest.class))).thenReturn(mockUser);
 
-        // Act & Assert
         mockMvc.perform(post(BASE_URL + "/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
-            .andExpect(status().isOk()) // Vérifie le statut 200
+            .andExpect(status().isOk())
             .andExpect(jsonPath("$.email").value("test@email.com")) // Vérifie le champ 'email' dans le JSON
             .andExpect(jsonPath("$.message").value("Connexion réussie !"));
 
@@ -141,14 +128,11 @@ class AuthControllerTest {
      */
     @Test
     void testLoginUser_Unauthorized() throws Exception {
-        // Arrange
         LoginRequest request = new LoginRequest("testuser", "wrongpassword");
 
-        // Configure le mock
         when(authService.loginUser(any(LoginRequest.class)))
             .thenThrow(new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Email ou mot de passe incorrect"));
 
-        // Act & Assert
         mockMvc.perform(post(BASE_URL + "/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
@@ -163,17 +147,12 @@ class AuthControllerTest {
      */
     @Test
     void testLoginUser_InvalidData() throws Exception {
-        // Arrange
-        // Supposons que le DTO a une validation @NotNull sur le username
-        LoginRequest request = new LoginRequest(null, "password123"); // Username manquant
+        LoginRequest request = new LoginRequest(null, "password123");
 
-        // Act & Assert
         mockMvc.perform(post(BASE_URL + "/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
-            .andExpect(status().isBadRequest()); // Vérifie le statut 400
-
-        // Vérifie que le service n'a JAMAIS été appelé
+            .andExpect(status().isBadRequest());
         verify(authService, never()).loginUser(any());
     }
 }

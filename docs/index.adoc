@@ -45,13 +45,13 @@ Le marché est polarisé :
 
 Pour garantir une meilleure lisibilité, l'architecture est présentée en deux vues distinctes.
 
-==== 1. Vue Logique : Traitement & Services
+==== Vue Logique : Traitement & Services
 Ce diagramme illustre la couche "Intelligente" de CyberScale. On y voit comment les Contrôleurs (API) orchestrent les Services métiers. Notez particulièrement l'interaction entre `ArenaController` et le `ContainerService` (gestion Docker), ainsi que le générateur de logs pour la Blue Team.
 
 .Architecture Logique (Contrôleurs & Services)
 image::uml/diagram_partie1[align="center", pdfwidth="95%"]
 
-==== 2. Vue de Données : Persistance
+==== Vue de Données : Persistance
 Ce diagramme présente la structure de la base de données PostgreSQL (Entités JPA). Il met en évidence la centralisation des données autour de l'entité `User`, qui est liée à ses résultats de quiz, ses challenges réussis et ses examens.
 
 .Modèle de Données (Entités JPA)
@@ -79,7 +79,7 @@ image::uml/diagram_partie2[align="center", pdfwidth="95%"]
 | JUnit 5, Selenium (E2E), Cucumber (BDD)
 |===
 
-=== 🐳 Focus : La Dockerisation (Cœur du Projet)
+=== Focus : La Dockerisation (Cœur du Projet)
 
 C'est l'innovation technique majeure de cette release. Pour permettre aux utilisateurs de s'entraîner sans risque, nous avons développé un orchestrateur de conteneurs interne.
 
@@ -93,18 +93,31 @@ C'est l'innovation technique majeure de cette release. Pour permettre aux utilis
 .Fonctionnement de l'architecture dockerisé
 image::images/docker[Docker, 600, align="center"]
 
+== Utilisation de l'IA Générative
+
+Dans une démarche de transparence et d'optimisation du temps de développement, nous avons utilisé des outils d'Intelligence Artificielle (type LLM) pour des tâches d'assistance spécifiques, sans leur déléguer l'architecture cœur du projet.
+
+* **Génération de Jeux de Données (Data Seeding)** :
+Pour le module d'Investigation (Blue Team), il était nécessaire de créer des milliers de lignes de logs réalistes (Apache/Linux). L'IA a été utilisée pour générer ces motifs de logs et y insérer des scénarios d'attaques variés, une tâche trop répétitive pour être faite manuellement.
+
+* **Création de Contenu Pédagogique** :
+Afin de peupler la base de données du Quiz, l'IA nous a assistés dans la rédaction des questions et des explications associées, nous permettant de nous concentrer sur l'algorithme de pondération plutôt que sur la rédaction.
+
+* **Aide au Débogage Docker** :
+Lors de la configuration complexe des conteneurs isolés pour l'Arena, l'IA a servi d'assistant pour analyser certaines erreurs obscures liées aux permissions Linux et aux WebSockets.
+
 == Fonctionnalités (Features v1.0.0)
 
 Cette version finale intègre l'ensemble des modules prévus.
 
-=== F1: Onboarding & Quiz Adaptatif 🧠
+=== F1: Onboarding & Quiz Adaptatif 
 *Objectif*:: Évaluer le bagage théorique initial.
 *Innovation*:: L'algorithme adapte la difficulté des questions (Facile -> Moyen -> Difficile) en fonction des réponses précédentes pour affiner le score.
 
 .Wireframe Quiz
 image::wireframes/F2_Quiz.png[width=600, align="center"]
 
-=== F2: Cyber Arena (Red Team) 🎮
+=== F2: Cyber Arena (Red Team) 
 *Objectif*:: Tester les compétences offensives (Linux, Pentest).
 *Scénario*:: L'utilisateur accède à un vrai terminal Linux. Il doit naviguer, décoder des fichiers et exploiter des failles pour trouver des "flags" (`CTF{...}`).
 *Validation*:: Le flag est validé par un script interne au conteneur qui notifie le backend en temps réel.
@@ -113,7 +126,7 @@ image::wireframes/F2_Quiz.png[width=600, align="center"]
 image::images/terminal.png[Terminal Arena, 600, align="center"]
 
 
-=== F3: Module Phishing (Facteur Humain) 🎣
+=== F3: Module Phishing (Facteur Humain) 
 *Objectif*:: Tester la vigilance face à l'ingénierie sociale.
 *Fonctionnement*:: Simulation d'une boîte mail avec des courriels piégés (Urgence RH, Faux support). L'utilisateur doit analyser les en-têtes et décider de signaler ou cliquer.
 
@@ -123,7 +136,7 @@ image::images/phishing1.png[Simulation Phishing, 600, align="center"]
 .Phishing Réussi
 image::images/phishing2.png[Simulation Phishing, 600, align="center"]
 
-=== F4: Module Investigation (Blue Team) 🕵️
+=== F4: Module Investigation (Blue Team) 
 *Objectif*:: Former à la défense et à l'analyse de logs (Forensics).
 *Technique*:: Un générateur de logs (`LogGenerator`) crée dynamiquement des milliers de lignes de trafic web réaliste, en y cachant une attaque unique (ex: Injection SQL). L'utilisateur doit filtrer et identifier l'IP malveillante.
 
@@ -133,7 +146,7 @@ image::images/logs.png[Screenshot Investigation, 600, align="center"]
 .Affichage des Logs
 image::images/logs2.png[Screenshot Investigation, 600, align="center"]
 
-=== F5: Dashboard Unifié & Certification 🏆
+=== F5: Dashboard Unifié & Certification 
 *Objectif*:: Centraliser la progression.
 *Évolution v1.0*:: Le Dashboard agrège désormais les scores de tous les modules (Quiz + Arena + Logs + Phishing) pour calculer une moyenne globale.
 *Recommandations*:: Si le score est faible, le système suggère des ressources externes ciblées. Si le score est élevé (>80%), il débloque des certifications virtuelles.
@@ -141,7 +154,7 @@ image::images/logs2.png[Screenshot Investigation, 600, align="center"]
 .Tableau de Bord Global
 image::images/dashboard1.png[Score Dashboard, 600, align="center"]
 
-== Gestion de Projet & Qualité ⚙️
+== Gestion de Projet & Qualité 
 
 === Sécurité & Authentification
 L'accès est strictement contrôlé pour protéger la progression des utilisateurs.
@@ -159,5 +172,5 @@ Nous avons industrialisé notre processus de développement pour la v1.0.
 * **Tests E2E (Selenium) :** Validation automatique des parcours utilisateurs complets (Login -> Arena -> Fin).
 * **Analyse Statique :** Zéro "Security Hotspot" critique sur SonarCloud.
 
-== Conclusion & Perspectives 🚀
+== Conclusion & Perspectives 
 La version v1.0.0 de CyberScale est une plateforme complète et innovante pour l'évaluation des compétences en cybersécurité. En combinant théorie, pratique, et une architecture technique avancée, nous offrons une expérience utilisateur unique.
