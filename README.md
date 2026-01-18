@@ -18,119 +18,234 @@
 
 ## 📖 À propos
 
-**CyberScale** est une plateforme éducative innovante permettant d'évaluer et d'améliorer ses compétences en cybersécurité. Contrairement aux plateformes classiques, elle positionne l'utilisateur sur deux axes :
-1.  **Théorie :** Connaissances normatives (ISO 27001, RGPD) et concepts.
-2.  **Technique :** Maîtrise des outils (Nmap, Wireshark) et pratique.
+**CyberScale** est une plateforme éducative "360 degrés" permettant d'évaluer et d'améliorer ses compétences en cybersécurité. Elle combine théorie et pratique dans un environnement gamifié.
 
-🚀 **Version actuelle : v0.2.0 (Release "Arena & Gamification")**
+Le projet repose sur une approche unique à deux axes :
+1.  **Théorie (Gouvernance) :** Normes ISO 27001, RGPD, gestion des risques.
+2.  **Technique (Opérationnel) :** Pentest, analyse de logs, scripting.
 
----
-
-## ✨ Fonctionnalités Clés
-
-### 🎮 Cyber Arena (Nouveau !)
-Un **terminal Linux simulé** directement dans le navigateur pour s'entraîner sans risques.
-* Commandes réelles : `ls`, `cat`, `sudo`, etc.
-* Système de fichiers virtuel avec missions cachées.
-* **Mode CTF (Capture The Flag) :** Trouvez les flags cachés et validez-les via la commande `submit <flag>`.
-
-### 🎓 Mode Certification
-Préparez-vous aux examens réels avec nos simulateurs :
-* **CEH (Certified Ethical Hacker)**
-* **CompTIA Security+**
-* **CISSP**
-* Algorithme prédictif estimant votre probabilité de réussite.
-
-### 📊 Dashboard & Gamification
-* Suivi du score en temps réel.
-* Badges de difficulté (Facile, Moyen, Hardcore).
-* Historique détaillé des tentatives.
+🚀 **Version actuelle : v1.0.0 (Release Officielle)**
 
 ---
 
-## 🛠️ Stack Technique
+## ✨ Fonctionnalités Clés (v1.0.0)
 
-* **Backend :** Java 21, Spring Boot 3.4, Spring Security, JPA/Hibernate.
-* **Base de Données :** H2 (Développement / Mémoire), PostgreSQL (Production).
-* **Frontend :** HTML5, JavaScript (ES6+), Tailwind CSS, Xterm.js.
-* **Tests :** JUnit 5, Mockito, MockMvc, Selenium (E2E), Cucumber (BDD).
-* **DevOps :** Gradle, GitHub Actions, Docker.
+### 🎮 Cyber Arena (Red Team)
+Un véritable **terminal Linux** isolé dans un conteneur Docker, accessible via le navigateur.
+* **Isolation Totale :** Chaque utilisateur possède son propre conteneur éphémère.
+* **Missions CTF :** Trouvez les flags cachés (`submit CTF{...}`) en utilisant `ls`, `grep`, `cat`, etc.
+
+### 🕵️ Module Investigation (Blue Team)
+Analysez des logs serveurs générés dynamiquement par une IA.
+* Détectez les intrusions (SQL Injection, Brute Force).
+* Identifiez les IP malveillantes parmi le trafic légitime.
+
+### 🎣 Module Phishing (Facteur Humain)
+Simulation réaliste d'une boîte mail d'entreprise. Apprenez à repérer les indices d'ingénierie sociale (headers suspects, liens piégés).
+
+### 📊 Dashboard Unifié
+Suivi de progression global avec calcul de score pondéré et recommandations de ressources (livres, certifications) adaptées à votre niveau.
 
 ---
 
-## 🚀 Guide de Démarrage (Débutant)
+## 🚀 Guide de Démarrage Rapide
 
-Suivez ces étapes pour lancer le projet sur votre machine locale en moins de 5 minutes.
+Suivez ces étapes pour lancer CyberScale en local en **moins de 5 minutes**.
 
-### 1️⃣ Prérequis
-Assurez-vous d'avoir installé :
+### 1️⃣ Prérequis (À installer avant de commencer)
 * **Java 21 (JDK)** : [Télécharger ici](https://adoptium.net/)
+* **Docker Desktop** (Obligatoire pour l'Arena) : [Télécharger ici](https://www.docker.com/products/docker-desktop/)
 * **Git** : [Télécharger ici](https://git-scm.com/)
-* Un navigateur web moderne (Chrome, Firefox).
 
 ### 2️⃣ Récupérer le projet
-Ouvrez votre terminal (Invite de commande ou PowerShell) et tapez :
+Ouvrez votre terminal et clonez le dépôt :
 
 ```bash
 git clone [https://github.com/LyesSEHILA/DataScale.git](https://github.com/LyesSEHILA/DataScale.git)
 cd DataScale
-```
-### 3️⃣ Lancer le Backend (Serveur)
-Le backend gère la base de données et l'API
 
-* **Sur Windows** : 
-```bash
-cd backend
-.\gradlew.bat bootrun
 ```
-* **Sur Mac/Linux** : 
+
+### 3️⃣ Démarrer l'infrastructure
+
+## 🐳 Démarrage via Docker (Méthode DevOps)
+
+Le projet est entièrement conteneurisé. C'est la méthode recommandée pour tester l'application dans un environnement iso-prod.
+
+### 1️⃣ Lancement Rapide (Docker Compose)
+
+Cette commande va compiler le projet, construire l'image, lancer la base de données PostgreSQL et démarrer le Backend automatiquement.
+
+```bash
+# À la racine du projet
+docker-compose up --build -d
+
+```
+
+* `up` : Démarre les conteneurs.
+* `--build` : Force la reconstruction de l'image (utile si vous avez modifié le code).
+* `-d` : Mode "détaché" (tourne en arrière-plan).
+
+🔍 **Vérifier que tout tourne :**
+
+```bash
+docker-compose ps
+
+```
+
+*Vous devriez voir `cyberscale-backend` et `cyberscale-db` en statut "Up".*
+
+---
+
+### 2️⃣ Commandes Manuelles (Build & Run)
+
+Si vous préférez gérer les conteneurs un par un :
+
+**Étape A : Construire l'image du Backend**
+
+```bash
+docker build -t cyberscale-backend:1.0.0 ./backend
+
+```
+
+**Étape B : Lancer le conteneur**
+⚠️ *Note : Pour que l'Arena (qui lance des conteneurs) fonctionne DANS un conteneur, il faut monter le socket Docker.*
+
+```bash
+docker run -d \
+  -p 8080:8080 \
+  --name cyberscale-app \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  cyberscale-backend:1.0.0
+
+```
+
+---
+
+### 3️⃣ Maintenance & Nettoyage (Important)
+
+L'application crée des conteneurs éphémères pour chaque challenge "Arena". Si vous voulez faire un grand nettoyage :
+
+**Arrêter l'application :**
+
+```bash
+docker-compose down
+
+```
+
+**Nettoyer les conteneurs d'entraînement orphelins :**
+Si vous avez fait beaucoup de tests Arena, nettoyez les conteneurs "exécutés" mais arrêtés :
+
+```bash
+docker container prune -f
+
+```
+
+**Voir les logs en temps réel (Debugging) :**
+
+```bash
+docker logs -f cyberscale-backend
+
+```
+
+---
+
+### 💡 Note sur l'Architecture Docker
+
+L'application utilise une architecture **Docker-out-of-Docker (DooD)** :
+Le conteneur du Backend a accès au `docker.sock` de l'hôte. Cela lui permet d'ordonner à votre Docker Desktop de créer les conteneurs Linux pour les utilisateurs (Ubuntu/Alpine) à côté de lui, et non à l'intérieur de lui.
+
+---
+
+### 4️⃣ Lancer le Backend (Serveur)
+
+Le backend va démarrer sur le port `8080`.
+
+**Sur Windows (PowerShell/CMD) :**
+
 ```bash
 cd backend
+.\gradlew.bat bootRun
+
+```
+
+**Sur Mac / Linux :**
+
+```bash
+cd backend
+chmod +x gradlew
 ./gradlew bootRun
+
 ```
-⏳ Attendez que le message suivant apparaisse : Started BackendApplication in X.XXX seconds. Ne fermez pas cette fenêtre !
 
-### 4️⃣ Lancer le Frontend (Interface)
-Ouvrez une nouvelle fenêtre de terminal ou naviguez dans vos dossiers.
-1. Allez dans le dossier DataScale/frontend.
-2. Ouvrez le fichier `index.html` dans votre navigateur.
-* **Recommandé** : Utilisez l'extension "Live Server" de VS Code pour éviter les problèmes de CORS.
-* **Sinon** : Double-cliquez simplement sur `index.html`.
+⏳ **Attendez** de voir le message : `Started BackendApplication in X.XXX seconds`.
+*Le premier lancement peut être un peu long (téléchargement des dépendances).*
 
-### 5️⃣ Premier Test
+### 5️⃣ Lancer le Frontend (Interface)
 
-1. Cliquez sur "S'inscrire".
+Le frontend est statique (HTML/JS). Pour éviter les erreurs de sécurité du navigateur (CORS), il ne faut pas juste double-cliquer sur le fichier.
 
-2. Créez un compte (ex: admin / admin@test.com / password).
+**Méthode Recommandée (VS Code) :**
 
-3. Connectez-vous.
+1. Ouvrez le dossier `DataScale` dans VS Code.
+2. Faites un clic droit sur le fichier `frontend/index.html`.
+3. Choisissez **"Open with Live Server"** (Extension à installer si besoin).
 
-4. Allez dans "Training Arena" et tapez ls !
+**Méthode Alternative (Python) :**
 
-### ✅ Lancer les Tests
-Pour vérifier que tout le code est robuste (Couverture > 80%), nous utilisons une suite de tests complète.
 ```bash
-# Dans le dossier backend/
-./gradlew clean test
+cd frontend
+python -m http.server 5500
+# Puis ouvrez http://localhost:5500 dans votre navigateur
+
 ```
-Cela exécutera :
 
-   * Les tests unitaires (JUnit).
+---
 
-   * Les tests d'intégration (MockMvc).
+## 🧪 Comment tester l'application ?
 
-   * Les tests E2E (Selenium - Nécessite Firefox installé).
+Une fois lancé :
 
-   * La génération du rapport de couverture JaCoCo (build/reports/jacoco/test/html/index.html).
+1. Cliquez sur **"S'inscrire"** et créez un compte (ex: `user` / `test`).
+2. Connectez-vous.
+3. Allez dans l'onglet **"Arena"**.
+4. Cliquez sur **"Démarrer"** une mission (ex: Alpha-1).
+5. *Si Docker est bien lancé*, un terminal noir apparaît. Tapez `ls -la` pour vérifier !
 
+---
 
-### 👥 Auteurs
+## 🛠️ Dépannage (Troubleshooting)
 
-    Lyes SEHILA - Lead DevOps & Architecte
+| Erreur Rencontrée | Solution |
+| --- | --- |
+| **"Port 8080 already in use"** | Un autre programme utilise le port. Tuez le processus Java ou changez le port dans `application.properties`. |
+| **"Connection refused" (Docker)** | Vérifiez que Docker Desktop est bien lancé. Le backend doit pouvoir communiquer avec le socket Docker. |
+| **Erreur CORS (Frontend)** | N'ouvrez pas le fichier `index.html` directement en double-cliquant. Utilisez un serveur local (Live Server). |
+| **Pas de logs dans "Investigation"** | Cliquez sur le bouton "Générer du trafic" pour que l'IA crée des données simulées. |
 
-    Hassan Jatta - Lead Backend
+---
 
-    Abdoulaye - Lead Frontend
+## ✅ Lancer les Tests Techniques
+
+Le projet assure une couverture de code > 80%.
+
+```bash
+cd backend
+./gradlew clean test
+
+```
+
+Cela générera un rapport HTML dans `backend/build/reports/jacoco/test/html/index.html`.
+
+---
+
+### 👥 L'Équipe
+
+Projet réalisé dans le cadre du cursus DevOps.
+
+* **Lyes SEHILA** - Lead DevOps & Architecte
+* **Hassan Jatta** - Lead Backend
+* **Abdoulaye** - Lead Frontend
 
 ### 📄 Licence
 
