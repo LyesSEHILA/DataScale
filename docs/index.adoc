@@ -1,4 +1,4 @@
-= Documentation Projet CyberScale
+= Documentation Projet CyberScale v1.0.0
 :toc: left
 :toclevels: 3
 :sectnums:
@@ -8,7 +8,7 @@
 :experimental:
 
 [abstract]
-Documentation technique et fonctionnelle du projet CyberScale, plateforme de positionnement en cybersécurité.
+Documentation technique et fonctionnelle de la plateforme CyberScale. Cette version v1.0.0 marque l'aboutissement du projet avec une architecture conteneurisée complète, des modules d'attaque et de défense, et un tableau de bord unifié.
 
 == Présentation
 
@@ -19,41 +19,43 @@ Projet réalisé dans le cadre du cursus DevOps par :
 * *Hassan Jatta* - Lead Backend
 * *Abdoulaye* - Lead Frontend
 
-=== Thématique et Objectifs
+=== Vision et Objectifs
 
-CyberScale a pour mission de fournir une évaluation claire et actionnable des compétences en cybersécurité.
+CyberScale a pour mission de fournir une évaluation "360 degrés" des compétences en cybersécurité.
 
 *.Concept Clé : La Matrice de Compétences*
-Le projet repose sur la distinction entre deux axes fondamentaux :
 
-. *L'Axe Théorique (X)* : Connaissance des concepts, normes (ISO 27001), lois (RGPD), et méthodologies.
-. *L'Axe Technique (Y)* : Maîtrise des outils (Nmap, Wireshark), scripts, et procédures techniques.
+Nous positionnons l'utilisateur sur deux axes complémentaires :
 
-*.Parcours Utilisateur*
-. *Onboarding* : Saisie du profil et auto-évaluation.
-. *Test Adaptatif* : Quiz intelligent qui s'adapte au niveau déclaré.
-. *Résultats* : Visualisation sur un nuage de points (Scatter Plot).
-. *Orientation* : Recommandations de ressources ciblées.
+. *L'Axe Théorique (X)* : Maîtrise des concepts, normes (ISO 27001), et lois (RGPD).
+. *L'Axe Technique (Y)* : Capacité opérationnelle (Pentest, Scripting, Analyse de logs).
 
 === Analyse de la Concurrence
 
-Le marché de l'évaluation en cybersécurité est dominé par deux types d'acteurs :
+Le marché est polarisé :
 
-* *Les plateformes de challenge (CTF/Labs)* : Des sites comme *RootMe*, *TryHackMe* ou *Hack The Box* sont excellents pour mesurer les compétences **techniques** pures. Cependant, ils n'évaluent que très peu les connaissances théoriques (gouvernance, normes, lois).
+* *CTF (RootMe)* : Excellent pour la technique pure, mais austère et sans théorie.
+* *Certifications (CISSP)* : Très théoriques, coûteuses, sans pratique immédiate.
 
-* *Les Certifications* : Des examens comme *CompTIA Security+* ou *CISSP* évaluent très bien la **théorie**, mais leurs tests pratiques sont souvent limités ou très coûteux.
+**CyberScale** réunit ces deux mondes : nous ne formons pas que des hackers, mais des professionnels complets (Red Team & Blue Team).
 
-**Notre Positionnement :**
-CyberScale se différencie en étant la seule plateforme d'auto-évaluation qui positionne explicitement l'utilisateur sur ces **deux axes** (Théorie vs. Technique). L'objectif n'est pas de remplacer les CTF ou les certifications, mais de servir d'**outil d'orientation** pour aider l'utilisateur à savoir *vers quoi* il doit se diriger.
+== Architecture et Technique
 
-== Architecture et Technologies
+=== Architecture Détaillée
 
-=== Architecture Système
+Pour garantir une meilleure lisibilité, l'architecture est présentée en deux vues distinctes.
 
-L'application suit une architecture découplée (Client-Serveur) standard.
+==== 1. Vue Logique : Traitement & Services
+Ce diagramme illustre la couche "Intelligente" de CyberScale. On y voit comment les Contrôleurs (API) orchestrent les Services métiers. Notez particulièrement l'interaction entre `ArenaController` et le `ContainerService` (gestion Docker), ainsi que le générateur de logs pour la Blue Team.
 
-.Diagramme d'Architecture Système
-plantuml::uml/system_architecture.puml[format=png, align="center"]
+.Architecture Logique (Contrôleurs & Services)
+image::uml/diagram_partie1[align="center", pdfwidth="95%"]
+
+==== 2. Vue de Données : Persistance
+Ce diagramme présente la structure de la base de données PostgreSQL (Entités JPA). Il met en évidence la centralisation des données autour de l'entité `User`, qui est liée à ses résultats de quiz, ses challenges réussis et ses examens.
+
+.Modèle de Données (Entités JPA)
+image::uml/diagram_partie2[align="center", pdfwidth="95%"]
 
 === Stack Technique
 
@@ -62,106 +64,100 @@ plantuml::uml/system_architecture.puml[format=png, align="center"]
 | Domaine | Technologies
 
 | *Backend*
-| Java 21, Spring Boot 3, Gradle, Spring Data JPA, H2 (Dev) / PostgreSQL (Prod)
+| Java 21, Spring Boot 3 (Security, JPA, WebSocket)
+
+| *Données*
+| PostgreSQL 16 (Production)
 
 | *Frontend*
-| HTML5, CSS3, JavaScript (Vanilla), Chart.js (Visualisation)
+| HTML5, CSS3, JavaScript (Vanilla), Xterm.js (Terminal Web)
 
 | *DevOps*
-| GitHub, GitHub Actions (CI/CD), SonarCloud (Qualité), Docker
+| Docker, Docker Compose, GitHub Actions (CI/CD), SonarCloud
 
 | *Tests*
-| JUnit 5, Mockito, MockMvc, Cucumber (BDD), Selenium (E2E)
+| JUnit 5, Selenium (E2E), Cucumber (BDD)
 |===
 
-=== Modèle de Données
+=== 🐳 Focus : La Dockerisation (Cœur du Projet)
 
-Le modèle métier reflète la structure du quiz et des résultats.
+C'est l'innovation technique majeure de cette release. Pour permettre aux utilisateurs de s'entraîner sans risque, nous avons développé un orchestrateur de conteneurs interne.
 
-.Diagramme de Classe Métier
-plantuml::uml/class_diagram.puml[format=png, align="center"]
+* **Isolation Totale :** Chaque challenge technique lance un conteneur Docker dédié à l'utilisateur. Il est impossible d'impacter le serveur hôte.
+* **Gestion du Cycle de Vie :**
+** *Création* : Instanciation à la volée via l'API `docker-java` lors du clic sur "Démarrer".
+** *Communication* : Un tunnel **WebSocket** relie le terminal Web (`Xterm.js`) à l'entrée/sortie standard du conteneur Linux.
+** *Nettoyage* : Une tâche planifiée (`ContainerCleanupTask`) détruit automatiquement les conteneurs inactifs ou terminés pour libérer les ressources.
+* **Sécurité :** Les conteneurs sont éphémères et n'ont aucun accès réseau vers l'extérieur (sauf si nécessaire pour le scénario).
 
-== Fonctionnalités (Features)
+.Fonctionnement de l'architecture dockerisé
+image::images/docker[Docker, 600, align="center"]
 
-===  F1: Onboarding & Auto-évaluation
-*Objectifs*:: Permettre à un nouvel utilisateur de démarrer le processus en fournissant son âge et son auto-évaluation (Théorie/Technique).
-*Scénario*:: L'utilisateur arrive sur la page d'accueil, remplit le formulaire et clique sur "Commencer". Une session unique est créée côté backend.
+== Fonctionnalités (Features v1.0.0)
 
-.Wireframe F1 - Accueil
-image::wireframes/F1_Onboarding.png[width=600, align="center"]
+Cette version finale intègre l'ensemble des modules prévus.
 
-===  F2: Moteur de Quiz Adaptatif
-*Objectifs*:: Générer et présenter une série de questions pertinentes. La difficulté et la catégorie (Théorie/Technique) sont pondérées selon l'auto-évaluation.
-*Scénario*:: L'utilisateur voit une question, choisit une réponse, valide, et passe à la suivante automatiquement.
+=== F1: Onboarding & Quiz Adaptatif 🧠
+*Objectif*:: Évaluer le bagage théorique initial.
+*Innovation*:: L'algorithme adapte la difficulté des questions (Facile -> Moyen -> Difficile) en fonction des réponses précédentes pour affiner le score.
 
-.Wireframe F2 - Quiz
+.Wireframe Quiz
 image::wireframes/F2_Quiz.png[width=600, align="center"]
 
-=== F3: Visualisation des Résultats
-*Objectifs*:: Calculer les scores finaux et les afficher visuellement sur un graphique 2D.
-*Scénario*:: À la fin du quiz, l'utilisateur découvre son positionnement précis sur la matrice "Théorie vs Technique".
-
-.Wireframe F3 - Résultats
-image::wireframes/F3_Results.png[width=600, align="center"]
-
-=== F4: Système de Recommandations
-*Objectifs*:: Proposer une liste de ressources ciblées (livres, certs, exercices) en fonction du quadrant où l'utilisateur a atterri.
-*Scénario*:: Sous le graphique, des cartes cliquables proposent des contenus pour s'améliorer (ex: "Vos bases techniques sont faibles ? Essayez TryHackMe").
-
-
-
-== 🚀 Release v0.2.0 : Fonctionnalités & Architecture
-
-Cette version majeure transforme l'application en une plateforme d'entraînement complète. Voici le détail des implémentations.
-
-=== Sécurité & Authentification 🔐
-Un système complet de gestion des utilisateurs a été mis en place pour sécuriser l'accès à la plateforme.
-* **Inscription & Connexion :** Formulaires sécurisés avec gestion des erreurs.
-* **Sécurisation des mots de passe :** Hachage via Spring Security avant stockage en base de données.
-* **Protection des Routes (AuthGuard) :** Mécanisme Frontend empêchant l'accès aux pages sensibles (Dashboard, Arena) sans session active.
-* **Persistance de Session :** Utilisation du `localStorage` pour maintenir l'utilisateur connecté.
-
-=== Cyber Arena (Terminal Web) 💻
-L'Arena est un environnement de simulation Linux interactif intégré directement dans le navigateur.
-* **Technologie :** Basé sur la librairie **Xterm.js**.
-* **Système de Fichiers Virtuel :** Simulation d'une arborescence (`/home`, fichiers de config, secrets).
-* **Commandes Implémentées :**
-** `ls` : Lister les fichiers (avec coloration syntaxique).
-** `cat` : Lire le contenu des fichiers (avec gestion des permissions).
-** `sudo` : Exécuter des commandes avec privilèges élevés.
-** `submit` : Soumettre un flag pour validation auprès de l'API.
+=== F2: Cyber Arena (Red Team) 🎮
+*Objectif*:: Tester les compétences offensives (Linux, Pentest).
+*Scénario*:: L'utilisateur accède à un vrai terminal Linux. Il doit naviguer, décoder des fichiers et exploiter des failles pour trouver des "flags" (`CTF{...}`).
+*Validation*:: Le flag est validé par un script interne au conteneur qui notifie le backend en temps réel.
 
 .Interface du Terminal Web
 image::images/terminal.png[Terminal Arena, 600, align="center"]
 
-=== Système "Capture The Flag" (CTF) 🚩
-Un moteur de jeu a été développé pour rendre l'apprentissage ludique.
-* **Scénarios :** Défis techniques (ex: "Mission Alpha-1") avec narration.
-* **Validation de Flag :** API Backend dédiée pour vérifier les réponses (`CTF{...}`).
-* **Récompenses :** Attribution automatique de points en cas de succès.
-* **Prévention de la triche :** Un défi ne peut être validé qu'une seule fois par utilisateur.
 
-.Tableau de bord des Challenges
-image::images/list_challenges.png[Liste des défis, 600, align="center"]
+=== F3: Module Phishing (Facteur Humain) 🎣
+*Objectif*:: Tester la vigilance face à l'ingénierie sociale.
+*Fonctionnement*:: Simulation d'une boîte mail avec des courriels piégés (Urgence RH, Faux support). L'utilisateur doit analyser les en-têtes et décider de signaler ou cliquer.
 
-=== Mode Certification & Examens 🎓
-Préparation aux certifications réelles avec des conditions d'examen.
-* **Simulateurs :** Support des examens **CEH**, **CISSP** et **CompTIA Security+**.
-* **Algorithme Prédictif :** Calcul de la probabilité de réussite à l'examen officiel basé sur le score obtenu.
-* **Gestion du Temps :** Minuterie stricte (ex: 30 minutes) avec soumission automatique à la fin.
+.Interface de Phishing
+image::images/phishing1.png[Simulation Phishing, 600, align="center"]
 
-=== Gamification & Suivi 🏆
-Pour engager les utilisateurs, des éléments de jeu ont été intégrés.
-* **Score Global :** Affichage du score cumulé en temps réel sur le Dashboard.
-* **Badges de Difficulté :** Indicateurs visuels (Facile, Moyen, Hardcore) sur les cartes de défis.
-* **Feedback Visuel :** Animations et messages de succès lors de la réussite d'un défi.
+.Phishing Réussi
+image::images/phishing2.png[Simulation Phishing, 600, align="center"]
 
-.Affichage du Score Utilisateur
-image::images/dashboard.png[Score Dashboard, 400, align="center"]
+=== F4: Module Investigation (Blue Team) 🕵️
+*Objectif*:: Former à la défense et à l'analyse de logs (Forensics).
+*Technique*:: Un générateur de logs (`LogGenerator`) crée dynamiquement des milliers de lignes de trafic web réaliste, en y cachant une attaque unique (ex: Injection SQL). L'utilisateur doit filtrer et identifier l'IP malveillante.
 
-=== Qualité Technique & Tests ⚙️
-Le projet respecte les standards de développement professionnels.
-* **Architecture Backend :** Séparation claire en contrôleurs, services, repositories et DTOs.
-* **Tests Unitaires :** Couverture complète des services (JUnit 5, Mockito).
-* **Tests d'Intégration :** Validation des endpoints API avec MockMvc et base de données H2.
-* **Tests E2E (End-to-End) :** Scénarios utilisateurs automatisés avec **Selenium** (ex: Parcours complet Login -> Arena -> Submit Flag).
+.Accueil dans le menu d'Investigation
+image::images/logs.png[Screenshot Investigation, 600, align="center"]
+
+.Affichage des Logs
+image::images/logs2.png[Screenshot Investigation, 600, align="center"]
+
+=== F5: Dashboard Unifié & Certification 🏆
+*Objectif*:: Centraliser la progression.
+*Évolution v1.0*:: Le Dashboard agrège désormais les scores de tous les modules (Quiz + Arena + Logs + Phishing) pour calculer une moyenne globale.
+*Recommandations*:: Si le score est faible, le système suggère des ressources externes ciblées. Si le score est élevé (>80%), il débloque des certifications virtuelles.
+
+.Tableau de Bord Global
+image::images/dashboard1.png[Score Dashboard, 600, align="center"]
+
+== Gestion de Projet & Qualité ⚙️
+
+=== Sécurité & Authentification
+L'accès est strictement contrôlé pour protéger la progression des utilisateurs.
+
+* **Inscription & Connexion :** Formulaires sécurisés avec gestion des erreurs (401/403).
+* **Sécurisation des mots de passe :** Hachage robuste via Spring Security (BCrypt) avant stockage en base.
+* **Protection des Routes (AuthGuard) :** Mécanisme Frontend empêchant l'accès direct aux pages sensibles (Dashboard, Arena) sans token de session valide.
+* **Persistance :** Utilisation du `localStorage` pour une expérience utilisateur fluide.
+
+=== Qualité du Code (CI/CD)
+Nous avons industrialisé notre processus de développement pour la v1.0.
+
+* **Pipeline Automatisé :** Chaque modification du code déclenche une compilation et des tests via GitHub Actions.
+* **Tests Unitaires (JUnit) :** Couverture de la logique métier critique (Calcul de score, Génération de logs).
+* **Tests E2E (Selenium) :** Validation automatique des parcours utilisateurs complets (Login -> Arena -> Fin).
+* **Analyse Statique :** Zéro "Security Hotspot" critique sur SonarCloud.
+
+== Conclusion & Perspectives 🚀
+La version v1.0.0 de CyberScale est une plateforme complète et innovante pour l'évaluation des compétences en cybersécurité. En combinant théorie, pratique, et une architecture technique avancée, nous offrons une expérience utilisateur unique.
