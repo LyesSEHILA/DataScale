@@ -42,8 +42,12 @@ Le marché est polarisé :
 == Architecture et Technique
 
 === Architecture Détaillée
+
 image::uml/Capture d’écran du 2026-01-18 17-10-18.png[align="center", pdfwidth="95%"]
 
+image::uml/Capture d’écran du 2026-01-18 17-12-32.png[align="center", pdfwidth="95%"]
+
+image::uml/Capture d’écran du 2026-01-18 17-13-26.png[align="center", pdfwidth="95%"]
 
 Pour garantir une meilleure lisibilité, l'architecture est présentée en deux vues distinctes.
 
