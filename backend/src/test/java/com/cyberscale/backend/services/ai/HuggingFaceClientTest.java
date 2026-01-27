@@ -1,4 +1,4 @@
-package com.cyberscale.backend.service.ai;
+package com.cyberscale.backend.services.ai;
 
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;

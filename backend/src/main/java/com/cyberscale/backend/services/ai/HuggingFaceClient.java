@@ -1,5 +1,7 @@
-package com.cyberscale.backend.service.ai;
+package com.cyberscale.backend.services.ai; // Attention au package "services" (pluriel)
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -10,6 +12,9 @@ import java.util.Map;
 
 @Service
 public class HuggingFaceClient {
+
+    // 1. On déclare le Logger (c'est lui qui va écrire les messages proprement)
+    private static final Logger logger = LoggerFactory.getLogger(HuggingFaceClient.class);
 
     private final WebClient webClient;
 
@@ -30,9 +35,9 @@ public class HuggingFaceClient {
     }
 
     public String generateResponse(String userPrompt) {
-        // MOCK PROPRE
+        // GESTION DU MOCK (Avec Logger)
         if (isMockEnabled) {
-            System.out.println("⚠️ MOCK IA ACTIVÉ (Config)");
+            logger.warn("⚠️ MOCK IA ACTIVÉ par configuration. Aucune requête API ne sera envoyée.");
             return "echo 'Commande simulée par le Mock'; ls -la";
         }
 
@@ -61,12 +66,16 @@ public class HuggingFaceClient {
                 }
             }
         } catch (WebClientResponseException e) {
-            System.err.println("🔴 ERREUR API : " + e.getResponseBodyAsString());
+            // 2. On remplace System.err par logger.error
+            logger.error("🔴 ERREUR API HUGGING FACE ({}): {}", e.getStatusCode(), e.getResponseBodyAsString());
             return "Erreur IA (" + e.getStatusCode() + ")";
         } catch (Exception e) {
-            e.printStackTrace();
+            // 3. On remplace e.printStackTrace() par logger.error avec l'exception
+            logger.error("❌ Erreur technique lors de l'appel IA", e);
             return "Erreur Technique : " + e.getMessage();
         }
+        
+        logger.warn("L'IA n'a renvoyé aucune réponse valide.");
         return "Aucune réponse de l'IA.";
     }
 }

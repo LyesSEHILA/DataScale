@@ -1,4 +1,4 @@
-package com.cyberscale.backend.service.ai;
+package com.cyberscale.backend.services.ai;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
@@ -13,7 +13,7 @@ public class AiConnectionTest {
             System.out.println("--- 🤖 TEST IA START (Mode Retry) ---");
             
             // Question simple pour tester
-            String question = "what is the capital of france ?" ; 
+            String question = "quel est le président des USA ? " ; 
             
             int maxRetries = 10; // On insiste jusqu'à 10 fois (soit ~100 secondes)
             int attempt = 0;
