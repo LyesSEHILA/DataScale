@@ -1,12 +1,12 @@
 package com.cyberscale.backend.services;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.exception.DockerException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Service gérant le cycle de vie des conteneurs Docker pour les challenges.
@@ -61,12 +61,20 @@ public class ContainerService {
      * @param containerId L'identifiant du conteneur à nettoyer.
      */
     public void stopAndRemoveContainer(String containerId) {
-        try {
-            dockerClient.stopContainerCmd(containerId).exec();
-            
-            dockerClient.removeContainerCmd(containerId).exec();
-        } catch (DockerException e) {
-            logger.error("Erreur lors du nettoyage du conteneur {}", containerId, e);
-        }
+    try {
+        // Tente d'arrêter le conteneur
+        dockerClient.stopContainerCmd(containerId).exec();
+    } catch (com.github.dockerjava.api.exception.NotModifiedException e) {
+        // Le conteneur est déjà arrêté, on ignore l'erreur
+    } catch (Exception e) {
+        System.err.println("Erreur lors de l'arrêt du conteneur " + containerId + ": " + e.getMessage());
     }
+
+    try {
+        // Supprime le conteneur
+        dockerClient.removeContainerCmd(containerId).exec();
+    } catch (Exception e) {
+        System.err.println("Erreur lors de la suppression du conteneur " + containerId + ": " + e.getMessage());
+    }
+}
 }
