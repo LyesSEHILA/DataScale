@@ -30,11 +30,11 @@ class ArenaControllerTest {
     @Autowired private MockMvc mockMvc;
     @Autowired private UserRepository userRepository;
     
-    // On mocke TOUS les services utilisés par le contrôleur
     @MockitoBean private ArenaService arenaService;
-    @MockitoBean private ContainerService containerService; // Nouveau
-    @MockitoBean private RabbitMQProducer rabbitMQProducer; // Nouveau
+    @MockitoBean private ContainerService containerService;
+    @MockitoBean private RabbitMQProducer rabbitMQProducer;
 
+    // --- TEST 1 : Validate Flag (Succès) ---
     @Test
     void validateFlag_Success() throws Exception {
         User user = userRepository.save(new User("Tester", "test@arena.com", "pass"));
@@ -49,6 +49,22 @@ class ArenaControllerTest {
                 .andExpect(jsonPath("$.success").value(true));
     }
 
+    // --- TEST 2 : Validate Flag (Échec - Nouveau) ---
+    @Test
+    void validateFlag_Failure() throws Exception {
+        User user = userRepository.save(new User("TesterFail", "fail@arena.com", "pass"));
+        when(arenaService.validateFlag(anyLong(), anyString(), anyString())).thenReturn(false);
+
+        String jsonRequest = String.format("{\"userId\": %d, \"challengeId\": \"C1\", \"flag\": \"BadFlag\"}", user.getId());
+
+        mockMvc.perform(post("/api/arena/validate")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonRequest))
+                .andExpect(status().isBadRequest()) // Vérifie le status 400
+                .andExpect(jsonPath("$.success").value(false));
+    }
+
+    // --- TEST 3 : Start Arena (Succès) ---
     @Test
     void startArena_Success() throws Exception {
         when(arenaService.startChallengeEnvironment("C1")).thenReturn("docker-id");
@@ -58,22 +74,55 @@ class ArenaControllerTest {
                 .andExpect(jsonPath("$.containerId").value("docker-id"));
     }
 
-    // --- NOUVEAU TEST POUR LE TICKET W-02 ---
+    // --- TEST 4 : Start Arena (Erreur Technique - Nouveau) ---
+    @Test
+    void startArena_Exception() throws Exception {
+        // On simule une erreur qui déclenche le catch du controller
+        when(arenaService.startChallengeEnvironment("C1")).thenThrow(new RuntimeException("Docker HS"));
+
+        mockMvc.perform(post("/api/arena/start/C1"))
+                .andExpect(status().isInternalServerError()) // 500
+                .andExpect(jsonPath("$.error").exists());
+    }
+
+    // --- TEST 5 : Stop Arena (Nouveau) ---
+    @Test
+    void stopArena_Success() throws Exception {
+        doNothing().when(arenaService).stopChallengeEnvironment("c1");
+
+        mockMvc.perform(post("/api/arena/stop/c1"))
+                .andExpect(status().isOk());
+        
+        verify(arenaService).stopChallengeEnvironment("c1");
+    }
+
+    // --- TEST 6 : Execute Command (Succès) ---
     @Test
     void executeCommand_Success() throws Exception {
-        // GIVEN
         String jsonRequest = "{\"userId\": \"u1\", \"containerId\": \"c1\", \"command\": \"ls\"}";
         when(containerService.executeCommand("c1", "ls")).thenReturn("file1.txt");
 
-        // WHEN
         mockMvc.perform(post("/api/arena/execute")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(jsonRequest))
-                // THEN
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.output").value("file1.txt"));
 
-        // Vérifie que RabbitMQ a bien été appelé ! (C'est le but du ticket)
         verify(rabbitMQProducer).sendGameEvent("u1", "ls", "c1");
+    }
+
+    // --- TEST 7 : Execute Command (Erreur Technique - Nouveau) ---
+    @Test
+    void executeCommand_Exception() throws Exception {
+        String jsonRequest = "{\"userId\": \"u1\", \"containerId\": \"c1\", \"command\": \"ls\"}";
+        
+        // On fait planter RabbitMQ ou Docker pour déclencher le catch
+        doThrow(new RuntimeException("Rabbit Down")).when(rabbitMQProducer).sendGameEvent(any(), any(), any());
+
+        mockMvc.perform(post("/api/arena/execute")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonRequest))
+                .andExpect(status().isInternalServerError()) // 500
+                .andExpect(jsonPath("$.error").value("Command execution failed"));
     }
 }

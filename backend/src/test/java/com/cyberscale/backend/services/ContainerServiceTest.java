@@ -18,6 +18,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -26,20 +27,18 @@ class ContainerServiceTest {
     @Mock private DockerClient dockerClient;
     @InjectMocks private ContainerService containerService;
 
-    // Mocks pour les conteneurs (existants)
+    // Mocks pour les conteneurs
     @Mock private CreateContainerCmd createContainerCmd;
     @Mock private CreateContainerResponse createContainerResponse;
     @Mock private StartContainerCmd startContainerCmd;
     @Mock private StopContainerCmd stopContainerCmd;
     @Mock private RemoveContainerCmd removeContainerCmd;
 
-    // Mocks pour l'exécution de commandes (Ticket W-02)
+    // Mocks pour l'exécution de commandes
     @Mock private ExecCreateCmd execCreateCmd;
     @Mock private ExecCreateCmdResponse execCreateCmdResponse;
     @Mock private ExecStartCmd execStartCmd;
     @Mock private ExecStartResultCallback execStartResultCallback;
-
-    // --- TESTS EXISTANTS ---
 
     @Test
     void createContainer_Success() {
@@ -70,6 +69,31 @@ class ContainerServiceTest {
     void startContainer_Failure_ShouldThrowRuntimeException() {
         when(dockerClient.startContainerCmd(anyString())).thenThrow(new DockerException("Start Error", 500));
         assertThrows(RuntimeException.class, () -> containerService.startContainer("id"));
+    }
+
+    // --- Test Manquant Ajouté ---
+    @Test
+    void startChallengeEnvironment_Success() {
+        // Cette méthode appelle createContainer puis startContainer
+        // On doit mocker la chaîne complète
+        
+        // 1. Mock de createContainer
+        when(dockerClient.createContainerCmd("cyberscale/base-challenge")).thenReturn(createContainerCmd);
+        when(createContainerCmd.withTty(anyBoolean())).thenReturn(createContainerCmd);
+        when(createContainerCmd.withStdinOpen(anyBoolean())).thenReturn(createContainerCmd);
+        when(createContainerCmd.exec()).thenReturn(createContainerResponse);
+        when(createContainerResponse.getId()).thenReturn("new-env-id");
+
+        // 2. Mock de startContainer
+        when(dockerClient.startContainerCmd("new-env-id")).thenReturn(startContainerCmd);
+
+        // WHEN
+        String result = containerService.startChallengeEnvironment("Challenge1");
+
+        // THEN
+        assertEquals("new-env-id", result);
+        verify(dockerClient).createContainerCmd("cyberscale/base-challenge");
+        verify(dockerClient).startContainerCmd("new-env-id");
     }
 
     @Test
@@ -110,11 +134,8 @@ class ContainerServiceTest {
         assertDoesNotThrow(() -> containerService.stopAndRemoveContainer("id"));
     }
 
-    // --- NOUVEAUX TESTS (Ticket W-02 : executeCommand) ---
-
     @Test
     void executeCommand_Success() throws InterruptedException {
-        // 1. Mock de la création de la commande (execCreate)
         when(dockerClient.execCreateCmd(anyString())).thenReturn(execCreateCmd);
         when(execCreateCmd.withAttachStdout(true)).thenReturn(execCreateCmd);
         when(execCreateCmd.withAttachStderr(true)).thenReturn(execCreateCmd);
@@ -122,18 +143,12 @@ class ContainerServiceTest {
         when(execCreateCmd.exec()).thenReturn(execCreateCmdResponse);
         when(execCreateCmdResponse.getId()).thenReturn("exec-id-123");
 
-        // 2. Mock du démarrage de la commande (execStart)
         when(dockerClient.execStartCmd("exec-id-123")).thenReturn(execStartCmd);
-        
-        // C'est ici l'astuce : exec() renvoie un Callback, sur lequel on appelle awaitCompletion
         when(execStartCmd.exec(any(ExecStartResultCallback.class))).thenReturn(execStartResultCallback);
         when(execStartResultCallback.awaitCompletion(anyLong(), any(TimeUnit.class))).thenReturn(true);
 
-        // WHEN
         String result = containerService.executeCommand("container-id", "ls -la");
 
-        // THEN
-        // On vérifie que tout a été appelé
         verify(dockerClient).execCreateCmd("container-id");
         verify(dockerClient).execStartCmd("exec-id-123");
         assertNotNull(result); 
@@ -141,12 +156,10 @@ class ContainerServiceTest {
 
     @Test
     void executeCommand_Failure() {
-        // Simulation d'une erreur dès la création de la commande
         when(dockerClient.execCreateCmd(anyString())).thenThrow(new RuntimeException("Docker Down"));
 
         String result = containerService.executeCommand("container-id", "ls");
         
-        // ✅ CORRECTION : On vérifie le message anglais défini dans le service ("Error executing command")
         assertTrue(result.contains("Error executing command"), "Le message d'erreur doit correspondre à celui du service");
     }
 }
