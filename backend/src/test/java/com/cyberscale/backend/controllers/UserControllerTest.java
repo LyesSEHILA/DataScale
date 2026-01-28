@@ -29,6 +29,7 @@ import com.cyberscale.backend.repositories.QuizSessionRepository;
 import com.cyberscale.backend.repositories.RecommendationRepository;
 import com.cyberscale.backend.repositories.UserRepository;
 import com.cyberscale.backend.services.QuizService;
+import com.cyberscale.backend.services.rabbitmq.RabbitMQProducer;
 
 @SpringBootTest
 @AutoConfigureMockMvc(addFilters = false)
@@ -45,6 +46,9 @@ class UserControllerTest {
     
     @MockitoBean 
     private QuizService quizService;
+
+    @MockitoBean 
+    private RabbitMQProducer rabbitMQProducer;
 
     private User testUser;
 
