@@ -5,6 +5,8 @@ import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.command.ExecCreateCmdResponse;
 import com.github.dockerjava.api.exception.NotModifiedException;
 import com.github.dockerjava.core.command.ExecStartResultCallback;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
@@ -14,6 +16,7 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class ContainerService {
 
+    private static final Logger logger = LoggerFactory.getLogger(ContainerService.class);
     private final DockerClient dockerClient;
 
     public ContainerService(DockerClient dockerClient) {
@@ -38,15 +41,16 @@ public class ContainerService {
         try {
             dockerClient.stopContainerCmd(containerId).exec();
         } catch (NotModifiedException e) {
-            // Déjà stoppé, on ignore
+            // Déjà stoppé, on ignore (Debug seulement pour ne pas polluer)
+            logger.debug("Le conteneur {} était déjà arrêté.", containerId);
         } catch (Exception e) {
-            System.err.println("Erreur arrêt container: " + e.getMessage());
+            logger.error("Erreur lors de l'arrêt du conteneur {}: {}", containerId, e.getMessage());
         }
 
         try {
             dockerClient.removeContainerCmd(containerId).exec();
         } catch (Exception e) {
-            System.err.println("Erreur suppression container: " + e.getMessage());
+            logger.error("Erreur lors de la suppression du conteneur {}: {}", containerId, e.getMessage());
         }
     }
 
@@ -55,9 +59,6 @@ public class ContainerService {
     public String executeCommand(String containerId, String command) {
         try {
             // 1. Préparer la commande (ExecCreate)
-            // On sépare la commande par espaces (ex: "ls -la" -> ["ls", "-la"])
-            // Note: Pour des commandes complexes avec quotes, il faudrait un parser plus robuste,
-            // mais pour l'instant ça suffit.
             String[] commandArray = command.split(" ");
 
             ExecCreateCmdResponse execCreateCmdResponse = dockerClient.execCreateCmd(containerId)
@@ -71,21 +72,20 @@ public class ContainerService {
             
             dockerClient.execStartCmd(execCreateCmdResponse.getId())
                     .exec(new ExecStartResultCallback(outputStream, null))
-                    .awaitCompletion(5, TimeUnit.SECONDS); // On attend max 5 secondes
+                    .awaitCompletion(5, TimeUnit.SECONDS);
 
             // 3. Retourner le résultat
             return outputStream.toString(StandardCharsets.UTF_8);
 
         } catch (Exception e) {
-            e.printStackTrace();
+            // ✅ CORRECTION : Usage propre des logs au lieu de printStackTrace
+            logger.error("Erreur d'exécution de la commande '{}' dans le conteneur {}: ", command, containerId, e);
             return "Erreur d'exécution : " + e.getMessage();
         }
     }
     
-    // Ajoute cette méthode utilitaire si elle te manque pour démarrer un challenge complet
     public String startChallengeEnvironment(String challengeId) {
-        // Logique simplifiée pour l'instant : on lance une image de base
-        // Plus tard, on pourra mapper challengeId -> image Docker spécifique
+        // Logique simplifiée
         String containerId = createContainer("cyberscale/base-challenge");
         startContainer(containerId);
         return containerId;
