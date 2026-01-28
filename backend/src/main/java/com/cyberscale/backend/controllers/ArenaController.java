@@ -1,56 +1,72 @@
 package com.cyberscale.backend.controllers;
 
 import java.util.Map;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.cyberscale.backend.services.ArenaService;
+import com.cyberscale.backend.services.ContainerService; // Assure-toi que ce service existe
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
+import com.cyberscale.backend.services.rabbitmq.RabbitMQProducer;
 
 /**
  * Controleur REST et WebSocket gérant l'arene de jeu.
  * Responsabilités :
- * - REST : Démarrer/Arrêter les conteneurs Docker des challenges.
- * - REST : Valider les Flags soumis par les joueurs.
- * - WS : Gérer les communications temps réel via STOMP.
+ * - REST : Démarrer/Arrêter les conteneurs Docker.
+ * - REST : Exécuter les commandes Shell (et notifier RabbitMQ).
+ * - REST : Valider les Flags.
+ * - WS : Chat/Echo.
  */
 @RestController
 @RequestMapping("/api/arena")
 @CrossOrigin(origins = "*") 
 public class ArenaController {
 
-    @Autowired private ArenaService arenaService;
+    private final ArenaService arenaService;
+    private final ContainerService containerService; // Nécessaire pour exécuter les commandes
+    private final RabbitMQProducer rabbitMQProducer; // Nécessaire pour le Ticket W-02
 
-    /**
-     * Endpoint WebSocket pour l'echo ou le chat de l'arène.
-     * Les messages envoyés à "/app/arena" sont redistribues sur "/topic/arena".
-     * @param message Le message entrant.
-     * @return Le message sortant.
-     */
-    @MessageMapping("/arena") 
-    @SendTo("/topic/arena")  
-    public String handleInput(String message) {
-        return message;
+    // Injection par constructeur (Plus propre que @Autowired sur les champs)
+    public ArenaController(ArenaService arenaService, 
+                           ContainerService containerService, 
+                           RabbitMQProducer rabbitMQProducer) {
+        this.arenaService = arenaService;
+        this.containerService = containerService;
+        this.rabbitMQProducer = rabbitMQProducer;
     }
-    
+
+    // --- DTOs ---
     public record FlagRequest(
         @JsonProperty("userId") Long userId,
         @JsonProperty("challengeId") String challengeId,
         @JsonProperty("flag") String flag
     ) {}
 
+    public record CommandRequest(
+        @JsonProperty("userId") String userId,       // Qui tape la commande ?
+        @JsonProperty("containerId") String containerId,
+        @JsonProperty("command") String command      // ex: "ls -la"
+    ) {}
+
+    // --- ENDPOINTS ---
+
     /**
-     * Démarre l'environnement pour un challenge spécifique.
-     * @param challengeId L'ID du challenge à lancer.
-     * @return L'ID du conteneur crée pour permettre au front de s'y connecter.
+     * WebSocket pour chat (inchangé)
+     */
+    @MessageMapping("/arena") 
+    @SendTo("/topic/arena")  
+    public String handleInput(String message) {
+        return message;
+    }
+
+    /**
+     * Démarrer le challenge
      */
     @PostMapping("/start/{challengeId}")
     public ResponseEntity<?> startArena(@PathVariable String challengeId) {
         try {
             String containerId = arenaService.startChallengeEnvironment(challengeId);
-            
             return ResponseEntity.ok(Map.of("containerId", containerId));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
@@ -58,10 +74,7 @@ public class ArenaController {
     }
 
     /**
-     * Arrête et supprime un conteneur actif.
-     * Appele lorsque l'utilisateur quitte la page du challenge.
-     * @param containerId L'ID du conteneur a detruire.
-     * @return code HTTP 200.
+     * Arrêter le challenge
      */
     @PostMapping("/stop/{containerId}")
     public ResponseEntity<?> stopArena(@PathVariable String containerId) {
@@ -70,9 +83,26 @@ public class ArenaController {
     }
 
     /**
-     * Valide un flag soumis par l'utilisateur.
-     * @param request DTO contenant user, challenge et flag.
-     * @return code HTTP 200 ou 400 .
+     * ✅ TICKET W-02 : Exécuter une commande et notifier RabbitMQ
+     */
+    @PostMapping("/execute")
+    public ResponseEntity<?> executeCommand(@RequestBody CommandRequest request) {
+        try {
+            // 1. SIGNALER L'ACTION (RabbitMQ) - Fire & Forget
+            // L'IA écoutera ce message plus tard pour analyser le comportement
+            rabbitMQProducer.sendGameEvent(request.userId(), request.command(), request.containerId());
+
+            // 2. EXÉCUTER LA COMMANDE (Docker)
+            String result = containerService.executeCommand(request.containerId(), request.command());
+
+            return ResponseEntity.ok(Map.of("output", result));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of("error", "Erreur d'exécution: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Valider un flag
      */
     @PostMapping("/validate")
     public ResponseEntity<?> validateFlag(@RequestBody FlagRequest request) {
@@ -83,5 +113,4 @@ public class ArenaController {
             return ResponseEntity.status(400).body(Map.of("message", "Flag incorrect.", "success", false));
         }
     }
-
 }

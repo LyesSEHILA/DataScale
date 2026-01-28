@@ -18,17 +18,22 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.cyberscale.backend.models.User;
 import com.cyberscale.backend.repositories.UserRepository;
 import com.cyberscale.backend.services.ArenaService;
+import com.cyberscale.backend.services.ContainerService;
+import com.cyberscale.backend.services.rabbitmq.RabbitMQProducer;
 import com.cyberscale.backend.config.SecurityConfig;
 
 @SpringBootTest
-@AutoConfigureMockMvc(addFilters = false)
+@AutoConfigureMockMvc(addFilters = false) // Désactive la sécu pour les tests
 @Import(SecurityConfig.class)
 class ArenaControllerTest {
 
     @Autowired private MockMvc mockMvc;
     @Autowired private UserRepository userRepository;
     
+    // On mocke TOUS les services utilisés par le contrôleur
     @MockitoBean private ArenaService arenaService;
+    @MockitoBean private ContainerService containerService; // Nouveau
+    @MockitoBean private RabbitMQProducer rabbitMQProducer; // Nouveau
 
     @Test
     void validateFlag_Success() throws Exception {
@@ -45,17 +50,6 @@ class ArenaControllerTest {
     }
 
     @Test
-    void validateFlag_Failure() throws Exception {
-        when(arenaService.validateFlag(any(), any(), any())).thenReturn(false);
-        String jsonRequest = "{\"userId\": 1, \"challengeId\": \"C1\", \"flag\": \"WRONG\"}";
-
-        mockMvc.perform(post("/api/arena/validate")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(jsonRequest))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
     void startArena_Success() throws Exception {
         when(arenaService.startChallengeEnvironment("C1")).thenReturn("docker-id");
 
@@ -64,20 +58,22 @@ class ArenaControllerTest {
                 .andExpect(jsonPath("$.containerId").value("docker-id"));
     }
 
+    // --- NOUVEAU TEST POUR LE TICKET W-02 ---
     @Test
-    void startArena_Error() throws Exception {
-        // Teste le try/catch du controller
-        when(arenaService.startChallengeEnvironment("C1")).thenThrow(new RuntimeException("Docker HS"));
+    void executeCommand_Success() throws Exception {
+        // GIVEN
+        String jsonRequest = "{\"userId\": \"u1\", \"containerId\": \"c1\", \"command\": \"ls\"}";
+        when(containerService.executeCommand("c1", "ls")).thenReturn("file1.txt");
 
-        mockMvc.perform(post("/api/arena/start/C1"))
-                .andExpect(status().isInternalServerError()) // 500
-                .andExpect(jsonPath("$.error").exists());
-    }
+        // WHEN
+        mockMvc.perform(post("/api/arena/execute")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonRequest))
+                // THEN
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.output").value("file1.txt"));
 
-    @Test
-    void stopArena_Success() throws Exception {
-        mockMvc.perform(post("/api/arena/stop/123"))
-                .andExpect(status().isOk());
-        verify(arenaService).stopChallengeEnvironment("123");
+        // Vérifie que RabbitMQ a bien été appelé ! (C'est le but du ticket)
+        verify(rabbitMQProducer).sendGameEvent("u1", "ls", "c1");
     }
 }

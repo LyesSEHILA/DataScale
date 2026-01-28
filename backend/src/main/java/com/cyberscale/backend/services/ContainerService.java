@@ -1,80 +1,93 @@
 package com.cyberscale.backend.services;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
-
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerResponse;
-import com.github.dockerjava.api.exception.DockerException;
+import com.github.dockerjava.api.command.ExecCreateCmdResponse;
+import com.github.dockerjava.api.exception.NotModifiedException;
+import com.github.dockerjava.core.command.ExecStartResultCallback;
+import org.springframework.stereotype.Service;
 
-/**
- * Service gérant le cycle de vie des conteneurs Docker pour les challenges.
- * Il permet de créer, démarrer et nettoyer des environnements isolés.
- */
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.concurrent.TimeUnit;
+
 @Service
 public class ContainerService {
 
-    private static final Logger logger = LoggerFactory.getLogger(ContainerService.class);
-
     private final DockerClient dockerClient;
 
-    // Injection DockerClient
     public ContainerService(DockerClient dockerClient) {
         this.dockerClient = dockerClient;
     }
 
-    /**
-     * Instancie un conteneur Docker à partir d'une image donnée.
-     * @param imageId L'identifiant ou le nom de l'image Docker.
-     * @return L'identifiant unique du conteneur créé.
-     * @throws RuntimeException Si l'API Docker renvoie une erreur lors de la création.
-     */
-    public String createContainer(String imageId) {
+    // --- Méthodes existantes ---
+
+    public String createContainer(String imageName) {
+        CreateContainerResponse container = dockerClient.createContainerCmd(imageName)
+                .withTty(true)
+                .withStdinOpen(true)
+                .exec();
+        return container.getId();
+    }
+
+    public void startContainer(String containerId) {
+        dockerClient.startContainerCmd(containerId).exec();
+    }
+
+    public void stopAndRemoveContainer(String containerId) {
         try {
-            CreateContainerResponse container = dockerClient.createContainerCmd(imageId)
-                    .withTty(true)
-                    .withStdinOpen(true)
+            dockerClient.stopContainerCmd(containerId).exec();
+        } catch (NotModifiedException e) {
+            // Déjà stoppé, on ignore
+        } catch (Exception e) {
+            System.err.println("Erreur arrêt container: " + e.getMessage());
+        }
+
+        try {
+            dockerClient.removeContainerCmd(containerId).exec();
+        } catch (Exception e) {
+            System.err.println("Erreur suppression container: " + e.getMessage());
+        }
+    }
+
+    // --- 👇 NOUVELLE MÉTHODE POUR LE TICKET W-02 👇 ---
+
+    public String executeCommand(String containerId, String command) {
+        try {
+            // 1. Préparer la commande (ExecCreate)
+            // On sépare la commande par espaces (ex: "ls -la" -> ["ls", "-la"])
+            // Note: Pour des commandes complexes avec quotes, il faudrait un parser plus robuste,
+            // mais pour l'instant ça suffit.
+            String[] commandArray = command.split(" ");
+
+            ExecCreateCmdResponse execCreateCmdResponse = dockerClient.execCreateCmd(containerId)
+                    .withAttachStdout(true)
+                    .withAttachStderr(true)
+                    .withCmd(commandArray)
                     .exec();
 
-            return container.getId();
-        } catch (DockerException e) {
-            throw new RuntimeException("Erreur lors de la création du conteneur : " + e.getMessage(), e);
+            // 2. Démarrer l'exécution et capturer la sortie (ExecStart)
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            
+            dockerClient.execStartCmd(execCreateCmdResponse.getId())
+                    .exec(new ExecStartResultCallback(outputStream, null))
+                    .awaitCompletion(5, TimeUnit.SECONDS); // On attend max 5 secondes
+
+            // 3. Retourner le résultat
+            return outputStream.toString(StandardCharsets.UTF_8);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "Erreur d'exécution : " + e.getMessage();
         }
     }
-
-    /**
-     * Démarre un conteneur existant qui a été créé précédemment.
-     * @param containerId L'identifiant du conteneur à démarrer.
-     * @throws RuntimeException Si le démarrage échoue.
-     */
-    public void startContainer(String containerId) {
-        try {
-            dockerClient.startContainerCmd(containerId).exec();
-        } catch (DockerException e) {
-            throw new RuntimeException("Erreur lors du démarrage du conteneur : " + e.getMessage(), e);
-        }
+    
+    // Ajoute cette méthode utilitaire si elle te manque pour démarrer un challenge complet
+    public String startChallengeEnvironment(String challengeId) {
+        // Logique simplifiée pour l'instant : on lance une image de base
+        // Plus tard, on pourra mapper challengeId -> image Docker spécifique
+        String containerId = createContainer("cyberscale/base-challenge");
+        startContainer(containerId);
+        return containerId;
     }
-
-    /**
-     * Arrête et supprime définitivement un conteneur.
-     * @param containerId L'identifiant du conteneur à nettoyer.
-     */
-    public void stopAndRemoveContainer(String containerId) {
-    try {
-        // Tente d'arrêter le conteneur
-        dockerClient.stopContainerCmd(containerId).exec();
-    } catch (com.github.dockerjava.api.exception.NotModifiedException e) {
-        // Le conteneur est déjà arrêté, on ignore l'erreur
-    } catch (Exception e) {
-        System.err.println("Erreur lors de l'arrêt du conteneur " + containerId + ": " + e.getMessage());
-    }
-
-    try {
-        // Supprime le conteneur
-        dockerClient.removeContainerCmd(containerId).exec();
-    } catch (Exception e) {
-        System.err.println("Erreur lors de la suppression du conteneur " + containerId + ": " + e.getMessage());
-    }
-}
 }

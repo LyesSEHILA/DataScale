@@ -29,6 +29,7 @@ dependencies {
     implementation("com.github.docker-java:docker-java-core:3.7.0")
     implementation("com.github.docker-java:docker-java-transport-httpclient5:3.7.0")
     implementation("org.springframework.boot:spring-boot-starter-webflux")
+    implementation("org.springframework.boot:spring-boot-starter-amqp")
     runtimeOnly("com.h2database:h2")
     runtimeOnly("org.postgresql:postgresql")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
