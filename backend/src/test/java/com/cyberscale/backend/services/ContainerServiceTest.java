@@ -5,9 +5,6 @@ import com.github.dockerjava.api.command.*;
 import com.github.dockerjava.api.exception.DockerException;
 import com.github.dockerjava.api.exception.NotModifiedException;
 import com.github.dockerjava.core.command.ExecStartResultCallback;
-import com.github.dockerjava.api.model.Frame;
-import com.cyberscale.backend.services.rabbitmq.RabbitMQProducer;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -42,7 +39,7 @@ class ContainerServiceTest {
     @Mock private ExecStartCmd execStartCmd;
     @Mock private ExecStartResultCallback execStartResultCallback;
 
-    // --- TESTS EXISTANTS (Déjà présents) ---
+    // --- TESTS EXISTANTS ---
 
     @Test
     void createContainer_Success() {
@@ -139,7 +136,7 @@ class ContainerServiceTest {
         // On vérifie que tout a été appelé
         verify(dockerClient).execCreateCmd("container-id");
         verify(dockerClient).execStartCmd("exec-id-123");
-        assertNotNull(result); // Le résultat sera vide car on ne simule pas l'écriture dans le stream, mais ça valide le flux.
+        assertNotNull(result); 
     }
 
     @Test
@@ -149,6 +146,7 @@ class ContainerServiceTest {
 
         String result = containerService.executeCommand("container-id", "ls");
         
-        assertTrue(result.contains("Erreur d'exécution"));
+        // ✅ CORRECTION : On vérifie le message anglais défini dans le service ("Error executing command")
+        assertTrue(result.contains("Error executing command"), "Le message d'erreur doit correspondre à celui du service");
     }
 }

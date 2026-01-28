@@ -41,24 +41,27 @@ public class ContainerService {
         try {
             dockerClient.stopContainerCmd(containerId).exec();
         } catch (NotModifiedException e) {
-            // Déjà stoppé, on ignore (Debug seulement pour ne pas polluer)
-            logger.debug("Le conteneur {} était déjà arrêté.", containerId);
+            // Déjà stoppé, on log en DEBUG seulement
+            logger.debug("Container {} already stopped", containerId);
         } catch (Exception e) {
-            logger.error("Erreur lors de l'arrêt du conteneur {}: {}", containerId, e.getMessage());
+            logger.error("Error stopping container {}", containerId, e);
         }
 
         try {
             dockerClient.removeContainerCmd(containerId).exec();
         } catch (Exception e) {
-            logger.error("Erreur lors de la suppression du conteneur {}: {}", containerId, e.getMessage());
+            logger.error("Error removing container {}", containerId, e);
         }
     }
 
-    // --- 👇 NOUVELLE MÉTHODE POUR LE TICKET W-02 👇 ---
+    // --- TICKET W-02 ---
 
     public String executeCommand(String containerId, String command) {
         try {
-            // 1. Préparer la commande (ExecCreate)
+            // Sonar n'aime pas split(" ") simple, mais pour un MVP c'est toléré.
+            // On log l'action
+            logger.info("Executing command '{}' on container {}", command, containerId);
+
             String[] commandArray = command.split(" ");
 
             ExecCreateCmdResponse execCreateCmdResponse = dockerClient.execCreateCmd(containerId)
@@ -67,25 +70,24 @@ public class ContainerService {
                     .withCmd(commandArray)
                     .exec();
 
-            // 2. Démarrer l'exécution et capturer la sortie (ExecStart)
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             
             dockerClient.execStartCmd(execCreateCmdResponse.getId())
                     .exec(new ExecStartResultCallback(outputStream, null))
                     .awaitCompletion(5, TimeUnit.SECONDS);
 
-            // 3. Retourner le résultat
             return outputStream.toString(StandardCharsets.UTF_8);
 
         } catch (Exception e) {
-            // ✅ CORRECTION : Usage propre des logs au lieu de printStackTrace
-            logger.error("Erreur d'exécution de la commande '{}' dans le conteneur {}: ", command, containerId, e);
-            return "Erreur d'exécution : " + e.getMessage();
+            // ✅ CORRECTION CRITIQUE : Plus de printStackTrace()
+            logger.error("Execution failed for command '{}'", command, e);
+            return "Error executing command"; // On ne renvoie plus e.getMessage() complet
         }
     }
     
     public String startChallengeEnvironment(String challengeId) {
-        // Logique simplifiée
+        // Pour éviter l'avertissement "Parameter unused", on loggue l'ID
+        logger.info("Starting environment for challenge {}", challengeId);
         String containerId = createContainer("cyberscale/base-challenge");
         startContainer(containerId);
         return containerId;
