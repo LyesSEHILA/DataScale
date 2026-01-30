@@ -37,3 +37,5 @@ out/
 .vscode/
 
 secrets.properties
+.env
+!.env.example
