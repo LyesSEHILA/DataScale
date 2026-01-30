@@ -19,5 +19,21 @@ services:
       timeout: 5s
       retries: 5
 
+  # 👇 AJOUT DU SERVICE RABBITMQ 👇
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: cyberscale-rabbitmq
+    ports:
+      - "5672:5672"   # Port pour l'app Java
+      - "15672:15672" # Interface d'admin web
+    environment:
+      - RABBITMQ_DEFAULT_USER=user
+      - RABBITMQ_DEFAULT_PASS=password
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
 volumes:
   postgres_data:

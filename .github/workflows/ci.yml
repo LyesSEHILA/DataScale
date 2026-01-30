@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - develop
+      - main
   pull_request:
     types: [opened, synchronize, reopened]
 
@@ -13,11 +14,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Récupérer le code du dépôt
+      # 1. Récupérer le code (fetch-depth: 0 est requis pour SonarCloud !)
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          fetch-depth: 
+          fetch-depth: 0
 
       # 2. Installer Java (JDK 21)
       - name: Set up JDK 21
@@ -30,10 +31,14 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x backend/gradlew
 
-      # 4. Lancer le build, les tests ET générer le rapport de couverture
+      # 4. Lancer le build AVEC les secrets injectés
       - name: Build, Test and Generate Coverage Report
-        run: ./gradlew build jacocoTestReport
         working-directory: ./backend
+        env:
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          RABBITMQ_PASS: ${{ secrets.RABBITMQ_PASS }}
+          HF_API_KEY: ${{ secrets.HF_API_KEY }}
+        run: ./gradlew build jacocoTestReport
 
       # 5. Lancer l'analyse SonarCloud
       - name: SonarCloud Scan

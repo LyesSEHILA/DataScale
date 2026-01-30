@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -19,6 +20,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import com.cyberscale.backend.services.rabbitmq.RabbitMQProducer;
 
 import com.cyberscale.backend.dto.ChallengeDTO;
 import com.cyberscale.backend.services.ArenaService;
@@ -36,6 +38,9 @@ class ChallengeControllerTest {
 
     @MockitoBean 
     private LogGenerator logGenerator;
+
+    @MockitoBean 
+    private RabbitMQProducer rabbitMQProducer;
 
     // --- CORRECTION SONARCLOUD ICI ---
     // On définit les IPs en constantes et on supprime l'alerte de sécurité

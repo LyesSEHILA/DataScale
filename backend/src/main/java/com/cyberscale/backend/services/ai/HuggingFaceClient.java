@@ -1,4 +1,4 @@
-package com.cyberscale.backend.services.ai; // Attention au package "services" (pluriel)
+package com.cyberscale.backend.services.ai; 
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

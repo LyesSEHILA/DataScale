@@ -12,6 +12,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -28,8 +29,11 @@ import com.cyberscale.backend.repositories.AnswerOptionRepository;
 import com.cyberscale.backend.repositories.ExamSessionRepository;
 import com.cyberscale.backend.repositories.QuestionRepository;
 import com.cyberscale.backend.repositories.UserAnswerRepository;
+import com.cyberscale.backend.services.rabbitmq.RabbitMQProducer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.cyberscale.backend.services.rabbitmq.RabbitMQProducer;
+
 
 @SpringBootTest
 @AutoConfigureMockMvc(addFilters = false)
@@ -43,6 +47,9 @@ public class ExamControllerTest {
     @Autowired private QuestionRepository questionRepository;
     @Autowired private AnswerOptionRepository answerOptionRepository;
     @Autowired private UserAnswerRepository userAnswerRepository;
+
+    @MockitoBean 
+    private RabbitMQProducer rabbitMQProducer;
 
     @BeforeEach
     void cleanUp() {

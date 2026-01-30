@@ -29,6 +29,7 @@ dependencies {
     implementation("com.github.docker-java:docker-java-core:3.7.0")
     implementation("com.github.docker-java:docker-java-transport-httpclient5:3.7.0")
     implementation("org.springframework.boot:spring-boot-starter-webflux")
+    implementation("org.springframework.boot:spring-boot-starter-amqp")
     runtimeOnly("com.h2database:h2")
     runtimeOnly("org.postgresql:postgresql")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
@@ -64,4 +65,45 @@ tasks.jacocoTestReport {
         csv.required.set(false)
         html.required.set(true)
     }
+}
+
+// ==================================================================
+//  CONFIGURATION AUTO DES VARIABLES D'ENVIRONNEMENT (.env)
+// ==================================================================
+
+// Fonction pour charger le fichier .env
+fun loadEnv(target: Any) {
+    val envFile = file(".env")
+    if (envFile.exists()) {
+        envFile.readLines().forEach { line ->
+            val trimmed = line.trim()
+            if (trimmed.isNotEmpty() && !trimmed.startsWith("#")) {
+                val parts = trimmed.split("=", limit = 2)
+                if (parts.size == 2) {
+                    val key = parts[0].trim()
+                    val value = parts[1].trim()
+                    
+                    // Injection selon le type de tâche
+                    if (target is JavaExec) {
+                        target.environment(key, value)
+                    } else if (target is Test) {
+                        target.environment(key, value)
+                    }
+                }
+            }
+        }
+        println("✅  [.env] Variables chargées pour : $target")
+    } else {
+        println("⚠️  [.env] Fichier introuvable ! (Pensez à copier .env.example)")
+    }
+}
+
+// Appliquer au démarrage (bootRun)
+tasks.withType<org.springframework.boot.gradle.tasks.run.BootRun> {
+    loadEnv(this)
+}
+
+// Appliquer aux tests
+tasks.withType<Test> {
+    loadEnv(this)
 }
