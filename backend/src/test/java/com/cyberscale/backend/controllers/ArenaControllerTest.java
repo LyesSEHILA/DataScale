@@ -135,4 +135,32 @@ class ArenaControllerTest {
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.error").value("Command execution failed"));
     }
+
+    @Test
+    void analyzeCommand_ShouldSendEventToRabbit() throws Exception {
+        String jsonRequest = "{\"userId\": \"u1\", \"containerId\": \"c1\", \"command\": \"ls\", \"mode\": \"RED_TEAM\"}";
+
+        // On n'attend pas de retour body, juste un statut OK
+        mockMvc.perform(post("/api/arena/analyze")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonRequest))
+                .andExpect(status().isOk());
+
+        // Vérification Clé : Le contrôleur a bien concaténé "MODE|COMMANDE"
+        verify(rabbitMQProducer).sendGameEvent("u1", "RED_TEAM|ls", "c1");
+    }
+    
+    @Test
+    void analyzeCommand_ShouldDefaultToTutorial_WhenModeIsNull() throws Exception {
+        String jsonRequest = "{\"userId\": \"u1\", \"containerId\": \"c1\", \"command\": \"ls\"}"; // Pas de mode
+
+        mockMvc.perform(post("/api/arena/analyze")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonRequest))
+                .andExpect(status().isOk());
+
+        // Vérification du défaut
+        verify(rabbitMQProducer).sendGameEvent("u1", "TUTORIAL|ls", "c1");
+    }
+    
 }

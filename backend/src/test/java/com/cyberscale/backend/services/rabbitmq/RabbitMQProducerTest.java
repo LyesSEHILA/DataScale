@@ -1,17 +1,16 @@
 package com.cyberscale.backend.services.rabbitmq;
 
-import com.cyberscale.backend.dto.GameEventDTO;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
+import static org.mockito.ArgumentMatchers.eq;
 import org.mockito.Mock;
+import static org.mockito.Mockito.verify;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
+import com.cyberscale.backend.dto.GameEventDTO;
 
 @ExtendWith(MockitoExtension.class)
 class RabbitMQProducerTest {
@@ -19,20 +18,35 @@ class RabbitMQProducerTest {
     @Mock
     private RabbitTemplate rabbitTemplate;
 
-    @InjectMocks
     private RabbitMQProducer producer;
 
+    @BeforeEach
+    void setUp() {
+        producer = new RabbitMQProducer(rabbitTemplate);
+        // Injection des valeurs @Value pour le test
+        ReflectionTestUtils.setField(producer, "exchange", "ex");
+        ReflectionTestUtils.setField(producer, "routingKey", "rk");
+        ReflectionTestUtils.setField(producer, "infraRoutingKey", "infra-rk"); // 👈 Nouveau
+    }
+
     @Test
-    void sendGameEvent_ShouldSendToRabbitMQ() {
-        ReflectionTestUtils.setField(producer, "exchange", "test.exchange");
-        ReflectionTestUtils.setField(producer, "routingKey", "test.key");
+    void sendGameEvent_ShouldSendToRabbit() {
+        producer.sendGameEvent("u1", "ls", "c1");
+        verify(rabbitTemplate).convertAndSend(eq("ex"), eq("rk"), (Object) any(GameEventDTO.class));
+    }
 
-        producer.sendGameEvent("player1", "ls -la", "container1");
-
-        verify(rabbitTemplate).convertAndSend(
-                eq("test.exchange"),
-                eq("test.key"),
-                any(GameEventDTO.class)
-        );
+    // 👇 TEST AJOUTÉ POUR COUVRIR sendInfraCommand
+    @Test
+    void sendInfraCommand_ShouldSendToInfraQueue() {
+        String command = "rm -rf /";
+        producer.sendInfraCommand(command);
+        
+        // Vérifie qu'on envoie bien sur la Routing Key de l'Infra
+        verify(rabbitTemplate).convertAndSend(eq("ex"), eq("infra-rk"), eq(command));
+    }
+    
+    // Helper pour matcher le type
+    private Object any(Class<GameEventDTO> class1) {
+        return org.mockito.ArgumentMatchers.any(class1);
     }
 }
