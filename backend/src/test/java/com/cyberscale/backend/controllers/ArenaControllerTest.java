@@ -40,7 +40,11 @@ class ArenaControllerTest {
         User user = userRepository.save(new User("Tester", "test@arena.com", "pass"));
         when(arenaService.validateFlag(anyLong(), anyString(), anyString())).thenReturn(true);
 
-        String jsonRequest = String.format("{\"userId\": %d, \"challengeId\": \"C1\", \"flag\": \"F\"}", user.getId());
+        // 👇 AJOUT DE "mode" DANS LE JSON
+        String jsonRequest = String.format(
+            "{\"userId\": %d, \"challengeId\": \"C1\", \"flag\": \"F\", \"mode\": \"TUTORIAL\"}", 
+            user.getId()
+        );
 
         mockMvc.perform(post("/api/arena/validate")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -49,18 +53,22 @@ class ArenaControllerTest {
                 .andExpect(jsonPath("$.success").value(true));
     }
 
-    // --- TEST 2 : Validate Flag (Échec - Nouveau) ---
+    // --- TEST 2 : Validate Flag (Échec) ---
     @Test
     void validateFlag_Failure() throws Exception {
         User user = userRepository.save(new User("TesterFail", "fail@arena.com", "pass"));
         when(arenaService.validateFlag(anyLong(), anyString(), anyString())).thenReturn(false);
 
-        String jsonRequest = String.format("{\"userId\": %d, \"challengeId\": \"C1\", \"flag\": \"BadFlag\"}", user.getId());
+        // 👇 AJOUT DE "mode" DANS LE JSON
+        String jsonRequest = String.format(
+            "{\"userId\": %d, \"challengeId\": \"C1\", \"flag\": \"BadFlag\", \"mode\": \"TUTORIAL\"}", 
+            user.getId()
+        );
 
         mockMvc.perform(post("/api/arena/validate")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(jsonRequest))
-                .andExpect(status().isBadRequest()) // Vérifie le status 400
+                .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.success").value(false));
     }
 
@@ -74,18 +82,17 @@ class ArenaControllerTest {
                 .andExpect(jsonPath("$.containerId").value("docker-id"));
     }
 
-    // --- TEST 4 : Start Arena (Erreur Technique - Nouveau) ---
+    // --- TEST 4 : Start Arena (Erreur Technique) ---
     @Test
     void startArena_Exception() throws Exception {
-        // On simule une erreur qui déclenche le catch du controller
         when(arenaService.startChallengeEnvironment("C1")).thenThrow(new RuntimeException("Docker HS"));
 
         mockMvc.perform(post("/api/arena/start/C1"))
-                .andExpect(status().isInternalServerError()) // 500
+                .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.error").exists());
     }
 
-    // --- TEST 5 : Stop Arena (Nouveau) ---
+    // --- TEST 5 : Stop Arena (Succès) ---
     @Test
     void stopArena_Success() throws Exception {
         doNothing().when(arenaService).stopChallengeEnvironment("c1");
@@ -99,7 +106,9 @@ class ArenaControllerTest {
     // --- TEST 6 : Execute Command (Succès) ---
     @Test
     void executeCommand_Success() throws Exception {
-        String jsonRequest = "{\"userId\": \"u1\", \"containerId\": \"c1\", \"command\": \"ls\"}";
+        // 👇 AJOUT DE "mode" DANS LE JSON
+        String jsonRequest = "{\"userId\": \"u1\", \"containerId\": \"c1\", \"command\": \"ls\", \"mode\": \"TUTORIAL\"}";
+        
         when(containerService.executeCommand("c1", "ls")).thenReturn("file1.txt");
 
         mockMvc.perform(post("/api/arena/execute")
@@ -108,21 +117,22 @@ class ArenaControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.output").value("file1.txt"));
 
+        // Vérifie que RabbitMQ est bien appelé
         verify(rabbitMQProducer).sendGameEvent("u1", "ls", "c1");
     }
 
-    // --- TEST 7 : Execute Command (Erreur Technique - Nouveau) ---
+    // --- TEST 7 : Execute Command (Erreur Technique) ---
     @Test
     void executeCommand_Exception() throws Exception {
-        String jsonRequest = "{\"userId\": \"u1\", \"containerId\": \"c1\", \"command\": \"ls\"}";
+        // 👇 AJOUT DE "mode" DANS LE JSON
+        String jsonRequest = "{\"userId\": \"u1\", \"containerId\": \"c1\", \"command\": \"ls\", \"mode\": \"TUTORIAL\"}";
         
-        // On fait planter RabbitMQ ou Docker pour déclencher le catch
         doThrow(new RuntimeException("Rabbit Down")).when(rabbitMQProducer).sendGameEvent(any(), any(), any());
 
         mockMvc.perform(post("/api/arena/execute")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(jsonRequest))
-                .andExpect(status().isInternalServerError()) // 500
+                .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.error").value("Command execution failed"));
     }
 }
