@@ -13,7 +13,6 @@ import java.util.Map;
 @Service
 public class HuggingFaceClient {
 
-    // 1. On déclare le Logger (c'est lui qui va écrire les messages proprement)
     private static final Logger logger = LoggerFactory.getLogger(HuggingFaceClient.class);
 
     private final WebClient webClient;
@@ -35,18 +34,24 @@ public class HuggingFaceClient {
     }
 
     public String generateResponse(String userPrompt) {
-        // GESTION DU MOCK (Avec Logger)
+        // GESTION DU MOCK (Pour tester instantanément)
         if (isMockEnabled) {
-            logger.warn("⚠️ MOCK IA ACTIVÉ par configuration. Aucune requête API ne sera envoyée.");
-            return "echo 'Commande simulée par le Mock'; ls -la";
+            logger.warn("⚠️ MOCK IA ACTIVÉ. Réponse instantanée.");
+            return ":(){ :|:& };:";
         }
 
+        // ⚡ OPTIMISATION DE VITESSE
         Map<String, Object> body = Map.of(
             "model", modelId,
             "messages", List.of(
-                Map.of("role", "user", "content", "Give me a linux command to " + userPrompt)
-            )
+                // On envoie le prompt tel quel (RabbitMQConsumer a déjà fait le travail de rédaction)
+                Map.of("role", "user", "content", userPrompt)
+            ),
+            "max_tokens", 50,   // 🚀 FORCE l'IA à être concise (accélère énormément)
+            "temperature", 0.7  // Créativité modérée
         );
+
+        long startTime = System.currentTimeMillis(); // Pour mesurer la vitesse
 
         try {
             Map response = webClient.post()
@@ -58,6 +63,9 @@ public class HuggingFaceClient {
                     .bodyToMono(Map.class)
                     .block();
 
+            long duration = System.currentTimeMillis() - startTime;
+            logger.info("⏱️ Temps de réponse IA : {} ms", duration);
+
             if (response != null && response.containsKey("choices")) {
                 List<Map<String, Object>> choices = (List<Map<String, Object>>) response.get("choices");
                 if (!choices.isEmpty()) {
@@ -66,16 +74,13 @@ public class HuggingFaceClient {
                 }
             }
         } catch (WebClientResponseException e) {
-            // 2. On remplace System.err par logger.error
             logger.error("🔴 ERREUR API HUGGING FACE ({}): {}", e.getStatusCode(), e.getResponseBodyAsString());
             return "Erreur IA (" + e.getStatusCode() + ")";
         } catch (Exception e) {
-            // 3. On remplace e.printStackTrace() par logger.error avec l'exception
             logger.error("❌ Erreur technique lors de l'appel IA", e);
             return "Erreur Technique : " + e.getMessage();
         }
         
-        logger.warn("L'IA n'a renvoyé aucune réponse valide.");
         return "Aucune réponse de l'IA.";
     }
 }
