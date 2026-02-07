@@ -16,14 +16,25 @@ public class RabbitMQConfig {
     private String queueName;
 
     @Value("${app.rabbitmq.exchange}")
-    private String exchangeName; // Sera "cyberscale.events"
+    private String exchangeName;
 
     @Value("${app.rabbitmq.routingkey}")
-    private String routingKey;   // Sera "player.action"
+    private String routingKey;
+
+    @Value("${app.rabbitmq.queue.infra}")
+    private String infraQueueName;
+
+    @Value("${app.rabbitmq.routingkey.infra}")
+    private String infraRoutingKey;
 
     @Bean
     public Queue queue() {
-        return new Queue(queueName, true); // true = durable
+        return new Queue(queueName, true);
+    }
+
+    @Bean
+    public Queue infraQueue() {
+        return new Queue(infraQueueName, true);
     }
 
     @Bean
@@ -34,6 +45,11 @@ public class RabbitMQConfig {
     @Bean
     public Binding binding(Queue queue, TopicExchange exchange) {
         return BindingBuilder.bind(queue).to(exchange).with(routingKey);
+    }
+
+    @Bean
+    public Binding infraBinding(Queue infraQueue, TopicExchange exchange) {
+        return BindingBuilder.bind(infraQueue).to(exchange).with(infraRoutingKey);
     }
 
     @Bean
