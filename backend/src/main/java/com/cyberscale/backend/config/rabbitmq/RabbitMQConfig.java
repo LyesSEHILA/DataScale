@@ -1,5 +1,7 @@
 package com.cyberscale.backend.config.rabbitmq;
 
+import org.springframework.amqp.core.Queue;
+
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -11,6 +13,8 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class RabbitMQConfig {
+
+    public static final String EXECUTION_QUEUE = "infra.execution";
 
     @Value("${app.rabbitmq.queue}")
     private String queueName;
@@ -35,6 +39,11 @@ public class RabbitMQConfig {
     @Bean
     public Queue infraQueue() {
         return new Queue(infraQueueName, true);
+    }
+
+    @Bean
+    public Queue executionQueue() {
+        return new Queue(EXECUTION_QUEUE, true);
     }
 
     @Bean
