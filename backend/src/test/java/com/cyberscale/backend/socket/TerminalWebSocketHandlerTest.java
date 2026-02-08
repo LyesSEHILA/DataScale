@@ -30,13 +30,14 @@ import com.github.dockerjava.api.command.ResizeContainerCmd;
 @ExtendWith(MockitoExtension.class)
 class TerminalWebSocketHandlerTest {
 
+    private static final String WS_URI = "ws://localhost?containerId=c1";
+
     @Mock private DockerClient dockerClient;
     @Mock private WebSocketSession session;
     
     @InjectMocks 
-    private TerminalWebSocketHandler handler; // Pas besoin de @Spy ici pour ce test
+    private TerminalWebSocketHandler handler; 
 
-    // Mocks Docker
     @Mock private ExecCreateCmd execCreateCmd;
     @Mock private ExecCreateCmdResponse execCreateCmdResponse;
     @Mock private ExecStartCmd execStartCmd;
@@ -44,16 +45,12 @@ class TerminalWebSocketHandlerTest {
 
     @BeforeEach
     void setUp() {
-        // Configuration Lenient pour éviter les erreurs de stubbing strict
         lenient().when(dockerClient.execCreateCmd(anyString())).thenReturn(execCreateCmd);
         lenient().when(execCreateCmd.withAttachStdout(true)).thenReturn(execCreateCmd);
         lenient().when(execCreateCmd.withAttachStderr(true)).thenReturn(execCreateCmd);
         lenient().when(execCreateCmd.withAttachStdin(true)).thenReturn(execCreateCmd);
         lenient().when(execCreateCmd.withTty(true)).thenReturn(execCreateCmd);
-        
-        // 🚨 CORRECTION CRITIQUE : withCmd prend un tableau (String...), pas une simple String !
         lenient().when(execCreateCmd.withCmd(any(String[].class))).thenReturn(execCreateCmd);
-        
         lenient().when(execCreateCmd.exec()).thenReturn(execCreateCmdResponse);
         lenient().when(execCreateCmdResponse.getId()).thenReturn("exec-123");
 
@@ -63,10 +60,9 @@ class TerminalWebSocketHandlerTest {
     }
 
     @Test
-    void afterConnectionEstablished_ShouldStartDockerExec() throws Exception {
-        // 🚨 CORRECTION : Il faut mocker getId() sinon ConcurrentHashMap plante
+    void afterConnectionEstablishedShouldStartDockerExec() throws Exception {
         when(session.getId()).thenReturn("s1");
-        when(session.getUri()).thenReturn(new URI("ws://localhost?containerId=c1"));
+        when(session.getUri()).thenReturn(new URI(WS_URI));
         
         handler.afterConnectionEstablished(session);
 
@@ -75,8 +71,8 @@ class TerminalWebSocketHandlerTest {
     }
 
     @Test
-    void afterConnectionEstablished_NoContainerId_ShouldClose() throws Exception {
-        when(session.getUri()).thenReturn(new URI("ws://localhost")); // Pas de params
+    void afterConnectionEstablishedNoContainerIdShouldClose() throws Exception {
+        when(session.getUri()).thenReturn(new URI("ws://localhost")); 
         
         handler.afterConnectionEstablished(session);
 
@@ -85,50 +81,38 @@ class TerminalWebSocketHandlerTest {
     }
 
     @Test
-    void handleTextMessage_ResizeCommand() throws Exception {
-        // 1. Setup session
+    void handleTextMessageResizeCommand() throws Exception {
         when(session.getId()).thenReturn("s1");
-        when(session.getUri()).thenReturn(new URI("ws://localhost?containerId=c1"));
-        handler.afterConnectionEstablished(session); // Remplit la map
+        when(session.getUri()).thenReturn(new URI(WS_URI));
+        handler.afterConnectionEstablished(session); 
 
-        // 2. Setup Resize mock
         when(dockerClient.resizeContainerCmd("c1")).thenReturn(resizeContainerCmd);
         when(resizeContainerCmd.withSize(100, 50)).thenReturn(resizeContainerCmd);
 
-        // 3. Action
         String json = "{\"type\":\"resize\", \"cols\":100, \"rows\":50}";
         handler.handleMessage(session, new TextMessage(json));
 
-        // 4. Verification
         verify(resizeContainerCmd).exec();
     }
 
     @Test
-    void handleTextMessage_StandardInput() throws Exception {
-        // 1. Setup session
+    void handleTextMessageStandardInput() throws Exception {
         when(session.getId()).thenReturn("s1");
-        when(session.getUri()).thenReturn(new URI("ws://localhost?containerId=c1"));
+        when(session.getUri()).thenReturn(new URI(WS_URI));
         handler.afterConnectionEstablished(session);
 
-        // Capture du stream
         ArgumentCaptor<InputStream> inputStreamCaptor = ArgumentCaptor.forClass(InputStream.class);
         verify(execStartCmd).withStdIn(inputStreamCaptor.capture());
 
-        // 2. Action
         handler.handleMessage(session, new TextMessage("ls"));
-
-        // Pas d'exception levée signifie que le code a traversé le try/catch et tenté d'écrire
     }
 
     @Test
-    void afterConnectionClosed_ShouldCleanup() throws Exception {
+    void afterConnectionClosedShouldCleanup() throws Exception {
         when(session.getId()).thenReturn("s1");
-        when(session.getUri()).thenReturn(new URI("ws://localhost?containerId=c1"));
+        when(session.getUri()).thenReturn(new URI(WS_URI));
         handler.afterConnectionEstablished(session);
 
         handler.afterConnectionClosed(session, CloseStatus.NORMAL);
-        
-        // On vérifie juste que ça ne plante pas, la vérification interne (reflection) est fragile
-        // Si besoin de vérifier le nettoyage, on peut le faire via ReflectionTestUtils ici
     }
 }

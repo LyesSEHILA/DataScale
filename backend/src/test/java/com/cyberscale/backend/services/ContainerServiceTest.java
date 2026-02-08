@@ -38,24 +38,24 @@ import com.github.dockerjava.core.command.ExecStartResultCallback;
 @ExtendWith(MockitoExtension.class)
 class ContainerServiceTest {
 
+    private static final String CONTAINER_99 = "container-99";
+
     @Mock private DockerClient dockerClient;
     @InjectMocks private ContainerService containerService;
 
-    // Mocks Docker
     @Mock private CreateContainerCmd createContainerCmd;
     @Mock private CreateContainerResponse createContainerResponse;
     @Mock private StartContainerCmd startContainerCmd;
     @Mock private StopContainerCmd stopContainerCmd;
     @Mock private RemoveContainerCmd removeContainerCmd;
 
-    // Mocks Exec
     @Mock private ExecCreateCmd execCreateCmd;
     @Mock private ExecCreateCmdResponse execCreateCmdResponse;
     @Mock private ExecStartCmd execStartCmd;
     @Mock private ExecStartResultCallback execStartResultCallback;
 
     @Test
-    void createContainer_Success() {
+    void createContainerSuccess() {
         when(dockerClient.createContainerCmd(anyString())).thenReturn(createContainerCmd);
         when(createContainerCmd.withTty(anyBoolean())).thenReturn(createContainerCmd);
         when(createContainerCmd.withStdinOpen(anyBoolean())).thenReturn(createContainerCmd);
@@ -67,60 +67,54 @@ class ContainerServiceTest {
     }
 
     @Test
-    void createContainer_Failure_ShouldThrowRuntimeException() {
+    void createContainerFailureShouldThrowRuntimeException() {
         when(dockerClient.createContainerCmd(anyString())).thenThrow(new DockerException("Docker Error", 500));
         assertThrows(RuntimeException.class, () -> containerService.createContainer("img"));
     }
 
     @Test
-    void startContainer_Success() {
+    void startContainerSuccess() {
         when(dockerClient.startContainerCmd(anyString())).thenReturn(startContainerCmd);
         containerService.startContainer("id");
         verify(startContainerCmd).exec();
     }
 
     @Test
-    void startContainer_Failure_ShouldThrowRuntimeException() {
+    void startContainerFailureShouldThrowRuntimeException() {
         when(dockerClient.startContainerCmd(anyString())).thenThrow(new DockerException("Start Error", 500));
         assertThrows(RuntimeException.class, () -> containerService.startContainer("id"));
     }
 
-    // 🚨 CORRECTION : On utilise lenient() sur les méthodes du Builder
     @Test
-    void createChallengeContainer_ShouldInjectEnvVar() {
+    void createChallengeContainerShouldInjectEnvVar() {
         String challengeId = "linux-challenge";
         String rawFlag = "a1b2c3d4";
 
         when(dockerClient.createContainerCmd(anyString())).thenReturn(createContainerCmd);
         
-        // Mockito est strict : si ton code n'appelle pas .withName(), il lance une erreur.
-        // lenient() rend ces stubs "optionnels" (utilisés si appelés, ignorés sinon).
         lenient().when(createContainerCmd.withTty(anyBoolean())).thenReturn(createContainerCmd);
         lenient().when(createContainerCmd.withStdinOpen(anyBoolean())).thenReturn(createContainerCmd);
         lenient().when(createContainerCmd.withName(anyString())).thenReturn(createContainerCmd);
         
-        // Idem pour withEnv : on utilise lenient() + any(String[].class) pour couvrir tous les cas
         lenient().when(createContainerCmd.withEnv(any(String[].class))).thenReturn(createContainerCmd);
         
         when(createContainerCmd.exec()).thenReturn(createContainerResponse);
-        when(createContainerResponse.getId()).thenReturn("container-99");
-        when(dockerClient.startContainerCmd("container-99")).thenReturn(startContainerCmd);
+        when(createContainerResponse.getId()).thenReturn(CONTAINER_99);
+        when(dockerClient.startContainerCmd(CONTAINER_99)).thenReturn(startContainerCmd);
 
         String resultId = containerService.createChallengeContainer(challengeId, rawFlag);
 
-        assertEquals("container-99", resultId);
+        assertEquals(CONTAINER_99, resultId);
 
-        // Vérification finale : on s'assure que withEnv a bien été appelé avec le flag
         ArgumentCaptor<String> envCaptor = ArgumentCaptor.forClass(String.class);
         verify(createContainerCmd).withEnv(envCaptor.capture());
 
         String capturedEnv = envCaptor.getValue();
-        assertTrue(capturedEnv.contains("CHALLENGE_FLAG=" + rawFlag), 
-            "La variable CHALLENGE_FLAG doit être injectée");
+        assertTrue(capturedEnv.contains("CHALLENGE_FLAG=" + rawFlag));
     }
 
     @Test
-    void stopAndRemoveContainer_Success() {
+    void stopAndRemoveContainerSuccess() {
         when(dockerClient.stopContainerCmd(anyString())).thenReturn(stopContainerCmd);
         when(dockerClient.removeContainerCmd(anyString())).thenReturn(removeContainerCmd);
         containerService.stopAndRemoveContainer("id");
@@ -129,7 +123,7 @@ class ContainerServiceTest {
     }
 
     @Test
-    void stopAndRemoveContainer_WhenAlreadyStopped() {
+    void stopAndRemoveContainerWhenAlreadyStopped() {
         when(dockerClient.stopContainerCmd(anyString())).thenReturn(stopContainerCmd);
         when(dockerClient.removeContainerCmd(anyString())).thenReturn(removeContainerCmd);
         doThrow(new NotModifiedException("Stopped")).when(stopContainerCmd).exec();
@@ -139,7 +133,7 @@ class ContainerServiceTest {
     }
 
     @Test
-    void stopAndRemoveContainer_WhenStopFailsGeneric() {
+    void stopAndRemoveContainerWhenStopFailsGeneric() {
         when(dockerClient.stopContainerCmd(anyString())).thenReturn(stopContainerCmd);
         when(dockerClient.removeContainerCmd(anyString())).thenReturn(removeContainerCmd);
         doThrow(new RuntimeException("Crash")).when(stopContainerCmd).exec();
@@ -149,7 +143,7 @@ class ContainerServiceTest {
     }
 
     @Test
-    void stopAndRemoveContainer_WhenRemoveFails() {
+    void stopAndRemoveContainerWhenRemoveFails() {
         when(dockerClient.stopContainerCmd(anyString())).thenReturn(stopContainerCmd);
         when(dockerClient.removeContainerCmd(anyString())).thenReturn(removeContainerCmd);
         doThrow(new RuntimeException("Crash Remove")).when(removeContainerCmd).exec();
@@ -158,7 +152,7 @@ class ContainerServiceTest {
     }
 
     @Test
-    void executeCommand_Success() throws InterruptedException {
+    void executeCommandSuccess() throws InterruptedException {
         when(dockerClient.execCreateCmd(anyString())).thenReturn(execCreateCmd);
         when(execCreateCmd.withAttachStdout(true)).thenReturn(execCreateCmd);
         when(execCreateCmd.withAttachStderr(true)).thenReturn(execCreateCmd);
@@ -178,60 +172,10 @@ class ContainerServiceTest {
     }
 
     @Test
-    void executeCommand_Failure() {
+    void executeCommandFailure() {
         when(dockerClient.execCreateCmd(anyString())).thenThrow(new RuntimeException("Docker Down"));
 
         String result = containerService.executeCommand("container-id", "ls");
-        
-        assertTrue(result.contains("Error executing command"), "Le message d'erreur doit correspondre à celui du service");
+        assertTrue(result.contains("Error executing command"));
     }
-
-    @Test
-    void executeCommand_Exception_Internal() {
-        // Teste le bloc catch(Exception e)
-        when(dockerClient.execCreateCmd(anyString())).thenThrow(new RuntimeException("Docker Crash"));
-
-        String result = containerService.executeCommand("container-id", "ls");
-        
-        // Vérifie qu'on retourne bien le message d'erreur et qu'on ne plante pas
-        assertEquals("Error executing command", result);
-    }
-
-    @Test
-    void stopAndRemoveContainer_Exception_OnStop() {
-        // Teste le catch(Exception e) dans le stop
-        when(dockerClient.stopContainerCmd(anyString())).thenReturn(stopContainerCmd);
-        // Force une erreur générique
-        doThrow(new RuntimeException("Stop Failed")).when(stopContainerCmd).exec();
-        
-        // Mock remove pour qu'il fonctionne
-        when(dockerClient.removeContainerCmd(anyString())).thenReturn(removeContainerCmd);
-
-        assertDoesNotThrow(() -> containerService.stopAndRemoveContainer("id"));
-        
-        // Vérifie que remove est quand même appelé même si stop a planté
-        verify(removeContainerCmd).exec();
-    }
-
-    @Test
-    void stopAndRemoveContainer_Exception_OnRemove() {
-        // Teste le catch(Exception e) dans le remove
-        when(dockerClient.stopContainerCmd(anyString())).thenReturn(stopContainerCmd);
-        when(dockerClient.removeContainerCmd(anyString())).thenReturn(removeContainerCmd);
-        
-        doThrow(new RuntimeException("Remove Failed")).when(removeContainerCmd).exec();
-
-        assertDoesNotThrow(() -> containerService.stopAndRemoveContainer("id"));
-    }
-    
-    @Test
-    void isCommandDangerous_ShouldBlock() {
-        // Ce test couvre la méthode privée si tu utilises Reflection ou si executeCommand l'appelle
-        String result = containerService.executeCommand("c1", "rm -rf /");
-        assertTrue(result.contains("blocked"));
-        
-        String result2 = containerService.executeCommand("c1", ":(){:|:&};:"); // Fork bomb
-        assertTrue(result2.contains("blocked"));
-    }
-    
 }

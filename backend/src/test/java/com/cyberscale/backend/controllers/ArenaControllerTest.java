@@ -1,14 +1,14 @@
 package com.cyberscale.backend.controllers;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertThrows; // ✅ Import Ajouté
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
-import jakarta.servlet.ServletException; // ✅ Import Ajouté
+import jakarta.servlet.ServletException;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,7 +39,7 @@ class ArenaControllerTest {
     @MockitoBean private RabbitMQProducer rabbitMQProducer;
 
     @Test
-    void validateFlag_Success() throws Exception {
+    void validateFlagSuccess() throws Exception {
         User user = userRepository.save(new User("Tester", "test@arena.com", "pass"));
         when(arenaService.validateFlag(anyLong(), anyString(), anyString())).thenReturn(true);
         
@@ -53,7 +53,7 @@ class ArenaControllerTest {
     }
 
     @Test
-    void validateFlag_Failure() throws Exception {
+    void validateFlagFailure() throws Exception {
         User user = userRepository.save(new User("TesterFail", "fail@arena.com", "pass"));
         when(arenaService.validateFlag(anyLong(), anyString(), anyString())).thenReturn(false);
         
@@ -67,7 +67,7 @@ class ArenaControllerTest {
     }
 
     @Test
-    void startArena_Success() throws Exception {
+    void startArenaSuccess() throws Exception {
         when(arenaService.startChallengeEnvironment(anyLong(), eq("C1"))).thenReturn("docker-id");
 
         mockMvc.perform(post("/api/arena/start/C1"))
@@ -75,27 +75,21 @@ class ArenaControllerTest {
                 .andExpect(jsonPath("$.containerId").value("docker-id"));
     }
 
-    // 🚨 CORRECTION MAJEURE ICI
     @Test
-    void startArena_Exception() {
-        // GIVEN
+    void startArenaException() {
         when(arenaService.startChallengeEnvironment(anyLong(), eq("C1")))
             .thenThrow(new RuntimeException("Docker HS"));
 
-        // WHEN & THEN
-        // Puisque le contrôleur ne capture pas l'exception, elle remonte comme une ServletException.
-        // On vérifie que c'est bien ce qui se passe.
         ServletException exception = assertThrows(ServletException.class, () -> {
             mockMvc.perform(post("/api/arena/start/C1"));
         });
 
-        // On vérifie que la cause est bien notre RuntimeException
         assertTrue(exception.getCause() instanceof RuntimeException);
         assertTrue(exception.getCause().getMessage().contains("Docker HS"));
     }
 
     @Test
-    void stopArena_Success() throws Exception {
+    void stopArenaSuccess() throws Exception {
         doNothing().when(arenaService).stopChallengeEnvironment("c1");
 
         mockMvc.perform(post("/api/arena/stop/c1"))
@@ -105,7 +99,7 @@ class ArenaControllerTest {
     }
 
     @Test
-    void executeCommand_Success() throws Exception {
+    void executeCommandSuccess() throws Exception {
         String jsonRequest = "{\"userId\": \"u1\", \"containerId\": \"c1\", \"command\": \"ls\", \"mode\": \"TUTORIAL\"}";
         when(containerService.executeCommand("c1", "ls")).thenReturn("file1.txt");
 
@@ -119,7 +113,7 @@ class ArenaControllerTest {
     }
 
     @Test
-    void executeCommand_Exception() throws Exception {
+    void executeCommandException() throws Exception {
         String jsonRequest = "{\"userId\": \"u1\", \"containerId\": \"c1\", \"command\": \"ls\", \"mode\": \"TUTORIAL\"}";
         doThrow(new RuntimeException("Rabbit Down")).when(rabbitMQProducer).sendGameEvent(any(), any(), any());
 
@@ -131,7 +125,7 @@ class ArenaControllerTest {
     }
 
     @Test
-    void analyzeCommand_ShouldSendEventToRabbit() throws Exception {
+    void analyzeCommandShouldSendEventToRabbit() throws Exception {
         String jsonRequest = "{\"userId\": \"u1\", \"containerId\": \"c1\", \"command\": \"ls\", \"mode\": \"RED_TEAM\"}";
         mockMvc.perform(post("/api/arena/analyze").contentType(MediaType.APPLICATION_JSON).content(jsonRequest))
                 .andExpect(status().isOk());
@@ -139,7 +133,7 @@ class ArenaControllerTest {
     }
     
     @Test
-    void analyzeCommand_ShouldDefaultToTutorial_WhenModeIsNull() throws Exception {
+    void analyzeCommandShouldDefaultToTutorialWhenModeIsNull() throws Exception {
         String jsonRequest = "{\"userId\": \"u1\", \"containerId\": \"c1\", \"command\": \"ls\"}"; 
         mockMvc.perform(post("/api/arena/analyze").contentType(MediaType.APPLICATION_JSON).content(jsonRequest))
                 .andExpect(status().isOk());

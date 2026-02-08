@@ -1,22 +1,24 @@
 package com.cyberscale.backend.services;
 
-import com.cyberscale.backend.dto.builder.NodeDTO;
-import com.cyberscale.backend.dto.builder.TopologyRequest;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
-
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Map;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+
+import com.cyberscale.backend.dto.builder.NodeDTO;
+import com.cyberscale.backend.dto.builder.TopologyRequest;
+
 @Service
 public class BuilderService {
 
     private static final Logger logger = LoggerFactory.getLogger(BuilderService.class);
     private static final String WORKSPACE_DIR = System.getProperty("java.io.tmpdir") + "/cyberscale-labs/";
+    private static final String LABEL_REGEX = "[^a-z0-9]";
 
     public String deployTopology(TopologyRequest topology) throws IOException, InterruptedException {
         String deploymentId = UUID.randomUUID().toString();
@@ -34,29 +36,19 @@ public class BuilderService {
 
         logger.info("📄 Docker Compose généré : {}", composeFile.getAbsolutePath());
 
-        // Appel de la méthode protégée (qu'on pourra surcharger dans les tests)
         executeDockerCompose(deploymentId, composeFile.getAbsolutePath());
 
         logger.info("✅ Architecture déployée avec succès ! ID: {}", deploymentId);
         return findKaliContainerName(topology, deploymentId);
     }
 
-    /**
-     * Méthode extraite pour :
-     * 1. Isoler la logique ProcessBuilder (pour les tests)
-     * 2. Corriger la faille de sécurité SonarQube sur le PATH
-     */
     protected void executeDockerCompose(String deploymentId, String composeFilePath) throws IOException, InterruptedException {
-        // On spécifie le chemin absolu vers l'exécutable docker (plus sûr)
-        // Adapter selon ton OS : /usr/bin/docker (Linux) ou /usr/local/bin/docker (Mac)
         ProcessBuilder pb = new ProcessBuilder("/usr/bin/docker", "compose", "-p", "lab_" + deploymentId, "-f", composeFilePath, "up", "-d");
         
-        // 🔒 SONAR FIX ULTIME : On nettoie complètement l'environnement
+        // 🔒 SONAR FIX : Clean environment
         Map<String, String> env = pb.environment();
-        env.clear(); // On vide tout ce qui vient du système
+        env.clear();
         env.put("PATH", "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin");
-        // Si Docker a besoin d'autres variables (comme DOCKER_HOST), il faut les remettre ici :
-        // env.put("DOCKER_HOST", "unix:///var/run/docker.sock");
         
         pb.redirectErrorStream(true);
         Process process = pb.start();
@@ -69,14 +61,13 @@ public class BuilderService {
         }
     }
 
-    // Passé en protected pour pouvoir le tester unitairement si besoin
     protected String generateDockerComposeYaml(TopologyRequest topology, String deploymentId) {
         StringBuilder yaml = new StringBuilder();
         yaml.append("version: '3.8'\n");
         yaml.append("services:\n");
 
         for (NodeDTO node : topology.nodes()) {
-            String cleanLabel = node.label().toLowerCase().replaceAll("[^a-z0-9]", "");
+            String cleanLabel = node.label().toLowerCase().replaceAll(LABEL_REGEX, "");
             String serviceName = cleanLabel + "_" + node.id();
             
             yaml.append("  ").append(serviceName).append(":\n");
@@ -108,14 +99,14 @@ public class BuilderService {
     private String findKaliContainerName(TopologyRequest topology, String deploymentId) {
         for (NodeDTO node : topology.nodes()) {
             if ("kali".equals(node.type())) {
-                String cleanLabel = node.label().toLowerCase().replaceAll("[^a-z0-9]", "");
+                String cleanLabel = node.label().toLowerCase().replaceAll(LABEL_REGEX, "");
                 String serviceName = cleanLabel + "_" + node.id();
                 return serviceName + "_" + deploymentId;
             }
         }
         if (!topology.nodes().isEmpty()) {
             NodeDTO node = topology.nodes().get(0);
-            String cleanLabel = node.label().toLowerCase().replaceAll("[^a-z0-9]", "");
+            String cleanLabel = node.label().toLowerCase().replaceAll(LABEL_REGEX, "");
             return cleanLabel + "_" + node.id() + "_" + deploymentId;
         }
         return null;

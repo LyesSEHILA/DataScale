@@ -43,24 +43,22 @@ public class TerminalWebSocketHandler extends TextWebSocketHandler {
             return;
         }
 
-        logger.info("🔌 Connexion Terminal (Exec) sur : " + containerId);
+        logger.info("🔌 Connexion Terminal (Exec) sur : {}", containerId);
 
         try {
-            // Création de l'exec Docker (bash)
             ExecCreateCmd cmd = dockerClient.execCreateCmd(containerId);
             ExecCreateCmdResponse execResponse = cmd
                     .withAttachStdout(true)
                     .withAttachStderr(true)
                     .withAttachStdin(true)
                     .withTty(true)
-                    .withCmd("/bin/sh") // ou /bin/bash selon l'image
+                    .withCmd("/bin/sh")
                     .exec();
 
             String execId = execResponse.getId();
             PipedOutputStream dockerInput = new PipedOutputStream();
             activeOutputStreams.put(session.getId(), dockerInput);
 
-            // Callback pour recevoir les données de Docker
             ResultCallback<Frame> callback = new ResultCallback.Adapter<Frame>() {
                 @Override
                 public void onNext(Frame item) {
@@ -76,7 +74,6 @@ public class TerminalWebSocketHandler extends TextWebSocketHandler {
 
             activeCallbacks.put(session.getId(), callback);
 
-            // Démarrage de l'exec avec stdin connecté
             dockerClient.execStartCmd(execId)
                     .withTty(true)
                     .withStdIn(new java.io.PipedInputStream(dockerInput))
@@ -96,7 +93,6 @@ public class TerminalWebSocketHandler extends TextWebSocketHandler {
         try {
             String payload = message.getPayload();
 
-            // ✅ CORRECTION : Traitement du message Resize au lieu de l'ignorer
             if (payload.trim().startsWith("{")) {
                 try {
                     JsonNode json = objectMapper.readTree(payload);
@@ -114,10 +110,9 @@ public class TerminalWebSocketHandler extends TextWebSocketHandler {
                 } catch (Exception e) {
                     logger.warn("Erreur parsing JSON resize", e);
                 }
-                return; // On retourne ici pour ne pas envoyer le JSON comme commande bash
+                return;
             }
 
-            // Envoi des touches au conteneur (si ce n'est pas du JSON)
             dockerInput.write(payload.getBytes(StandardCharsets.UTF_8));
             dockerInput.flush();
 
@@ -130,11 +125,19 @@ public class TerminalWebSocketHandler extends TextWebSocketHandler {
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
         String sId = session.getId();
         if (activeOutputStreams.containsKey(sId)) {
-            try { activeOutputStreams.get(sId).close(); } catch (IOException e) {}
+            try {
+                activeOutputStreams.get(sId).close();
+            } catch (IOException e) {
+                // Ignore errors during stream closure
+            }
             activeOutputStreams.remove(sId);
         }
         if (activeCallbacks.containsKey(sId)) {
-            try { activeCallbacks.get(sId).close(); } catch (IOException e) {}
+            try {
+                activeCallbacks.get(sId).close();
+            } catch (IOException e) {
+                // Ignore errors during callback closure
+            }
             activeCallbacks.remove(sId);
         }
     }
@@ -149,7 +152,9 @@ public class TerminalWebSocketHandler extends TextWebSocketHandler {
                 String[] pair = param.split("=");
                 if (pair.length == 2 && "containerId".equals(pair[0])) return pair[1];
             }
-        } catch (Exception e) { return null; }
+        } catch (Exception e) {
+            return null;
+        }
         return null;
     }
 }
