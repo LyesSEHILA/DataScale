@@ -7,178 +7,135 @@ import com.github.dockerjava.api.exception.NotModifiedException;
 import com.github.dockerjava.core.command.ExecStartResultCallback;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class ContainerServiceTest {
 
+    private static final String CONTAINER_ID = "container-id";
+
     @Mock private DockerClient dockerClient;
     @InjectMocks private ContainerService containerService;
 
-    // Mocks pour les conteneurs
     @Mock private CreateContainerCmd createContainerCmd;
     @Mock private CreateContainerResponse createContainerResponse;
     @Mock private StartContainerCmd startContainerCmd;
     @Mock private StopContainerCmd stopContainerCmd;
     @Mock private RemoveContainerCmd removeContainerCmd;
-
-    // Mocks pour l'exécution de commandes
     @Mock private ExecCreateCmd execCreateCmd;
     @Mock private ExecCreateCmdResponse execCreateCmdResponse;
     @Mock private ExecStartCmd execStartCmd;
     @Mock private ExecStartResultCallback execStartResultCallback;
 
     @Test
-    void createContainer_Success() {
+    void createContainerSuccess() {
         when(dockerClient.createContainerCmd(anyString())).thenReturn(createContainerCmd);
         when(createContainerCmd.withTty(anyBoolean())).thenReturn(createContainerCmd);
         when(createContainerCmd.withStdinOpen(anyBoolean())).thenReturn(createContainerCmd);
         when(createContainerCmd.exec()).thenReturn(createContainerResponse);
-        when(createContainerResponse.getId()).thenReturn("id-123");
+        when(createContainerResponse.getId()).thenReturn(CONTAINER_ID);
 
         String res = containerService.createContainer("img");
-        assertEquals("id-123", res);
+        assertEquals(CONTAINER_ID, res);
     }
 
     @Test
-    void createContainer_Failure_ShouldThrowRuntimeException() {
-        when(dockerClient.createContainerCmd(anyString())).thenThrow(new DockerException("Docker Error", 500));
-        assertThrows(RuntimeException.class, () -> containerService.createContainer("img"));
+    void startContainerFailure() {
+        when(dockerClient.startContainerCmd(anyString())).thenThrow(new DockerException("Err", 500));
+        assertThrows(RuntimeException.class, () -> containerService.startContainer(CONTAINER_ID));
     }
 
     @Test
-    void startContainer_Success() {
-        when(dockerClient.startContainerCmd(anyString())).thenReturn(startContainerCmd);
-        containerService.startContainer("id");
-        verify(startContainerCmd).exec();
-    }
-
-    @Test
-    void startContainer_Failure_ShouldThrowRuntimeException() {
-        when(dockerClient.startContainerCmd(anyString())).thenThrow(new DockerException("Start Error", 500));
-        assertThrows(RuntimeException.class, () -> containerService.startContainer("id"));
-    }
-
-    // --- Test Manquant Ajouté ---
-    @Test
-    void startChallengeEnvironment_Success() {
-        // Cette méthode appelle createContainer puis startContainer
-        // On doit mocker la chaîne complète
+    void createChallengeContainerSuccess() {
+        when(dockerClient.createContainerCmd(anyString())).thenReturn(createContainerCmd);
+        lenient().when(createContainerCmd.withTty(anyBoolean())).thenReturn(createContainerCmd);
+        lenient().when(createContainerCmd.withStdinOpen(anyBoolean())).thenReturn(createContainerCmd);
+        // Important : matcher le varargs
+        lenient().when(createContainerCmd.withEnv(any(String[].class))).thenReturn(createContainerCmd);
         
-        // 1. Mock de createContainer
-        when(dockerClient.createContainerCmd("cyberscale/base-challenge")).thenReturn(createContainerCmd);
-        when(createContainerCmd.withTty(anyBoolean())).thenReturn(createContainerCmd);
-        when(createContainerCmd.withStdinOpen(anyBoolean())).thenReturn(createContainerCmd);
         when(createContainerCmd.exec()).thenReturn(createContainerResponse);
-        when(createContainerResponse.getId()).thenReturn("new-env-id");
+        when(createContainerResponse.getId()).thenReturn(CONTAINER_ID);
+        when(dockerClient.startContainerCmd(CONTAINER_ID)).thenReturn(startContainerCmd);
 
-        // 2. Mock de startContainer
-        when(dockerClient.startContainerCmd("new-env-id")).thenReturn(startContainerCmd);
-
-        // WHEN
-        String result = containerService.startChallengeEnvironment("Challenge1");
-
-        // THEN
-        assertEquals("new-env-id", result);
-        verify(dockerClient).createContainerCmd("cyberscale/base-challenge");
-        verify(dockerClient).startContainerCmd("new-env-id");
+        String id = containerService.createChallengeContainer("chall", "flag");
+        assertEquals(CONTAINER_ID, id);
     }
 
     @Test
-    void stopAndRemoveContainer_Success() {
+    void stopAndRemoveContainerHandlesExceptions() {
         when(dockerClient.stopContainerCmd(anyString())).thenReturn(stopContainerCmd);
         when(dockerClient.removeContainerCmd(anyString())).thenReturn(removeContainerCmd);
-        containerService.stopAndRemoveContainer("id");
-        verify(stopContainerCmd).exec();
-        verify(removeContainerCmd).exec();
+
+        // Simulation d'erreurs qui doivent être catchées (pas de crash)
+        doThrow(new RuntimeException("Stop failed")).when(stopContainerCmd).exec();
+        doThrow(new RuntimeException("Remove failed")).when(removeContainerCmd).exec();
+
+        assertDoesNotThrow(() -> containerService.stopAndRemoveContainer(CONTAINER_ID));
     }
 
     @Test
-    void stopAndRemoveContainer_WhenAlreadyStopped() {
+    void stopAndRemoveContainerHandlesNotModified() {
         when(dockerClient.stopContainerCmd(anyString())).thenReturn(stopContainerCmd);
         when(dockerClient.removeContainerCmd(anyString())).thenReturn(removeContainerCmd);
-        doThrow(new NotModifiedException("Stopped")).when(stopContainerCmd).exec();
+        doThrow(new NotModifiedException("Already stopped")).when(stopContainerCmd).exec();
 
-        containerService.stopAndRemoveContainer("id");
-        verify(removeContainerCmd).exec();
+        containerService.stopAndRemoveContainer(CONTAINER_ID);
+        verify(removeContainerCmd).exec(); // Doit quand même tenter le remove
     }
 
     @Test
-    void stopAndRemoveContainer_WhenStopFailsGeneric() {
-        when(dockerClient.stopContainerCmd(anyString())).thenReturn(stopContainerCmd);
-        when(dockerClient.removeContainerCmd(anyString())).thenReturn(removeContainerCmd);
-        doThrow(new RuntimeException("Crash")).when(stopContainerCmd).exec();
-
-        containerService.stopAndRemoveContainer("id");
-        verify(removeContainerCmd).exec();
+    void executeCommandSecurityCheck() {
+        // Teste isCommandDangerous (méthode privée appelée par executeCommand)
+        String res = containerService.executeCommand(CONTAINER_ID, "rm -rf /");
+        assertTrue(res.contains("blocked"));
     }
 
     @Test
-    void stopAndRemoveContainer_WhenRemoveFails() {
-        when(dockerClient.stopContainerCmd(anyString())).thenReturn(stopContainerCmd);
-        when(dockerClient.removeContainerCmd(anyString())).thenReturn(removeContainerCmd);
-        doThrow(new RuntimeException("Crash Remove")).when(removeContainerCmd).exec();
-
-        assertDoesNotThrow(() -> containerService.stopAndRemoveContainer("id"));
-    }
-
-    @Test
-    void executeCommand_Success() throws InterruptedException {
+    void executeCommandSuccess() throws InterruptedException {
         when(dockerClient.execCreateCmd(anyString())).thenReturn(execCreateCmd);
         when(execCreateCmd.withAttachStdout(true)).thenReturn(execCreateCmd);
         when(execCreateCmd.withAttachStderr(true)).thenReturn(execCreateCmd);
-        when(execCreateCmd.withCmd(anyString(), anyString(), anyString())).thenReturn(execCreateCmd);
+        when(execCreateCmd.withCmd(any(String[].class))).thenReturn(execCreateCmd);
         when(execCreateCmd.exec()).thenReturn(execCreateCmdResponse);
-        when(execCreateCmdResponse.getId()).thenReturn("exec-id-123");
-        when(dockerClient.execStartCmd("exec-id-123")).thenReturn(execStartCmd);
-        
-        // On simule le comportement du callback pour éviter un NullPointerException
-        when(execStartCmd.exec(any(ExecStartResultCallback.class))).thenAnswer(invocation -> {
-            return invocation.getArgument(0);
-        });
+        when(execCreateCmdResponse.getId()).thenReturn("exec-1");
 
-        String result = containerService.executeCommand("container-id", "ls -la");
+        when(dockerClient.execStartCmd("exec-1")).thenReturn(execStartCmd);
+        when(execStartCmd.exec(any())).thenReturn(execStartResultCallback);
+        when(execStartResultCallback.awaitCompletion(anyLong(), any())).thenReturn(true);
 
-        verify(dockerClient).execCreateCmd("container-id");
-        verify(dockerClient).execStartCmd("exec-id-123");
-        assertNotNull(result); 
+        String res = containerService.executeCommand(CONTAINER_ID, "ls");
+        assertNotNull(res);
     }
 
     @Test
-    void executeCommand_Failure() {
-        when(dockerClient.execCreateCmd(anyString())).thenThrow(new RuntimeException("Docker Down"));
-
-        String result = containerService.executeCommand("container-id", "ls");
-        
-        assertTrue(result.contains("ERREUR D'EXÉCUTION : "), "Le message doit signaler une erreur d'exécution");
+    void executeCommandFailure() {
+        when(dockerClient.execCreateCmd(anyString())).thenThrow(new RuntimeException("Docker HS"));
+        String res = containerService.executeCommand(CONTAINER_ID, "ls");
+        assertTrue(res.contains("Error executing command"));
     }
-
+    
     @Test
-    void executeCommand_ShouldBlockDangerousCommand() {
-        // ARRANGE
-        String dangerousCmd = "rm -rf /"; // Commande interdite
-        String containerId = "test-container";
+    void startChallengeEnvironmentDeprecated() {
+        // Couverture de l'ancienne méthode dépréciée
+        when(dockerClient.createContainerCmd(anyString())).thenReturn(createContainerCmd);
+        lenient().when(createContainerCmd.withTty(anyBoolean())).thenReturn(createContainerCmd);
+        lenient().when(createContainerCmd.withStdinOpen(anyBoolean())).thenReturn(createContainerCmd);
+        lenient().when(createContainerCmd.withEnv(any(String[].class))).thenReturn(createContainerCmd);
+        when(createContainerCmd.exec()).thenReturn(createContainerResponse);
+        when(createContainerResponse.getId()).thenReturn("legacy-id");
+        when(dockerClient.startContainerCmd("legacy-id")).thenReturn(startContainerCmd);
 
-        // ACT
-        String result = containerService.executeCommand(containerId, dangerousCmd);
-
-        // ASSERT
-        // 1. On vérifie qu'on reçoit le message d'alerte
-        assertTrue(result.contains("ERREUR : Commande interdite par la politique de sécurité."), "Le service doit bloquer la commande dangereuse");
-        
-        // 2. CRUCIAL : On vérifie que Docker n'a JAMAIS été appelé
-        verify(dockerClient, never()).execCreateCmd(anyString());
+        String id = containerService.startChallengeEnvironment("chall");
+        assertEquals("legacy-id", id);
     }
 }

@@ -12,9 +12,6 @@ import org.springframework.stereotype.Service;
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
-import java.util.List;
-import java.util.Arrays;
-
 
 @Service
 public class ContainerService {
@@ -22,18 +19,11 @@ public class ContainerService {
     private static final Logger logger = LoggerFactory.getLogger(ContainerService.class);
     private final DockerClient dockerClient;
 
-    private final List<String> FORBIDDEN_PATTERNS = Arrays.asList(
-        "rm -rf /", 
-        ":(){ :|:& };:", // Fork bomb
-        "mkfs", 
-        "dd if=/dev/zero"
-    );
-
     public ContainerService(DockerClient dockerClient) {
         this.dockerClient = dockerClient;
     }
 
-    // --- Méthodes existantes ---
+    // --- Méthodes de base ---
 
     public String createContainer(String imageName) {
         CreateContainerResponse container = dockerClient.createContainerCmd(imageName)
@@ -41,6 +31,23 @@ public class ContainerService {
                 .withStdinOpen(true)
                 .exec();
         return container.getId();
+    }
+
+    public String createChallengeContainer(String challengeId, String dynamicFlag) {
+        logger.info("Creating container for challenge {} with dynamic flag", challengeId);
+        
+        String imageName = "cyberscale/base-challenge"; 
+
+        CreateContainerResponse container = dockerClient.createContainerCmd(imageName)
+                .withTty(true)
+                .withStdinOpen(true)
+                .withEnv("CHALLENGE_FLAG=" + dynamicFlag) 
+                .exec();
+        
+        String containerId = container.getId();
+        startContainer(containerId);
+        
+        return containerId;
     }
 
     public void startContainer(String containerId) {
@@ -51,7 +58,6 @@ public class ContainerService {
         try {
             dockerClient.stopContainerCmd(containerId).exec();
         } catch (NotModifiedException e) {
-            // Déjà stoppé, on log en DEBUG seulement
             logger.debug("Container {} already stopped", containerId);
         } catch (Exception e) {
             logger.error("Error stopping container {}", containerId, e);
@@ -64,74 +70,44 @@ public class ContainerService {
         }
     }
 
-    // --- TICKET: EXÉCUTION SÉCURISÉE (BRAS ARMÉ) ---
-
-    /**
-     * Exécute une commande shell à l'intérieur d'un conteneur spécifique.
-     * @param containerId L'ID du conteneur cible.
-     * @param command La commande à exécuter (ex: "ls -la").
-     * @return Le résultat (texte) de la commande ou un message d'erreur.
-     */
     public String executeCommand(String containerId, String command) {
-        // 1. SÉCURITÉ : On vérifie si la commande est dangereuse avant de parler à Docker
+        // Sécurité basique (Optionnel, selon tes besoins)
         if (isCommandDangerous(command)) {
-            logger.warn("⚠️ ALERTE SÉCURITÉ : Commande bloquée -> {}", command);
-            return "ERREUR : Commande interdite par la politique de sécurité.";
+            return "Command blocked for security reasons.";
         }
 
         try {
-            logger.info("Exécution commande sur {}: {}", containerId, command);
+            logger.info("Executing command '{}' on container {}", command, containerId);
 
-            // 2. PRÉPARATION (ExecCreate)
-            // On utilise "sh -c" pour que Linux interprète correctement les espaces et arguments
-            ExecCreateCmdResponse execResponse = dockerClient.execCreateCmd(containerId)
+            String[] commandArray = command.split(" ");
+
+            ExecCreateCmdResponse execCreateCmdResponse = dockerClient.execCreateCmd(containerId)
                     .withAttachStdout(true)
                     .withAttachStderr(true)
-                    .withCmd("sh", "-c", command) 
+                    .withCmd(commandArray)
                     .exec();
 
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            
+            dockerClient.execStartCmd(execCreateCmdResponse.getId())
+                    .exec(new ExecStartResultCallback(outputStream, null))
+                    .awaitCompletion(5, TimeUnit.SECONDS);
 
-            // 3. LANCEMENT (ExecStart)
-            // On attend jusqu'à 10 secondes que la commande finisse
-            dockerClient.execStartCmd(execResponse.getId())
-                    .exec(new ExecStartResultCallback(outputStream, outputStream))
-                    .awaitCompletion(10, TimeUnit.SECONDS);
-
-            // On convertit le flux de données (bytes) en texte lisible (String)
             return outputStream.toString(StandardCharsets.UTF_8);
 
         } catch (Exception e) {
-            logger.error("Erreur d'exécution pour la commande: " + command, e);
-            return "ERREUR D'EXÉCUTION : " + e.getMessage();
+            logger.error("Execution failed for command '{}'", command, e);
+            return "Error executing command";
         }
-    }
-
-    /**
-     * Vérifie si la commande contient des mots-clés interdits (Blacklist).
-     */
-    private boolean isCommandDangerous(String command) {
-        if (command == null || command.trim().isEmpty()) return true;
-
-        // Liste des commandes destructrices à bloquer
-        List<String> blacklist = List.of(
-            "rm -rf",           // Suppression récursive
-            "mkfs",             // Formatage disque
-            ":(){ :|:& };:",    // Fork bomb (crash serveur)
-            "> /dev/sd",        // Écriture directe sur disque
-            "shutdown",         // Extinction
-            "reboot"            // Redémarrage
-        );
-
-        // Si la commande contient l'un de ces termes, on renvoie "true" (C'est dangereux !)
-        return blacklist.stream().anyMatch(command::contains);
     }
     
     public String startChallengeEnvironment(String challengeId) {
-        // Pour éviter l'avertissement "Parameter unused", on loggue l'ID
-        logger.info("Starting environment for challenge {}", challengeId);
-        String containerId = createContainer("cyberscale/base-challenge");
-        startContainer(containerId);
-        return containerId;
+        return createChallengeContainer(challengeId, "DEFAULT_FLAG");
+    }
+
+    // ✅ La méthode est ici, correctement placée à la fin de la classe
+    private boolean isCommandDangerous(String command) {
+        // Exemple simple de blocage
+        return command.contains("rm -rf /") || command.contains(":(){:|:&};:");
     }
 }
