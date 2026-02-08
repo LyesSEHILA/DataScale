@@ -33,24 +33,18 @@ public class ContainerService {
         return container.getId();
     }
 
-    // 👇 NOUVELLE MÉTHODE : Création avec injection du FLAG
     public String createChallengeContainer(String challengeId, String dynamicFlag) {
         logger.info("Creating container for challenge {} with dynamic flag", challengeId);
         
-        // Pour l'instant, on utilise l'image de base. 
-        // Plus tard, tu pourras mapper challengeId -> image (ex: CTF_WEB -> cyberscale/web-challenge)
         String imageName = "cyberscale/base-challenge"; 
 
         CreateContainerResponse container = dockerClient.createContainerCmd(imageName)
-                .withTty(true)           // Nécessaire pour le shell interactif
-                .withStdinOpen(true)     // Nécessaire pour envoyer des commandes
-                // C'est ICI que la magie opère : on injecte le flag dans l'OS du conteneur
+                .withTty(true)
+                .withStdinOpen(true)
                 .withEnv("CHALLENGE_FLAG=" + dynamicFlag) 
                 .exec();
         
         String containerId = container.getId();
-        
-        // On le démarre immédiatement
         startContainer(containerId);
         
         return containerId;
@@ -76,9 +70,14 @@ public class ContainerService {
         }
     }
 
-    // --- Exécution de commandes (Utilisé par l'IA ou les tests) ---
+    // --- Exécution de commandes ---
 
     public String executeCommand(String containerId, String command) {
+        // Sécurité basique (Optionnel, selon tes besoins)
+        if (isCommandDangerous(command)) {
+            return "Command blocked for security reasons.";
+        }
+
         try {
             logger.info("Executing command '{}' on container {}", command, containerId);
 
@@ -104,8 +103,13 @@ public class ContainerService {
         }
     }
     
-    // Ancienne méthode (gardée pour compatibilité si besoin, mais dépréciée)
     public String startChallengeEnvironment(String challengeId) {
         return createChallengeContainer(challengeId, "DEFAULT_FLAG");
+    }
+
+    // ✅ La méthode est ici, correctement placée à la fin de la classe
+    private boolean isCommandDangerous(String command) {
+        // Exemple simple de blocage
+        return command.contains("rm -rf /") || command.contains(":(){:|:&};:");
     }
 }
