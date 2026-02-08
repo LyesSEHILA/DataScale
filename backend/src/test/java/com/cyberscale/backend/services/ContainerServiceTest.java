@@ -1,23 +1,39 @@
 package com.cyberscale.backend.services;
 
-import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.api.command.*;
-import com.github.dockerjava.api.exception.DockerException;
-import com.github.dockerjava.api.exception.NotModifiedException;
-import com.github.dockerjava.core.command.ExecStartResultCallback;
+import java.util.concurrent.TimeUnit;
+
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.command.CreateContainerCmd;
+import com.github.dockerjava.api.command.CreateContainerResponse;
+import com.github.dockerjava.api.command.ExecCreateCmd;
+import com.github.dockerjava.api.command.ExecCreateCmdResponse;
+import com.github.dockerjava.api.command.ExecStartCmd;
+import com.github.dockerjava.api.command.RemoveContainerCmd;
+import com.github.dockerjava.api.command.StartContainerCmd;
+import com.github.dockerjava.api.command.StopContainerCmd;
+import com.github.dockerjava.api.exception.DockerException;
+import com.github.dockerjava.api.exception.NotModifiedException;
+import com.github.dockerjava.core.command.ExecStartResultCallback;
 
 @ExtendWith(MockitoExtension.class)
 class ContainerServiceTest {
@@ -169,4 +185,53 @@ class ContainerServiceTest {
         
         assertTrue(result.contains("Error executing command"), "Le message d'erreur doit correspondre à celui du service");
     }
+
+    @Test
+    void executeCommand_Exception_Internal() {
+        // Teste le bloc catch(Exception e)
+        when(dockerClient.execCreateCmd(anyString())).thenThrow(new RuntimeException("Docker Crash"));
+
+        String result = containerService.executeCommand("container-id", "ls");
+        
+        // Vérifie qu'on retourne bien le message d'erreur et qu'on ne plante pas
+        assertEquals("Error executing command", result);
+    }
+
+    @Test
+    void stopAndRemoveContainer_Exception_OnStop() {
+        // Teste le catch(Exception e) dans le stop
+        when(dockerClient.stopContainerCmd(anyString())).thenReturn(stopContainerCmd);
+        // Force une erreur générique
+        doThrow(new RuntimeException("Stop Failed")).when(stopContainerCmd).exec();
+        
+        // Mock remove pour qu'il fonctionne
+        when(dockerClient.removeContainerCmd(anyString())).thenReturn(removeContainerCmd);
+
+        assertDoesNotThrow(() -> containerService.stopAndRemoveContainer("id"));
+        
+        // Vérifie que remove est quand même appelé même si stop a planté
+        verify(removeContainerCmd).exec();
+    }
+
+    @Test
+    void stopAndRemoveContainer_Exception_OnRemove() {
+        // Teste le catch(Exception e) dans le remove
+        when(dockerClient.stopContainerCmd(anyString())).thenReturn(stopContainerCmd);
+        when(dockerClient.removeContainerCmd(anyString())).thenReturn(removeContainerCmd);
+        
+        doThrow(new RuntimeException("Remove Failed")).when(removeContainerCmd).exec();
+
+        assertDoesNotThrow(() -> containerService.stopAndRemoveContainer("id"));
+    }
+    
+    @Test
+    void isCommandDangerous_ShouldBlock() {
+        // Ce test couvre la méthode privée si tu utilises Reflection ou si executeCommand l'appelle
+        String result = containerService.executeCommand("c1", "rm -rf /");
+        assertTrue(result.contains("blocked"));
+        
+        String result2 = containerService.executeCommand("c1", ":(){:|:&};:"); // Fork bomb
+        assertTrue(result2.contains("blocked"));
+    }
+    
 }
