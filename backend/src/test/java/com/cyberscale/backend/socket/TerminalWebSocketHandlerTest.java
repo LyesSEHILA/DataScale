@@ -15,7 +15,6 @@ import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
@@ -33,7 +32,9 @@ class TerminalWebSocketHandlerTest {
 
     @Mock private DockerClient dockerClient;
     @Mock private WebSocketSession session;
-    @InjectMocks @Spy private TerminalWebSocketHandler handler;
+    
+    @InjectMocks 
+    private TerminalWebSocketHandler handler; // Pas besoin de @Spy ici pour ce test
 
     // Mocks Docker
     @Mock private ExecCreateCmd execCreateCmd;
@@ -43,13 +44,16 @@ class TerminalWebSocketHandlerTest {
 
     @BeforeEach
     void setUp() {
-        // Configuration Lenient pour éviter les erreurs de stubbing inutile
+        // Configuration Lenient pour éviter les erreurs de stubbing strict
         lenient().when(dockerClient.execCreateCmd(anyString())).thenReturn(execCreateCmd);
         lenient().when(execCreateCmd.withAttachStdout(true)).thenReturn(execCreateCmd);
         lenient().when(execCreateCmd.withAttachStderr(true)).thenReturn(execCreateCmd);
         lenient().when(execCreateCmd.withAttachStdin(true)).thenReturn(execCreateCmd);
         lenient().when(execCreateCmd.withTty(true)).thenReturn(execCreateCmd);
-        lenient().when(execCreateCmd.withCmd(anyString())).thenReturn(execCreateCmd);
+        
+        // 🚨 CORRECTION CRITIQUE : withCmd prend un tableau (String...), pas une simple String !
+        lenient().when(execCreateCmd.withCmd(any(String[].class))).thenReturn(execCreateCmd);
+        
         lenient().when(execCreateCmd.exec()).thenReturn(execCreateCmdResponse);
         lenient().when(execCreateCmdResponse.getId()).thenReturn("exec-123");
 
@@ -60,6 +64,8 @@ class TerminalWebSocketHandlerTest {
 
     @Test
     void afterConnectionEstablished_ShouldStartDockerExec() throws Exception {
+        // 🚨 CORRECTION : Il faut mocker getId() sinon ConcurrentHashMap plante
+        when(session.getId()).thenReturn("s1");
         when(session.getUri()).thenReturn(new URI("ws://localhost?containerId=c1"));
         
         handler.afterConnectionEstablished(session);
@@ -80,39 +86,38 @@ class TerminalWebSocketHandlerTest {
 
     @Test
     void handleTextMessage_ResizeCommand() throws Exception {
-        // 1. Établir la connexion pour remplir la map
+        // 1. Setup session
         when(session.getId()).thenReturn("s1");
         when(session.getUri()).thenReturn(new URI("ws://localhost?containerId=c1"));
-        handler.afterConnectionEstablished(session);
+        handler.afterConnectionEstablished(session); // Remplit la map
 
-        // 2. Préparer le mock Resize
+        // 2. Setup Resize mock
         when(dockerClient.resizeContainerCmd("c1")).thenReturn(resizeContainerCmd);
         when(resizeContainerCmd.withSize(100, 50)).thenReturn(resizeContainerCmd);
 
-        // 3. Envoyer le message de resize
+        // 3. Action
         String json = "{\"type\":\"resize\", \"cols\":100, \"rows\":50}";
         handler.handleMessage(session, new TextMessage(json));
 
-        // 4. Vérifier
+        // 4. Verification
         verify(resizeContainerCmd).exec();
     }
 
     @Test
     void handleTextMessage_StandardInput() throws Exception {
+        // 1. Setup session
         when(session.getId()).thenReturn("s1");
         when(session.getUri()).thenReturn(new URI("ws://localhost?containerId=c1"));
         handler.afterConnectionEstablished(session);
 
-        // On capture l'InputStream passé à Docker pour vérifier qu'on écrit dedans
+        // Capture du stream
         ArgumentCaptor<InputStream> inputStreamCaptor = ArgumentCaptor.forClass(InputStream.class);
         verify(execStartCmd).withStdIn(inputStreamCaptor.capture());
-        InputStream dockerInputStream = inputStreamCaptor.getValue();
 
-        // Envoyer une commande "ls"
+        // 2. Action
         handler.handleMessage(session, new TextMessage("ls"));
 
-        // Comme c'est un PipedStream, c'est complexe à vérifier directement sans bloquer.
-        // Ici, on vérifie surtout que ça ne plante pas et que le code passe dans le "else" du JSON.
+        // Pas d'exception levée signifie que le code a traversé le try/catch et tenté d'écrire
     }
 
     @Test
@@ -123,7 +128,7 @@ class TerminalWebSocketHandlerTest {
 
         handler.afterConnectionClosed(session, CloseStatus.NORMAL);
         
-        // Vérification indirecte : si on renvoie un message, ça ne devrait plus trouver le stream
-        // (difficile à asserter sans exposer l'état interne, mais ça couvre les lignes)
+        // On vérifie juste que ça ne plante pas, la vérification interne (reflection) est fragile
+        // Si besoin de vérifier le nettoyage, on peut le faire via ReflectionTestUtils ici
     }
 }
