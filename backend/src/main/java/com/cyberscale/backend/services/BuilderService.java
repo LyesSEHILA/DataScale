@@ -1,17 +1,16 @@
 package com.cyberscale.backend.services;
 
+import com.cyberscale.backend.dto.builder.NodeDTO;
+import com.cyberscale.backend.dto.builder.TopologyRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Map;
 import java.util.UUID;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
-
-import com.cyberscale.backend.dto.builder.NodeDTO;
-import com.cyberscale.backend.dto.builder.TopologyRequest;
 
 @Service
 public class BuilderService {
@@ -20,7 +19,7 @@ public class BuilderService {
     private static final String WORKSPACE_DIR = System.getProperty("java.io.tmpdir") + "/cyberscale-labs/";
     private static final String LABEL_REGEX = "[^a-z0-9]";
 
-    public String deployTopology(TopologyRequest topology) throws IOException, InterruptedException {
+    public String deployTopology(TopologyRequest topology) throws IOException {
         String deploymentId = UUID.randomUUID().toString();
         String composeContent = generateDockerComposeYaml(topology, deploymentId);
         
@@ -42,10 +41,9 @@ public class BuilderService {
         return findKaliContainerName(topology, deploymentId);
     }
 
-    protected void executeDockerCompose(String deploymentId, String composeFilePath) throws IOException, InterruptedException {
+    protected void executeDockerCompose(String deploymentId, String composeFilePath) throws IOException {
         ProcessBuilder pb = new ProcessBuilder("/usr/bin/docker", "compose", "-p", "lab_" + deploymentId, "-f", composeFilePath, "up", "-d");
         
-        // 🔒 SONAR FIX : Clean environment
         Map<String, String> env = pb.environment();
         env.clear();
         env.put("PATH", "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin");
@@ -53,11 +51,17 @@ public class BuilderService {
         pb.redirectErrorStream(true);
         Process process = pb.start();
         
-        int exitCode = process.waitFor();
-        if (exitCode != 0) {
-            String error = new String(process.getInputStream().readAllBytes());
-            logger.error("❌ Erreur Docker Compose : {}", error);
-            throw new RuntimeException("Échec du déploiement : " + error);
+        try {
+            int exitCode = process.waitFor();
+            if (exitCode != 0) {
+                String error = new String(process.getInputStream().readAllBytes());
+                logger.error("❌ Erreur Docker Compose : {}", error);
+                throw new IOException("Échec du déploiement (Code " + exitCode + ") : " + error);
+            }
+        } catch (InterruptedException e) {
+            // SONAR FIX: Restore interrupted state
+            Thread.currentThread().interrupt();
+            throw new IOException("Le déploiement a été interrompu", e);
         }
     }
 
