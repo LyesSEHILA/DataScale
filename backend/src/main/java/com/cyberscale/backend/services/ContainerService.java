@@ -12,12 +12,22 @@ import org.springframework.stereotype.Service;
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
+import java.util.List;
+import java.util.Arrays;
+
 
 @Service
 public class ContainerService {
 
     private static final Logger logger = LoggerFactory.getLogger(ContainerService.class);
     private final DockerClient dockerClient;
+
+    private final List<String> FORBIDDEN_PATTERNS = Arrays.asList(
+        "rm -rf /", 
+        ":(){ :|:& };:", // Fork bomb
+        "mkfs", 
+        "dd if=/dev/zero"
+    );
 
     public ContainerService(DockerClient dockerClient) {
         this.dockerClient = dockerClient;
@@ -54,35 +64,67 @@ public class ContainerService {
         }
     }
 
-    // --- TICKET W-02 ---
+    // --- TICKET: EXÉCUTION SÉCURISÉE (BRAS ARMÉ) ---
 
+    /**
+     * Exécute une commande shell à l'intérieur d'un conteneur spécifique.
+     * @param containerId L'ID du conteneur cible.
+     * @param command La commande à exécuter (ex: "ls -la").
+     * @return Le résultat (texte) de la commande ou un message d'erreur.
+     */
     public String executeCommand(String containerId, String command) {
+        // 1. SÉCURITÉ : On vérifie si la commande est dangereuse avant de parler à Docker
+        if (isCommandDangerous(command)) {
+            logger.warn("⚠️ ALERTE SÉCURITÉ : Commande bloquée -> {}", command);
+            return "ERREUR : Commande interdite par la politique de sécurité.";
+        }
+
         try {
-            // Sonar n'aime pas split(" ") simple, mais pour un MVP c'est toléré.
-            // On log l'action
-            logger.info("Executing command '{}' on container {}", command, containerId);
+            logger.info("Exécution commande sur {}: {}", containerId, command);
 
-            String[] commandArray = command.split(" ");
-
-            ExecCreateCmdResponse execCreateCmdResponse = dockerClient.execCreateCmd(containerId)
+            // 2. PRÉPARATION (ExecCreate)
+            // On utilise "sh -c" pour que Linux interprète correctement les espaces et arguments
+            ExecCreateCmdResponse execResponse = dockerClient.execCreateCmd(containerId)
                     .withAttachStdout(true)
                     .withAttachStderr(true)
-                    .withCmd(commandArray)
+                    .withCmd("sh", "-c", command) 
                     .exec();
 
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            
-            dockerClient.execStartCmd(execCreateCmdResponse.getId())
-                    .exec(new ExecStartResultCallback(outputStream, null))
-                    .awaitCompletion(5, TimeUnit.SECONDS);
 
+            // 3. LANCEMENT (ExecStart)
+            // On attend jusqu'à 10 secondes que la commande finisse
+            dockerClient.execStartCmd(execResponse.getId())
+                    .exec(new ExecStartResultCallback(outputStream, outputStream))
+                    .awaitCompletion(10, TimeUnit.SECONDS);
+
+            // On convertit le flux de données (bytes) en texte lisible (String)
             return outputStream.toString(StandardCharsets.UTF_8);
 
         } catch (Exception e) {
-            // ✅ CORRECTION CRITIQUE : Plus de printStackTrace()
-            logger.error("Execution failed for command '{}'", command, e);
-            return "Error executing command"; // On ne renvoie plus e.getMessage() complet
+            logger.error("Erreur d'exécution pour la commande: " + command, e);
+            return "ERREUR D'EXÉCUTION : " + e.getMessage();
         }
+    }
+
+    /**
+     * Vérifie si la commande contient des mots-clés interdits (Blacklist).
+     */
+    private boolean isCommandDangerous(String command) {
+        if (command == null || command.trim().isEmpty()) return true;
+
+        // Liste des commandes destructrices à bloquer
+        List<String> blacklist = List.of(
+            "rm -rf",           // Suppression récursive
+            "mkfs",             // Formatage disque
+            ":(){ :|:& };:",    // Fork bomb (crash serveur)
+            "> /dev/sd",        // Écriture directe sur disque
+            "shutdown",         // Extinction
+            "reboot"            // Redémarrage
+        );
+
+        // Si la commande contient l'un de ces termes, on renvoie "true" (C'est dangereux !)
+        return blacklist.stream().anyMatch(command::contains);
     }
     
     public String startChallengeEnvironment(String challengeId) {
