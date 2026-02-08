@@ -70,8 +70,6 @@ public class ContainerService {
         }
     }
 
-    // --- Exécution de commandes ---
-
     public String executeCommand(String containerId, String command) {
         // Sécurité basique (Optionnel, selon tes besoins)
         if (isCommandDangerous(command)) {
