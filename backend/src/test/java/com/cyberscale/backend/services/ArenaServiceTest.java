@@ -15,7 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -28,7 +28,6 @@ class ArenaServiceTest {
 
     @InjectMocks private ArenaService arenaService;
 
-    // SONAR FIX: CamelCase naming
     @Test
     void startChallengeEnvironmentSuccess() {
         when(containerService.createChallengeContainer(anyString(), anyString())).thenReturn("container-123");
@@ -47,7 +46,9 @@ class ArenaServiceTest {
 
         when(challengeRepository.findById("chall-1")).thenReturn(Optional.of(challenge));
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(userChallengeRepository.findByUserAndChallenge(user, challenge)).thenReturn(Optional.empty());
+        
+        // ✅ CORRECTION : On mocke la méthode qui existe réellement dans le Repository
+        when(userChallengeRepository.existsByUserIdAndChallengeId(1L, "chall-1")).thenReturn(false);
 
         boolean result = arenaService.validateFlag(1L, "chall-1", "SUPERFLAG");
 
@@ -57,6 +58,11 @@ class ArenaServiceTest {
 
     @Test
     void validateFlagFailure() {
+        // ✅ CORRECTION : On mocke l'utilisateur pour éviter le "User introuvable" (404)
+        User user = new User();
+        user.setId(1L);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
         Challenge challenge = new Challenge("chall-1", "Linux", "Easy", "SUPERFLAG", 100);
         when(challengeRepository.findById("chall-1")).thenReturn(Optional.of(challenge));
 
