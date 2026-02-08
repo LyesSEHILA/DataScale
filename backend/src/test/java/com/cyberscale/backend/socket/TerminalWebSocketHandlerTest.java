@@ -35,7 +35,9 @@ class TerminalWebSocketHandlerTest {
 
     @Mock private DockerClient dockerClient;
     @Mock private WebSocketSession session;
-    @InjectMocks private TerminalWebSocketHandler handler;
+    
+    @InjectMocks 
+    private TerminalWebSocketHandler handler; 
 
     @Mock private ExecCreateCmd execCreateCmd;
     @Mock private ExecCreateCmdResponse execCreateCmdResponse;
@@ -52,39 +54,95 @@ class TerminalWebSocketHandlerTest {
         lenient().when(execCreateCmd.withCmd(any(String[].class))).thenReturn(execCreateCmd);
         lenient().when(execCreateCmd.exec()).thenReturn(execCreateCmdResponse);
         lenient().when(execCreateCmdResponse.getId()).thenReturn("exec-123");
+
         lenient().when(dockerClient.execStartCmd(anyString())).thenReturn(execStartCmd);
         lenient().when(execStartCmd.withTty(true)).thenReturn(execStartCmd);
         lenient().when(execStartCmd.withStdIn(any(InputStream.class))).thenReturn(execStartCmd);
     }
 
     @Test
-    void handleTextMessageJsonMalformedShouldLogAndNotThrow() throws Exception {
+    void afterConnectionEstablishedSuccess() throws Exception {
         when(session.getId()).thenReturn("s1");
         when(session.getUri()).thenReturn(new URI(WS_URI));
+        
         handler.afterConnectionEstablished(session);
 
-        // Envoi d'un JSON cassé pour déclencher le catch(Exception e) dans le bloc resize
-        String brokenJson = "{\"type\":\"resize\", \"cols\":"; // JSON incomplet
-        handler.handleMessage(session, new TextMessage(brokenJson));
-        
-        // Si pas d'exception, le test passe (le catch a fonctionné)
+        verify(dockerClient).execCreateCmd("c1");
     }
 
     @Test
-    void afterConnectionClosedWithExceptionShouldNotCrash() throws Exception {
+    void afterConnectionEstablishedNoIdClosesSession() throws Exception {
+        when(session.getUri()).thenReturn(new URI("ws://localhost")); 
+        
+        handler.afterConnectionEstablished(session);
+
+        verify(session).close(CloseStatus.BAD_DATA);
+    }
+    
+    @Test
+    void afterConnectionEstablishedException() throws Exception {
+        when(session.getUri()).thenReturn(new URI(WS_URI));
+        // Force une exception Docker
+        when(dockerClient.execCreateCmd(anyString())).thenThrow(new RuntimeException("Docker Error"));
+        
+        handler.afterConnectionEstablished(session);
+        
+        verify(session).close(CloseStatus.SERVER_ERROR);
+    }
+
+    @Test
+    void handleTextMessageResizeSuccess() throws Exception {
+        setupSession();
+        when(dockerClient.resizeContainerCmd("c1")).thenReturn(resizeContainerCmd);
+        when(resizeContainerCmd.withSize(anyInt(), anyInt())).thenReturn(resizeContainerCmd);
+
+        String json = "{\"type\":\"resize\", \"cols\":100, \"rows\":50}";
+        handler.handleMessage(session, new TextMessage(json));
+
+        verify(resizeContainerCmd).exec();
+    }
+    
+    @Test
+    void handleTextMessageResizeMalformedJson() throws Exception {
+        setupSession();
+        // JSON cassé -> Doit passer dans le catch sans planter
+        String badJson = "{\"type\":\"resize\", \"cols\":"; 
+        handler.handleMessage(session, new TextMessage(badJson));
+    }
+
+    @Test
+    void handleTextMessageStandardInput() throws Exception {
+        setupSession();
+        handler.handleMessage(session, new TextMessage("ls"));
+    }
+    
+    @Test
+    void handleTextMessageStreamError() throws Exception {
+        // Mock session avec un stream qui plante
+        when(session.getId()).thenReturn("s1");
+        when(session.getUri()).thenReturn(new URI(WS_URI));
+        
+        PipedOutputStream mockStream = mock(PipedOutputStream.class);
+        doThrow(new IOException("Write failed")).when(mockStream).write(any(byte[].class));
+        
+        Map<String, PipedOutputStream> streams = new ConcurrentHashMap<>();
+        streams.put("s1", mockStream);
+        ReflectionTestUtils.setField(handler, "activeOutputStreams", streams);
+        
+        // Ne doit pas throw d'exception, juste logger
+        handler.handleMessage(session, new TextMessage("ls"));
+    }
+
+    @Test
+    void afterConnectionClosedCleanly() throws Exception {
+        setupSession();
+        handler.afterConnectionClosed(session, CloseStatus.NORMAL);
+    }
+    
+    // Helper pour initialiser une session valide dans la Map interne
+    private void setupSession() throws Exception {
         when(session.getId()).thenReturn("s1");
         when(session.getUri()).thenReturn(new URI(WS_URI));
         handler.afterConnectionEstablished(session);
-
-        // On injecte un Stream qui plante à la fermeture pour tester le catch(IOException)
-        PipedOutputStream faultyStream = mock(PipedOutputStream.class);
-        doThrow(new IOException("Close failed")).when(faultyStream).close();
-
-        Map<String, PipedOutputStream> streams = new ConcurrentHashMap<>();
-        streams.put("s1", faultyStream);
-        ReflectionTestUtils.setField(handler, "activeOutputStreams", streams);
-
-        // Devrait avaler l'exception
-        handler.afterConnectionClosed(session, CloseStatus.NORMAL);
     }
 }

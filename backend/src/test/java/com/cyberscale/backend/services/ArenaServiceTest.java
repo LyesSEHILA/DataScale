@@ -9,6 +9,7 @@ import com.cyberscale.backend.repositories.UserChallengeRepository;
 import com.cyberscale.backend.repositories.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -32,22 +33,50 @@ class ArenaServiceTest {
     @InjectMocks private ArenaService arenaService;
 
     @Test
-    void getAllChallengesShouldMapDifficultiesCorrectly() {
-        // GIVEN: 3 challenges avec des points différents pour tester les IFs
-        Challenge c1 = new Challenge("1", "Easy", "Desc", "F", 10);
-        Challenge c2 = new Challenge("2", "Medium", "Desc", "F", 60);
-        Challenge c3 = new Challenge("3", "Hard", "Desc", "F", 150);
+    void getAllChallengesShouldMapDifficultiesAndStatusCorrectly() {
+        // GIVEN
+        Challenge c1 = new Challenge("1", "Linux", "Desc", "F", 10);  // Facile
+        Challenge c2 = new Challenge("2", "Web", "Desc", "F", 60);    // Moyen
+        Challenge c3 = new Challenge("3", "Net", "Desc", "F", 150);   // Hardcore
+
+        UserChallenge uc = new UserChallenge();
+        uc.setChallenge(c1);
 
         when(challengeRepository.findAll()).thenReturn(List.of(c1, c2, c3));
-        when(userChallengeRepository.findByUserId(anyLong())).thenReturn(List.of());
+        when(userChallengeRepository.findByUserId(1L)).thenReturn(List.of(uc));
 
         // WHEN
         List<ChallengeDTO> result = arenaService.getAllChallenges(1L);
 
         // THEN
+        assertEquals(3, result.size());
         assertEquals("FACILE", result.get(0).difficulty());
         assertEquals("MOYEN", result.get(1).difficulty());
         assertEquals("HARDCORE", result.get(2).difficulty());
+        
+        assertTrue(result.get(0).isDone());
+        assertFalse(result.get(1).isDone());
+    }
+
+    @Test
+    void getAllChallengesWithNullUserShouldReturnEmptyStatus() {
+        Challenge c1 = new Challenge("1", "Linux", "Desc", "F", 10);
+        when(challengeRepository.findAll()).thenReturn(List.of(c1));
+
+        List<ChallengeDTO> result = arenaService.getAllChallenges(null);
+
+        assertFalse(result.get(0).isDone());
+        verify(userChallengeRepository, never()).findByUserId(any());
+    }
+
+    @Test
+    void getChallengeByIdSuccess() {
+        Challenge c = new Challenge("1", "T", "D", "F", 10);
+        when(challengeRepository.findById("1")).thenReturn(Optional.of(c));
+
+        ChallengeDTO dto = arenaService.getChallengeById("1");
+        assertNotNull(dto);
+        assertEquals("1", dto.id());
     }
 
     @Test
@@ -55,12 +84,15 @@ class ArenaServiceTest {
         when(challengeRepository.findById("unknown")).thenReturn(Optional.empty());
         assertThrows(ResponseStatusException.class, () -> arenaService.getChallengeById("unknown"));
     }
-    
+
     @Test
-    void getChallengeByIdSuccess() {
-        Challenge c = new Challenge("1", "C", "D", "F", 10);
-        when(challengeRepository.findById("1")).thenReturn(Optional.of(c));
-        assertNotNull(arenaService.getChallengeById("1"));
+    void startChallengeEnvironmentSuccess() {
+        Challenge c = new Challenge("c1", "T", "D", "F", 10);
+        when(challengeRepository.findById("c1")).thenReturn(Optional.of(c));
+        when(containerService.createChallengeContainer(eq("c1"), anyString())).thenReturn("container-123");
+
+        String id = arenaService.startChallengeEnvironment(1L, "c1");
+        assertEquals("container-123", id);
     }
 
     @Test
@@ -70,27 +102,71 @@ class ArenaServiceTest {
     }
 
     @Test
-    void validateFlagStaticFallbackSuccess() {
-        // Teste le cas où le flag dynamique est absent mais le flag statique est bon
-        User user = new User(); user.setId(1L);
-        Challenge challenge = new Challenge("c1", "Linux", "Easy", "STATIC_FLAG", 100);
-
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(challengeRepository.findById("c1")).thenReturn(Optional.of(challenge));
-        when(userChallengeRepository.existsByUserIdAndChallengeId(1L, "c1")).thenReturn(false);
-
-        // Pas de flag dynamique dans la map (cas par défaut)
-        boolean result = arenaService.validateFlag(1L, "c1", "STATIC_FLAG");
-
-        assertTrue(result);
+    void stopChallengeEnvironmentSuccess() {
+        arenaService.stopChallengeEnvironment("c1");
+        verify(containerService).stopAndRemoveContainer("c1");
     }
-    
+
     @Test
-    void validateFlagAlreadyDone() {
+    void validateFlagDynamicSuccess() {
+        // On simule le cycle complet : start -> validate
+        Long userId = 1L;
+        String challengeId = "c1";
+        Challenge c = new Challenge(challengeId, "T", "D", "STATIC", 10);
+        User u = new User(); u.setId(userId);
+
+        when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(c));
+        when(userRepository.findById(userId)).thenReturn(Optional.of(u));
+        when(containerService.createChallengeContainer(eq(challengeId), anyString())).thenReturn("cid");
+        
+        // 1. Start pour générer le flag dynamique
+        arenaService.startChallengeEnvironment(userId, challengeId);
+        
+        ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
+        verify(containerService).createChallengeContainer(any(), captor.capture());
+        String generatedFlag = captor.getValue();
+
+        // 2. Validate
+        boolean res = arenaService.validateFlag(userId, challengeId, generatedFlag);
+        assertTrue(res);
+        verify(userRepository).save(u);
+    }
+
+    @Test
+    void validateFlagStaticFallback() {
+        Long userId = 1L;
+        String challengeId = "c1";
+        Challenge c = new Challenge(challengeId, "T", "D", "STATIC_FLAG", 10);
+        User u = new User(); u.setId(userId);
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(u));
+        when(challengeRepository.findById(challengeId)).thenReturn(Optional.of(c));
+        // Pas de flag dynamique en mémoire
+
+        boolean res = arenaService.validateFlag(userId, challengeId, "STATIC_FLAG");
+        assertTrue(res);
+    }
+
+    @Test
+    void validateFlagUserNotFound() {
+        when(userRepository.findById(99L)).thenReturn(Optional.empty());
+        assertThrows(ResponseStatusException.class, () -> arenaService.validateFlag(99L, "c1", "flag"));
+    }
+
+    @Test
+    void validateFlagChallengeNotFound() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(new User()));
+        when(challengeRepository.findById("unknown")).thenReturn(Optional.empty());
+        assertThrows(ResponseStatusException.class, () -> arenaService.validateFlag(1L, "unknown", "flag"));
+    }
+
+    @Test
+    void validateFlagAlreadyValidated() {
         when(userRepository.findById(1L)).thenReturn(Optional.of(new User()));
         when(challengeRepository.findById("c1")).thenReturn(Optional.of(new Challenge()));
         when(userChallengeRepository.existsByUserIdAndChallengeId(1L, "c1")).thenReturn(true);
-        
+
         assertTrue(arenaService.validateFlag(1L, "c1", "ANY"));
+        verify(userRepository, never()).save(any());
     }
 }

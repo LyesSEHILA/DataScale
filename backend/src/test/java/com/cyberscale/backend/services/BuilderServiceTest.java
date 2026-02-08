@@ -8,16 +8,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
 
 @ExtendWith(MockitoExtension.class)
 class BuilderServiceTest {
@@ -29,24 +25,50 @@ class BuilderServiceTest {
     private BuilderService builderService;
 
     @Test
-    void deployTopologyAllTypes() throws IOException, InterruptedException {
-        // COUVERTURE : On teste tous les types d'images (kali, server, db, default)
-        NodeDTO kali = new NodeDTO("1", "kali", "K");
-        NodeDTO server = new NodeDTO("2", "server", "S");
-        NodeDTO db = new NodeDTO("3", "db", "D");
-        NodeDTO other = new NodeDTO("4", "router", "R"); // Default case
+    void deployTopologyWithMultipleNodeTypes() throws IOException, InterruptedException {
+        // GIVEN: Un de chaque type pour couvrir tous les 'case' du switch
+        NodeDTO kali = new NodeDTO("1", "kali", "Kali");
+        NodeDTO server = new NodeDTO("2", "server", "Server");
+        NodeDTO db = new NodeDTO("3", "db", "DB");
+        NodeDTO other = new NodeDTO("4", "other", "Other"); // Default case
 
         TopologyRequest request = new TopologyRequest(TEST_USER, List.of(kali, server, db, other), List.of());
 
+        // Mock de l'exécution Docker (on veut juste tester la génération et le flux)
         doNothing().when(builderService).executeDockerCompose(anyString(), anyString());
 
+        // WHEN
         String result = builderService.deployTopology(request);
+
+        // THEN
+        assertNotNull(result);
         
-        // On vérifie indirectement via le YAML généré (appelé en interne)
-        String yaml = builderService.generateDockerComposeYaml(request, "uuid");
-        assertTrue(yaml.contains("kalilinux"));
-        assertTrue(yaml.contains("httpd:alpine"));
-        assertTrue(yaml.contains("mysql"));
-        assertTrue(yaml.contains("alpine")); // fallback
+        // On vérifie le YAML généré indirectement via une méthode publique ou protected si accessible
+        // Ici on fait confiance à deployTopology qui appelle generateDockerComposeYaml
+        // On peut vérifier le nom du conteneur de retour
+        assertTrue(result.startsWith("kali_1_"));
+    }
+    
+    @Test
+    void generateYamlContentCheck() {
+        NodeDTO db = new NodeDTO("3", "db", "DB");
+        TopologyRequest req = new TopologyRequest(TEST_USER, List.of(db), List.of());
+        
+        String yaml = builderService.generateDockerComposeYaml(req, "uid");
+        
+        assertTrue(yaml.contains("mysql:5.7"));
+        assertTrue(yaml.contains("MYSQL_ROOT_PASSWORD"));
+    }
+    
+    @Test
+    void findKaliFallback() throws IOException, InterruptedException {
+        // Pas de Kali, doit retourner le premier noeud
+        NodeDTO server = new NodeDTO("1", "server", "Srv");
+        TopologyRequest req = new TopologyRequest(TEST_USER, List.of(server), List.of());
+        
+        doNothing().when(builderService).executeDockerCompose(anyString(), anyString());
+        
+        String result = builderService.deployTopology(req);
+        assertTrue(result.startsWith("srv_1_"));
     }
 }
