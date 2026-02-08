@@ -120,7 +120,7 @@ class TerminalWebSocketHandlerTest {
     void handleTextMessageStreamError() throws Exception {
         // Mock session avec un stream qui plante
         when(session.getId()).thenReturn("s1");
-        when(session.getUri()).thenReturn(new URI(WS_URI));
+        // ✅ CORRECTION : Suppression de session.getUri() qui ne sert à rien ici
         
         PipedOutputStream mockStream = mock(PipedOutputStream.class);
         doThrow(new IOException("Write failed")).when(mockStream).write(any(byte[].class));
