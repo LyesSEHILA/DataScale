@@ -47,13 +47,16 @@ public class BuilderService {
      * 2. Corriger la faille de sécurité SonarQube sur le PATH
      */
     protected void executeDockerCompose(String deploymentId, String composeFilePath) throws IOException, InterruptedException {
-        // Utilisation du chemin absolu (Recommandation Sonar)
-        // Note: Sur Alpine/Linux c'est souvent /usr/bin/docker ou /usr/local/bin/docker
-        ProcessBuilder pb = new ProcessBuilder("docker", "compose", "-p", "lab_" + deploymentId, "-f", composeFilePath, "up", "-d");
+        // On spécifie le chemin absolu vers l'exécutable docker (plus sûr)
+        // Adapter selon ton OS : /usr/bin/docker (Linux) ou /usr/local/bin/docker (Mac)
+        ProcessBuilder pb = new ProcessBuilder("/usr/bin/docker", "compose", "-p", "lab_" + deploymentId, "-f", composeFilePath, "up", "-d");
         
-        // 🔒 SONAR FIX : Sécurisation du PATH
+        // 🔒 SONAR FIX ULTIME : On nettoie complètement l'environnement
         Map<String, String> env = pb.environment();
+        env.clear(); // On vide tout ce qui vient du système
         env.put("PATH", "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin");
+        // Si Docker a besoin d'autres variables (comme DOCKER_HOST), il faut les remettre ici :
+        // env.put("DOCKER_HOST", "unix:///var/run/docker.sock");
         
         pb.redirectErrorStream(true);
         Process process = pb.start();
