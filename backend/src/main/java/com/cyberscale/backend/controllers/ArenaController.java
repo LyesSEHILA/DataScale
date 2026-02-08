@@ -60,14 +60,15 @@ public class ArenaController {
     }
 
     @PostMapping("/start/{challengeId}")
-    public ResponseEntity<Map<String, String>> startArena(@PathVariable String challengeId) {
-        try {
-            String containerId = arenaService.startChallengeEnvironment(challengeId);
-            return ResponseEntity.ok(Map.of("containerId", containerId));
-        } catch (Exception e) {
-            logger.error("Error starting arena for {}", challengeId, e);
-            return ResponseEntity.internalServerError().body(Map.of("error", "Unable to start challenge environment"));
-        }
+    public ResponseEntity<?> startArena(@PathVariable String challengeId) {
+        // ⚠️ TODO: Récupérer le vrai ID via le token JWT (SecurityContext)
+        // Pour l'instant, on utilise l'ID 1 ou 4 en dur pour que ça marche avec ton test frontend actuel
+        Long tempUserId = 4L; // Correspond à ton utilisateur de test actuel
+        
+        // Appel avec les DEUX paramètres
+        String containerId = arenaService.startChallengeEnvironment(tempUserId, challengeId);
+        
+        return ResponseEntity.ok(Map.of("containerId", containerId));
     }
 
     @PostMapping("/stop/{containerId}")

@@ -7,18 +7,16 @@ import com.github.dockerjava.api.exception.NotModifiedException;
 import com.github.dockerjava.core.command.ExecStartResultCallback;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -27,14 +25,14 @@ class ContainerServiceTest {
     @Mock private DockerClient dockerClient;
     @InjectMocks private ContainerService containerService;
 
-    // Mocks pour les conteneurs
+    // Mocks Docker
     @Mock private CreateContainerCmd createContainerCmd;
     @Mock private CreateContainerResponse createContainerResponse;
     @Mock private StartContainerCmd startContainerCmd;
     @Mock private StopContainerCmd stopContainerCmd;
     @Mock private RemoveContainerCmd removeContainerCmd;
 
-    // Mocks pour l'exécution de commandes
+    // Mocks Exec
     @Mock private ExecCreateCmd execCreateCmd;
     @Mock private ExecCreateCmdResponse execCreateCmdResponse;
     @Mock private ExecStartCmd execStartCmd;
@@ -71,29 +69,38 @@ class ContainerServiceTest {
         assertThrows(RuntimeException.class, () -> containerService.startContainer("id"));
     }
 
-    // --- Test Manquant Ajouté ---
+    // 🚨 CORRECTION : On utilise lenient() sur les méthodes du Builder
     @Test
-    void startChallengeEnvironment_Success() {
-        // Cette méthode appelle createContainer puis startContainer
-        // On doit mocker la chaîne complète
+    void createChallengeContainer_ShouldInjectEnvVar() {
+        String challengeId = "linux-challenge";
+        String rawFlag = "a1b2c3d4";
+
+        when(dockerClient.createContainerCmd(anyString())).thenReturn(createContainerCmd);
         
-        // 1. Mock de createContainer
-        when(dockerClient.createContainerCmd("cyberscale/base-challenge")).thenReturn(createContainerCmd);
-        when(createContainerCmd.withTty(anyBoolean())).thenReturn(createContainerCmd);
-        when(createContainerCmd.withStdinOpen(anyBoolean())).thenReturn(createContainerCmd);
+        // Mockito est strict : si ton code n'appelle pas .withName(), il lance une erreur.
+        // lenient() rend ces stubs "optionnels" (utilisés si appelés, ignorés sinon).
+        lenient().when(createContainerCmd.withTty(anyBoolean())).thenReturn(createContainerCmd);
+        lenient().when(createContainerCmd.withStdinOpen(anyBoolean())).thenReturn(createContainerCmd);
+        lenient().when(createContainerCmd.withName(anyString())).thenReturn(createContainerCmd);
+        
+        // Idem pour withEnv : on utilise lenient() + any(String[].class) pour couvrir tous les cas
+        lenient().when(createContainerCmd.withEnv(any(String[].class))).thenReturn(createContainerCmd);
+        
         when(createContainerCmd.exec()).thenReturn(createContainerResponse);
-        when(createContainerResponse.getId()).thenReturn("new-env-id");
+        when(createContainerResponse.getId()).thenReturn("container-99");
+        when(dockerClient.startContainerCmd("container-99")).thenReturn(startContainerCmd);
 
-        // 2. Mock de startContainer
-        when(dockerClient.startContainerCmd("new-env-id")).thenReturn(startContainerCmd);
+        String resultId = containerService.createChallengeContainer(challengeId, rawFlag);
 
-        // WHEN
-        String result = containerService.startChallengeEnvironment("Challenge1");
+        assertEquals("container-99", resultId);
 
-        // THEN
-        assertEquals("new-env-id", result);
-        verify(dockerClient).createContainerCmd("cyberscale/base-challenge");
-        verify(dockerClient).startContainerCmd("new-env-id");
+        // Vérification finale : on s'assure que withEnv a bien été appelé avec le flag
+        ArgumentCaptor<String> envCaptor = ArgumentCaptor.forClass(String.class);
+        verify(createContainerCmd).withEnv(envCaptor.capture());
+
+        String capturedEnv = envCaptor.getValue();
+        assertTrue(capturedEnv.contains("CHALLENGE_FLAG=" + rawFlag), 
+            "La variable CHALLENGE_FLAG doit être injectée");
     }
 
     @Test

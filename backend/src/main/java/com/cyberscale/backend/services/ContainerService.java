@@ -23,7 +23,7 @@ public class ContainerService {
         this.dockerClient = dockerClient;
     }
 
-    // --- Méthodes existantes ---
+    // --- Méthodes de base ---
 
     public String createContainer(String imageName) {
         CreateContainerResponse container = dockerClient.createContainerCmd(imageName)
@@ -31,6 +31,29 @@ public class ContainerService {
                 .withStdinOpen(true)
                 .exec();
         return container.getId();
+    }
+
+    // 👇 NOUVELLE MÉTHODE : Création avec injection du FLAG
+    public String createChallengeContainer(String challengeId, String dynamicFlag) {
+        logger.info("Creating container for challenge {} with dynamic flag", challengeId);
+        
+        // Pour l'instant, on utilise l'image de base. 
+        // Plus tard, tu pourras mapper challengeId -> image (ex: CTF_WEB -> cyberscale/web-challenge)
+        String imageName = "cyberscale/base-challenge"; 
+
+        CreateContainerResponse container = dockerClient.createContainerCmd(imageName)
+                .withTty(true)           // Nécessaire pour le shell interactif
+                .withStdinOpen(true)     // Nécessaire pour envoyer des commandes
+                // C'est ICI que la magie opère : on injecte le flag dans l'OS du conteneur
+                .withEnv("CHALLENGE_FLAG=" + dynamicFlag) 
+                .exec();
+        
+        String containerId = container.getId();
+        
+        // On le démarre immédiatement
+        startContainer(containerId);
+        
+        return containerId;
     }
 
     public void startContainer(String containerId) {
@@ -41,7 +64,6 @@ public class ContainerService {
         try {
             dockerClient.stopContainerCmd(containerId).exec();
         } catch (NotModifiedException e) {
-            // Déjà stoppé, on log en DEBUG seulement
             logger.debug("Container {} already stopped", containerId);
         } catch (Exception e) {
             logger.error("Error stopping container {}", containerId, e);
@@ -54,12 +76,10 @@ public class ContainerService {
         }
     }
 
-    // --- TICKET W-02 ---
+    // --- Exécution de commandes (Utilisé par l'IA ou les tests) ---
 
     public String executeCommand(String containerId, String command) {
         try {
-            // Sonar n'aime pas split(" ") simple, mais pour un MVP c'est toléré.
-            // On log l'action
             logger.info("Executing command '{}' on container {}", command, containerId);
 
             String[] commandArray = command.split(" ");
@@ -79,17 +99,13 @@ public class ContainerService {
             return outputStream.toString(StandardCharsets.UTF_8);
 
         } catch (Exception e) {
-            // ✅ CORRECTION CRITIQUE : Plus de printStackTrace()
             logger.error("Execution failed for command '{}'", command, e);
-            return "Error executing command"; // On ne renvoie plus e.getMessage() complet
+            return "Error executing command";
         }
     }
     
+    // Ancienne méthode (gardée pour compatibilité si besoin, mais dépréciée)
     public String startChallengeEnvironment(String challengeId) {
-        // Pour éviter l'avertissement "Parameter unused", on loggue l'ID
-        logger.info("Starting environment for challenge {}", challengeId);
-        String containerId = createContainer("cyberscale/base-challenge");
-        startContainer(containerId);
-        return containerId;
+        return createChallengeContainer(challengeId, "DEFAULT_FLAG");
     }
 }

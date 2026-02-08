@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
+import com.github.dockerjava.api.command.ExecCreateCmd; // Import corrigé
 import com.github.dockerjava.api.command.ExecCreateCmdResponse;
 import com.github.dockerjava.api.model.Frame;
 import org.slf4j.Logger;
@@ -16,7 +17,6 @@ import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 import java.io.IOException;
-import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
@@ -38,68 +38,53 @@ public class TerminalWebSocketHandler extends TextWebSocketHandler {
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
         String containerId = getContainerId(session);
         if (containerId == null) {
+            logger.error("Aucun containerId trouvé dans l'URL");
             session.close(CloseStatus.BAD_DATA);
             return;
         }
 
-        logger.info("🔌 Connexion Terminal (Exec) sur : {}", containerId);
+        logger.info("🔌 Connexion Terminal (Exec) sur : " + containerId);
 
         try {
-            // 1. Tuyauterie : Ce que tu tapes dans le WebSocket va vers le Stdin de Docker
-            PipedOutputStream wsToDocker = new PipedOutputStream();
-            PipedInputStream dockerStdin = new PipedInputStream(wsToDocker);
-            activeOutputStreams.put(session.getId(), wsToDocker);
-
-            // 2. Création de la commande EXEC (Shell interactif HYBRIDE)
-            // L'astuce : on lance 'sh' pour exécuter une commande qui vérifie si 'bash' existe.
-            // Si bash est là, on l'utilise (mieux). Sinon, on reste sur sh (compatible Alpine).
-            ExecCreateCmdResponse execCmd = dockerClient.execCreateCmd(containerId)
+            // Création de l'exec Docker (bash)
+            // ✅ Utilisation de la bonne classe ExecCreateCmd
+            ExecCreateCmd cmd = dockerClient.execCreateCmd(containerId); 
+            ExecCreateCmdResponse execResponse = cmd
                     .withAttachStdout(true)
                     .withAttachStderr(true)
                     .withAttachStdin(true)
                     .withTty(true)
-                    // 👇 LA CORRECTION MAGIQUE EST ICI 👇
-                    .withCmd("/bin/sh", "-c", "[ -x /bin/bash ] && exec /bin/bash || exec /bin/sh")
+                    .withCmd("/bin/sh") // ou /bin/bash selon l'image
                     .exec();
 
-            // 3. Callback : Ce que Docker répond va vers le WebSocket
-            ResultCallback.Adapter<Frame> callback = new ResultCallback.Adapter<>() {
+            String execId = execResponse.getId();
+            PipedOutputStream dockerInput = new PipedOutputStream();
+            activeOutputStreams.put(session.getId(), dockerInput);
+
+            // Callback pour recevoir les données de Docker
+            ResultCallback<Frame> callback = new ResultCallback.Adapter<Frame>() {
                 @Override
-                public void onNext(Frame frame) {
+                public void onNext(Frame item) {
                     try {
                         if (session.isOpen()) {
-                            // Envoi brut pour xterm.js
-                            session.sendMessage(new TextMessage(new String(frame.getPayload(), StandardCharsets.UTF_8)));
+                            session.sendMessage(new TextMessage(new String(item.getPayload(), StandardCharsets.UTF_8)));
                         }
                     } catch (IOException e) {
-                        // Session fermée, on ignore
+                        logger.error("Erreur envoi WebSocket", e);
                     }
-                }
-                @Override
-                public void onError(Throwable t) {
-                    logger.error("Erreur flux Docker", t);
-                    try { session.close(); } catch (IOException e) {}
                 }
             };
 
-            // 4. Démarrage
-            dockerClient.execStartCmd(execCmd.getId())
-                    .withTty(true)
-                    .withStdIn(dockerStdin)
-                    .exec(callback);
-
             activeCallbacks.put(session.getId(), callback);
 
-            // 5. Message d'accueil
-            session.sendMessage(new TextMessage("\r\n\u001B[1;32m[SYSTEM] Connexion établie (Bash/Sh).\u001B[0m\r\n"));
-            
-            // On force un "Entrée" pour afficher le prompt immédiatement
-            wsToDocker.write("\n".getBytes(StandardCharsets.UTF_8));
-            wsToDocker.flush();
+            // Démarrage de l'exec avec stdin connecté
+            dockerClient.execStartCmd(execId)
+                    .withTty(true)
+                    .withStdIn(new java.io.PipedInputStream(dockerInput))
+                    .exec(callback);
 
         } catch (Exception e) {
             logger.error("Impossible de lancer le shell", e);
-            session.sendMessage(new TextMessage("\r\n\u001B[1;31m[ERREUR CRITIQUE] Impossible de lancer un shell (/bin/sh manquant ?).\u001B[0m\r\n"));
             session.close(CloseStatus.SERVER_ERROR);
         }
     }
@@ -112,8 +97,26 @@ public class TerminalWebSocketHandler extends TextWebSocketHandler {
         try {
             String payload = message.getPayload();
 
-            // Gestion du redimensionnement (ignoré pour l'instant)
-            if (payload.trim().startsWith("{")) return;
+            // ✅ CORRECTION : Activation du redimensionnement (Resize)
+            if (payload.trim().startsWith("{")) {
+                try {
+                    JsonNode json = objectMapper.readTree(payload);
+                    if (json.has("type") && "resize".equals(json.get("type").asText())) {
+                        int cols = json.get("cols").asInt();
+                        int rows = json.get("rows").asInt();
+                        String containerId = getContainerId(session);
+                        if (containerId != null) {
+                            dockerClient.resizeContainerCmd(containerId)
+                                    .withSize(cols, rows)
+                                    .exec();
+                            logger.info("Terminal resized: {}x{}", cols, rows);
+                        }
+                    }
+                } catch (Exception e) {
+                    logger.warn("Erreur parsing JSON resize", e);
+                }
+                return;
+            }
 
             // Envoi des touches au conteneur
             dockerInput.write(payload.getBytes(StandardCharsets.UTF_8));
@@ -139,7 +142,10 @@ public class TerminalWebSocketHandler extends TextWebSocketHandler {
 
     private String getContainerId(WebSocketSession session) {
         try {
+            if (session.getUri() == null) return null;
             String query = session.getUri().getQuery();
+            if (query == null) return null;
+            
             for (String param : query.split("&")) {
                 String[] pair = param.split("=");
                 if (pair.length == 2 && "containerId".equals(pair[0])) return pair[1];

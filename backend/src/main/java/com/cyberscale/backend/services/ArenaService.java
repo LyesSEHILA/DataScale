@@ -1,10 +1,12 @@
 package com.cyberscale.backend.services;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -30,6 +32,9 @@ public class ArenaService {
     private final UserChallengeRepository userChallengeRepository;
     private final ContainerService containerService;
 
+    // 👇 NOUVEAU : Stockage temporaire des flags dynamiques (UserID -> Flag)
+    private final Map<Long, String> activeUserFlags = new ConcurrentHashMap<>();
+
     public ArenaService(ChallengeRepository challengeRepository, 
                         UserRepository userRepository,
                         UserChallengeRepository userChallengeRepository,
@@ -40,11 +45,6 @@ public class ArenaService {
         this.containerService = containerService;
     }
     
-    /**
-     * Récupère la liste de tous les challenges disponibles.
-     * @param userId L'ID de l'utilisateur connecté.
-     * @return Une liste de DTOs prêts pour l'affichage frontend.
-     */
     public List<ChallengeDTO> getAllChallenges(Long userId) {
         List<Challenge> challenges = challengeRepository.findAll();
         
@@ -76,12 +76,8 @@ public class ArenaService {
     }
 
     /**
-     * Tente de valider un flag soumis par un utilisateur pour un challenge donné.
-     * @param userId L'ID de l'utilisateur.
-     * @param challengeId L'ID du challenge.
-     * @param submittedFlag Le flag entré par l'utilisateur.
-     * @return true si le flag est valide ou déjà validé, false sinon.
-     * @throws ResponseStatusException Si l'utilisateur ou le challenge n'existe pas.
+     * Tente de valider un flag soumis par un utilisateur.
+     * Vérifie d'abord le flag dynamique, puis le flag statique en fallback.
      */
     public boolean validateFlag(Long userId, String challengeId, String submittedFlag) {
         User user = userRepository.findById(userId)
@@ -90,29 +86,42 @@ public class ArenaService {
         Challenge challenge = challengeRepository.findById(challengeId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Challenge introuvable"));
 
+        // Déjà validé ?
         if (userChallengeRepository.existsByUserIdAndChallengeId(userId, challengeId)) {
             return true;
         }
 
-        if (!challenge.getFlagSecret().equals(submittedFlag.trim())) {
-            return false;
+        String cleanedFlag = submittedFlag.trim();
+        boolean isCorrect = false;
+
+        // 1. Vérification du Flag Dynamique (Prioritaire)
+        if (activeUserFlags.containsKey(userId)) {
+            String expectedDynamicFlag = activeUserFlags.get(userId);
+            if (expectedDynamicFlag.equals(cleanedFlag)) {
+                isCorrect = true;
+                // On retire le flag de la mémoire pour nettoyer
+                activeUserFlags.remove(userId);
+            }
         }
 
-        user.addPoints(challenge.getPointsReward());
-        userRepository.save(user);
+        // 2. Fallback : Vérification du Flag Statique (Base de données)
+        // Utile si le conteneur a redémarré ou pour les tests
+        if (!isCorrect && challenge.getFlagSecret().equals(cleanedFlag)) {
+            isCorrect = true;
+        }
 
-        UserChallenge victory = new UserChallenge(user, challenge);
-        userChallengeRepository.save(victory);
+        if (isCorrect) {
+            user.addPoints(challenge.getPointsReward());
+            userRepository.save(user);
 
-        return true;
+            UserChallenge victory = new UserChallenge(user, challenge);
+            userChallengeRepository.save(victory);
+            return true;
+        }
+
+        return false;
     }
     
-    /**
-     * Récupère les détails d'un challenge spécifique.
-     * @param challengeId L'ID du challenge.
-     * @return Le DTO du challenge.
-     * @throws ResponseStatusException Si le challenge est introuvable.
-     */
     public ChallengeDTO getChallengeById(String challengeId) {
         Challenge c = challengeRepository.findById(challengeId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Challenge introuvable"));
@@ -121,27 +130,21 @@ public class ArenaService {
     }
 
     /**
-     * Démarre un environnement Docker pour le challenge.
+     * Démarre un environnement Docker avec un FLAG DYNAMIQUE UNIQUE.
+     * @param userId L'ID de l'utilisateur qui lance le challenge.
      * @param challengeId L'ID du challenge.
-     * @return L'ID du conteneur Docker créé.
-     * @throws ResponseStatusException Si le challenge n'existe pas.
      */
-    public String startChallengeEnvironment(String challengeId) {
-        Challenge challenge = challengeRepository.findById(challengeId)
+    public String startChallengeEnvironment(Long userId, String challengeId) {
+        challengeRepository.findById(challengeId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Challenge inconnu"));
 
-        String imageName = "cyberscale/base-challenge";
-        
-        String containerId = containerService.createContainer(imageName);
-        containerService.startContainer(containerId);
+        String uniqueId = UUID.randomUUID().toString().substring(0, 8);
+        String dynamicFlag = uniqueId ; 
 
-        return containerId;
+        activeUserFlags.put(userId, dynamicFlag);
+        return containerService.createChallengeContainer(challengeId, dynamicFlag);
     }
 
-    /**
-     * Arrête et supprime un environnement de challenge.
-     * @param containerId L'ID du conteneur à nettoyer.
-     */
     public void stopChallengeEnvironment(String containerId) {
         containerService.stopAndRemoveContainer(containerId);
     }

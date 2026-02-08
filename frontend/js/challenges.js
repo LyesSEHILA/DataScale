@@ -137,8 +137,9 @@ function renderChallenges(challenges, container) {
 }
 
 function startChallenge(id, title) {
-    localStorage.setItem('currentChallengeId', id);
+    localStorage.setItem('currentChallengeId', id); // On le garde au cas où
+    
     if(confirm(`Voulez-vous entrer dans l'arène pour résoudre : "${title}" ?`)) {
-        window.location.href = 'arena.html';
+        window.location.href = `arena.html?challengeId=${id}`;
     }
 }
