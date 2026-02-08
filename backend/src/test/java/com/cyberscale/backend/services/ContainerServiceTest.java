@@ -162,13 +162,15 @@ class ContainerServiceTest {
         when(dockerClient.execCreateCmd(anyString())).thenReturn(execCreateCmd);
         when(execCreateCmd.withAttachStdout(true)).thenReturn(execCreateCmd);
         when(execCreateCmd.withAttachStderr(true)).thenReturn(execCreateCmd);
-        when(execCreateCmd.withCmd(any(String[].class))).thenReturn(execCreateCmd);
+        when(execCreateCmd.withCmd(anyString(), anyString(), anyString())).thenReturn(execCreateCmd);
         when(execCreateCmd.exec()).thenReturn(execCreateCmdResponse);
         when(execCreateCmdResponse.getId()).thenReturn("exec-id-123");
-
         when(dockerClient.execStartCmd("exec-id-123")).thenReturn(execStartCmd);
-        when(execStartCmd.exec(any(ExecStartResultCallback.class))).thenReturn(execStartResultCallback);
-        when(execStartResultCallback.awaitCompletion(anyLong(), any(TimeUnit.class))).thenReturn(true);
+        
+        // On simule le comportement du callback pour éviter un NullPointerException
+        when(execStartCmd.exec(any(ExecStartResultCallback.class))).thenAnswer(invocation -> {
+            return invocation.getArgument(0);
+        });
 
         String result = containerService.executeCommand("container-id", "ls -la");
 
@@ -183,7 +185,24 @@ class ContainerServiceTest {
 
         String result = containerService.executeCommand("container-id", "ls");
         
-        assertTrue(result.contains("Error executing command"), "Le message d'erreur doit correspondre à celui du service");
+        assertTrue(result.contains("ERREUR D'EXÉCUTION : "), "Le message doit signaler une erreur d'exécution");
+    }
+
+    @Test
+    void executeCommand_ShouldBlockDangerousCommand() {
+        // ARRANGE
+        String dangerousCmd = "rm -rf /"; // Commande interdite
+        String containerId = "test-container";
+
+        // ACT
+        String result = containerService.executeCommand(containerId, dangerousCmd);
+
+        // ASSERT
+        // 1. On vérifie qu'on reçoit le message d'alerte
+        assertTrue(result.contains("ERREUR : Commande interdite par la politique de sécurité."), "Le service doit bloquer la commande dangereuse");
+        
+        // 2. CRUCIAL : On vérifie que Docker n'a JAMAIS été appelé
+        verify(dockerClient, never()).execCreateCmd(anyString());
     }
 
     @Test
