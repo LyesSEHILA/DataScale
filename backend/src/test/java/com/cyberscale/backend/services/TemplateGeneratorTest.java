@@ -7,49 +7,59 @@ import java.io.IOException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class TemplateGeneratorTest {
+@ExtendWith(MockitoExtension.class)
+public class TemplateGeneratorTest {
 
+    @Mock
+    private ResourceLoader resourceLoader; // On mocke le chargeur
+
+    @Mock
+    private Resource resource; // On mocke le fichier lui-même
+
+    @InjectMocks
     private TemplateGenerator templateGenerator;
-
-    @BeforeEach
-    void setUp() {
-        // La classe n'a pas de dépendances, on l'instancie directement
-        templateGenerator = new TemplateGenerator();
-    }
-
-    @Test
+@Test
     void generateYaml_Success() throws IOException {
         // ARRANGE
-        // On utilise le type "test" qui va chercher "honeypot-test.yaml" (créé à l'étape 1)
-        String type = "test";
+        // Contenu fictif du fichier YAML pour le test
+        String mockYamlContent = "apiVersion: v1\nkind: Pod\nmetadata:\n  name: ${POD_NAME}\nenv:\n  - name: PASS\n    value: ${RANDOM_PASS}";
+
+        // On dit : "Quand on cherche n'importe quel fichier..."
+        when(resourceLoader.getResource(anyString())).thenReturn(resource);
+        // "... dis qu'il existe"
+        when(resource.exists()).thenReturn(true);
+        // "... et renvoie mon contenu fictif quand on le lit"
+        when(resource.getInputStream()).thenReturn(new ByteArrayInputStream(mockYamlContent.getBytes(StandardCharsets.UTF_8)));
 
         // ACT
-        String result = templateGenerator.generateYaml(type);
+        String result = templateGenerator.generateYaml("mysql");
 
         // ASSERT
         assertNotNull(result);
 
-        // 1. Vérifier que le contenu du fichier a bien été lu
-        assertTrue(result.contains("kind: Pod"), "Le contenu du fichier doit être présent");
+        // Vérifie que le contenu est là
+        assertTrue(result.contains("kind: Pod"));
 
-        // 2. Vérifier que ${POD_NAME} a été remplacé
-        assertFalse(result.contains("${POD_NAME}"), "Le placeholder ${POD_NAME} doit être remplacé");
-        assertTrue(result.contains("honeypot-test-"), "Le nom du pod doit contenir le préfixe généré");
+        // Vérifie que le nom du POD a été généré et remplacé
+        assertFalse(result.contains("${POD_NAME}"), "Le placeholder doit être remplacé");
+        assertTrue(result.contains("honeypot-mysql-"), "Le nom généré doit être correct");
 
-        // 3. Vérifier que ${RANDOM_PASS} a été remplacé (couvre la méthode privée generateRandomPassword)
-        assertFalse(result.contains("${RANDOM_PASS}"), "Le placeholder ${RANDOM_PASS} doit être remplacé");
+        // Vérifie que le mot de passe a été généré et remplacé
+        // (Ceci valide implicitement la méthode privée generateRandomPassword !)
+        assertFalse(result.contains("${RANDOM_PASS}"), "Le mot de passe doit être remplacé");
     }
 
     @Test
-    void generateYaml_FileNotFound_ShouldThrowException() {
+    void generateYaml_FileNotFound() {
         // ARRANGE
-        String unknownType = "inexistant-12345";
+        when(resourceLoader.getResource(anyString())).thenReturn(resource);
+        when(resource.exists()).thenReturn(false); // Cette fois, le fichier n'existe pas
 
         // ACT & ASSERT
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            templateGenerator.generateYaml(unknownType);
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> {
+            templateGenerator.generateYaml("unknown_type");
         });
 
-        assertEquals("Template introuvable pour le type : " + unknownType, exception.getMessage());
+        assertEquals("Template introuvable pour le type : unknown_type", e.getMessage());
     }
 }
