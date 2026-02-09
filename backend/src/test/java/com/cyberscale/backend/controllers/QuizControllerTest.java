@@ -9,6 +9,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -29,6 +30,7 @@ import com.cyberscale.backend.repositories.QuestionRepository;
 import com.cyberscale.backend.repositories.QuizSessionRepository;
 import com.cyberscale.backend.repositories.RecommendationRepository;
 import com.cyberscale.backend.repositories.UserAnswerRepository;
+import com.cyberscale.backend.services.rabbitmq.RabbitMQProducer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @SpringBootTest
@@ -45,6 +47,9 @@ class QuizControllerTest {
     @Autowired private UserAnswerRepository userAnswerRepository;
     @Autowired private RecommendationRepository recommendationRepository;
     @Autowired private com.cyberscale.backend.repositories.UserRepository userRepository; 
+
+    @MockitoBean 
+    private RabbitMQProducer rabbitMQProducer;
 
     @BeforeEach
     void setup() {

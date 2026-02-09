@@ -38,6 +38,7 @@ dependencies {
     testImplementation("org.junit.platform:junit-platform-suite:1.10.1")
     testImplementation("org.seleniumhq.selenium:selenium-java:4.18.1")
     testImplementation("io.github.bonigarcia:webdrivermanager:5.7.0")
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
 }
 
 // --- Configuration JaCoCo en Kotlin DSL ---
@@ -62,4 +63,45 @@ tasks.jacocoTestReport {
         csv.required.set(false)
         html.required.set(true)
     }
+}
+
+// ==================================================================
+//  CONFIGURATION AUTO DES VARIABLES D'ENVIRONNEMENT (.env)
+// ==================================================================
+
+// Fonction pour charger le fichier .env
+fun loadEnv(target: Any) {
+    val envFile = file(".env")
+    if (envFile.exists()) {
+        envFile.readLines().forEach { line ->
+            val trimmed = line.trim()
+            if (trimmed.isNotEmpty() && !trimmed.startsWith("#")) {
+                val parts = trimmed.split("=", limit = 2)
+                if (parts.size == 2) {
+                    val key = parts[0].trim()
+                    val value = parts[1].trim()
+                    
+                    // Injection selon le type de tâche
+                    if (target is JavaExec) {
+                        target.environment(key, value)
+                    } else if (target is Test) {
+                        target.environment(key, value)
+                    }
+                }
+            }
+        }
+        println("✅  [.env] Variables chargées pour : $target")
+    } else {
+        println("⚠️  [.env] Fichier introuvable ! (Pensez à copier .env.example)")
+    }
+}
+
+// Appliquer au démarrage (bootRun)
+tasks.withType<org.springframework.boot.gradle.tasks.run.BootRun> {
+    loadEnv(this)
+}
+
+// Appliquer aux tests
+tasks.withType<Test> {
+    loadEnv(this)
 }

@@ -21,7 +21,7 @@ import org.springframework.messaging.handler.annotation.SendTo;
 @CrossOrigin(origins = "*") 
 public class ArenaController {
 
-    @Autowired private ArenaService arenaService;
+    private static final Logger logger = LoggerFactory.getLogger(ArenaController.class);
 
     /**
      * Endpoint WebSocket pour l'echo ou le chat de l'arène.
@@ -75,7 +75,7 @@ public class ArenaController {
      * @return code HTTP 200 ou 400 .
      */
     @PostMapping("/validate")
-    public ResponseEntity<?> validateFlag(@RequestBody FlagRequest request) {
+    public ResponseEntity<Map<String, Object>> validateFlag(@RequestBody FlagRequest request) {
         boolean success = arenaService.validateFlag(request.userId(), request.challengeId(), request.flag());
         if (success) {
             return ResponseEntity.ok(Map.of("message", "Flag valide ! Points attribués.", "success", true));
