@@ -1,5 +1,7 @@
 package com.cyberscale.backend.services;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
@@ -14,7 +16,9 @@ import java.util.UUID;
 @Service
 public class TemplateGenerator {
 
-    private static final String TEMPLATE_PATH = "classpath:templates/k8s/"; 
+    private static final Logger logger = LoggerFactory.getLogger(TemplateGenerator.class);
+    
+    private static final String TEMPLATE_PATH = "classpath:templates/k8s/";
     
     private final ResourceLoader resourceLoader;
 
@@ -28,6 +32,7 @@ public class TemplateGenerator {
         Resource resource = resourceLoader.getResource(TEMPLATE_PATH + filename);
         
         if (!resource.exists()) {
+            logger.error("Template not found for type: {}", type);
             throw new IllegalArgumentException("Template introuvable pour le type : " + type);
         }
 
@@ -37,9 +42,11 @@ public class TemplateGenerator {
         String podName = "honeypot-" + type + "-" + uuid;
         String randomPass = generateRandomPassword(12);
 
-        return templateContent
+        String finalYaml = templateContent
                 .replace("${POD_NAME}", podName)
                 .replace("${RANDOM_PASS}", randomPass);
+
+        return finalYaml;
     }
 
     private String generateRandomPassword(int length) {

@@ -1,25 +1,20 @@
 package com.cyberscale.backend.services;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith; 
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 
-import org.mockito.InjectMocks; 
-import org.mockito.Mock;        
-import org.mockito.junit.jupiter.MockitoExtension; 
-
-
-import org.springframework.core.io.Resource;      
-import org.springframework.core.io.ResourceLoader; 
-
-
-import java.io.ByteArrayInputStream; 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets; 
-
+import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.anyString; 
-import static org.mockito.Mockito.when;               
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class TemplateGeneratorTest {
@@ -45,9 +40,9 @@ public class TemplateGeneratorTest {
 
         assertNotNull(result);
         assertTrue(result.contains("kind: Pod"));
-        assertFalse(result.contains("${POD_NAME}"));
-        assertTrue(result.contains("honeypot-mysql-"));
-        assertFalse(result.contains("${RANDOM_PASS}"));
+        assertFalse(result.contains("${POD_NAME}"), "Le placeholder ${POD_NAME} doit être remplacé");
+        assertTrue(result.contains("honeypot-mysql-"), "Le nom généré doit contenir le préfixe honeypot-mysql-");
+        assertFalse(result.contains("${RANDOM_PASS}"), "Le placeholder ${RANDOM_PASS} doit être remplacé");
     }
 
     @Test
@@ -59,6 +54,6 @@ public class TemplateGeneratorTest {
             templateGenerator.generateYaml("unknown_type");
         });
 
-        assertTrue(e.getMessage().contains("Template introuvable"));
+        assertTrue(e.getMessage().contains("Template introuvable"), "Le message d'erreur doit indiquer que le template est introuvable");
     }
 }
