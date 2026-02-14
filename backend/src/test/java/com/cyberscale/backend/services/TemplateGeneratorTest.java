@@ -29,11 +29,10 @@ class TemplateGeneratorTest {
     private TemplateGenerator templateGenerator;
 
     @Test
-    void generateYaml_Success() throws IOException {
+    void generateYamlSuccess() throws IOException {
         // ARRANGE
         String mockYamlContent = "apiVersion: v1\nkind: Pod\nmetadata:\n  name: ${POD_NAME}\nenv:\n  - name: PASS\n    value: ${RANDOM_PASS}";
 
-        // Simulation du comportement normal
         when(resourceLoader.getResource(anyString())).thenReturn(resource);
         when(resource.exists()).thenReturn(true);
         when(resource.getInputStream()).thenReturn(new ByteArrayInputStream(mockYamlContent.getBytes(StandardCharsets.UTF_8)));
@@ -45,7 +44,6 @@ class TemplateGeneratorTest {
         assertNotNull(result);
         assertTrue(result.contains("kind: Pod"));
         
-        // Vérification des remplacements
         assertFalse(result.contains("${POD_NAME}"), "Placeholder POD_NAME non remplacé");
         assertTrue(result.contains("honeypot-mysql-"), "Le nom généré est incorrect");
         
@@ -53,32 +51,29 @@ class TemplateGeneratorTest {
     }
 
     @Test
-    void generateYaml_FileNotFound() {
+    void generateYamlFileNotFound() {
         // ARRANGE
         when(resourceLoader.getResource(anyString())).thenReturn(resource);
         when(resource.exists()).thenReturn(false);
 
         // ACT & ASSERT
-        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> {
-            templateGenerator.generateYaml("unknown");
-        });
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> 
+            templateGenerator.generateYaml("unknown")
+        );
 
         assertTrue(e.getMessage().contains("Template introuvable"));
     }
 
-    // 👇 LE TEST AJOUTÉ POUR LA SÉCURITÉ 👇
     @Test
-    void generateYaml_Security_PathTraversal() {
+    void generateYamlSecurityPathTraversal() {
         // ARRANGE
         String maliciousType = "../../etc/passwd";
 
         // ACT & ASSERT
-        // On s'attend à ce que le Regex bloque l'appel AVANT même de toucher au ResourceLoader
-        assertThrows(IllegalArgumentException.class, () -> {
-            templateGenerator.generateYaml(maliciousType);
-        });
+        assertThrows(IllegalArgumentException.class, () -> 
+            templateGenerator.generateYaml(maliciousType)
+        );
 
-        // On vérifie que le ResourceLoader n'a JAMAIS été appelé (preuve que la sécurité est en amont)
         verify(resourceLoader, never()).getResource(anyString());
     }
 }
