@@ -6,7 +6,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.test.util.ReflectionTestUtils; // Import essentiel
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
@@ -39,7 +39,6 @@ public class HuggingFaceClientTest {
     @Mock
     private WebClient.ResponseSpec responseSpec;
 
-    // Pas de @InjectMocks ici car on va l'instancier manuellement dans setUp()
     private HuggingFaceClient huggingFaceClient;
 
     @BeforeEach
@@ -50,7 +49,7 @@ public class HuggingFaceClientTest {
         // 2. Instancier le service manuellement
         huggingFaceClient = new HuggingFaceClient(webClientBuilder);
 
-        // 3. Injecter les valeurs @Value manuellement (ce que Mockito ne fait pas tout seul)
+        // 3. Injecter les valeurs @Value manuellement
         ReflectionTestUtils.setField(huggingFaceClient, "apiUrl", "https://api-fake.com");
         ReflectionTestUtils.setField(huggingFaceClient, "apiKey", "dummy_key");
         ReflectionTestUtils.setField(huggingFaceClient, "modelId", "test-model");
@@ -59,12 +58,16 @@ public class HuggingFaceClientTest {
 
     @Test
     void generateResponse_Success() {
-        // ARRANGE : Configuration du chaînage complexe de WebClient
+        // ARRANGE
         when(webClient.post()).thenReturn(requestBodyUriSpec);
         when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodySpec);
+        
+        // Cette ligne gère TOUS les appels à .header() (Authorization ET Content-Type)
         when(requestBodySpec.header(anyString(), anyString())).thenReturn(requestBodySpec);
-        when(requestBodySpec.contentType(any())).thenReturn(requestBodySpec);
-        // Utilisation de any(Object.class) pour éviter l'ambiguïté
+        
+        // --- SUPPRESSION DE LA LIGNE contentType() QUI CAUSAIT L'ERREUR ---
+        // when(requestBodySpec.contentType(any())).thenReturn(requestBodySpec);
+
         when(requestBodySpec.bodyValue(any(Object.class))).thenReturn(requestHeadersSpec);
         when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
 
