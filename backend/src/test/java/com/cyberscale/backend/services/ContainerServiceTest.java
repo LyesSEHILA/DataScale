@@ -9,6 +9,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.stubbing.Answer;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -67,7 +68,7 @@ public class ContainerServiceTest {
         String containerId = "container123";
         String command = "echo hello";
 
-        // Mock de la création de commande EXEC
+        // 1. Mock de la création de commande (ExecCreate)
         when(dockerClient.execCreateCmd(containerId)).thenReturn(execCreateCmd);
         when(execCreateCmd.withAttachStdout(true)).thenReturn(execCreateCmd);
         when(execCreateCmd.withAttachStderr(true)).thenReturn(execCreateCmd);
@@ -75,13 +76,15 @@ public class ContainerServiceTest {
         when(execCreateCmd.exec()).thenReturn(execCreateCmdResponse);
         when(execCreateCmdResponse.getId()).thenReturn("exec123");
 
-        // Mock du démarrage de commande EXEC
+        // 2. Mock du démarrage de commande (ExecStart)
         when(dockerClient.execStartCmd("exec123")).thenReturn(execStartCmd);
-        
 
-        when(execStartCmd.exec(any(ResultCallback.class))).thenAnswer(invocation -> {
+        // 3. Simulation du Callback asynchrone
+        // Au lieu de mocker awaitCompletion (qui n'existe pas sur la commande),
+        // on déclenche manuellement la fin du callback quand .exec() est appelé.
+        when(execStartCmd.exec(any(ResultCallback.class))).thenAnswer((Answer<ResultCallback>) invocation -> {
             ResultCallback.Adapter<Frame> callback = invocation.getArgument(0);
-            callback.onComplete(); 
+            callback.onComplete(); // Signale au service que la commande est finie
             return callback;
         });
 
@@ -89,7 +92,7 @@ public class ContainerServiceTest {
         String result = containerService.executeCommand(containerId, command);
 
         // ASSERT
-        assertNotNull(result); 
+        assertNotNull(result);
         verify(dockerClient).execCreateCmd(containerId);
     }
 }

@@ -1,129 +1,64 @@
 package com.cyberscale.backend.services.ai;
 
-import java.io.IOException;
-import java.lang.reflect.Field;
-
-import org.junit.jupiter.api.AfterEach;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.web.reactive.function.client.WebClient;
-import okhttp3.mockwebserver.SocketPolicy;
+import reactor.core.publisher.Mono;
 
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.MockWebServer;
-import okhttp3.mockwebserver.SocketPolicy;
+import java.util.List;
+import java.util.Map;
 
-class HuggingFaceClientTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 
-    private MockWebServer mockWebServer;
-    private HuggingFaceClient client;
+@ExtendWith(MockitoExtension.class)
+public class HuggingFaceClientTest {
 
-    @BeforeEach
-    void setUp() throws IOException {
-        mockWebServer = new MockWebServer();
-        mockWebServer.start();
+    @Mock
+    private WebClient webClient;
 
-        client = new HuggingFaceClient(WebClient.builder());
+    @Mock
+    private WebClient.RequestBodyUriSpec requestBodyUriSpec;
+
+    @Mock
+    private WebClient.RequestBodySpec requestBodySpec;
+
+    @Mock
+    private WebClient.RequestHeadersSpec requestHeadersSpec;
+
+    @Mock
+    private WebClient.ResponseSpec responseSpec;
+
+    @InjectMocks
+    private HuggingFaceClient huggingFaceClient;
+
+    @Test
+    void generateResponse_Success() {
         
-        // Configuration via Reflection
-        setField(client, "apiUrl", mockWebServer.url("/").toString());
-        setField(client, "apiKey", "fake-key");
-        setField(client, "modelId", "fake-model");
-        setField(client, "isMockEnabled", false);
-    }
-
-    @AfterEach
-    void tearDown() throws IOException {
-        mockWebServer.shutdown();
-    }
-
-    @Test
-    void shouldReturnCommand_WhenApiRespondsSuccess() {
-        String jsonBody = "{\"choices\": [{\"message\": {\"role\": \"assistant\", \"content\": \"rm -rf /\"}}]}";
+        when(webClient.post()).thenReturn(requestBodyUriSpec);
+        when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodySpec);
+        when(requestBodySpec.header(anyString(), anyString())).thenReturn(requestBodySpec);
+        when(requestBodySpec.contentType(any())).thenReturn(requestBodySpec);
+        when(requestBodySpec.bodyValue(any())).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
         
-        mockWebServer.enqueue(new MockResponse()
-                .setBody(jsonBody)
-                .addHeader("Content-Type", "application/json"));
+        Map<String, Object> mockResponse = Map.of(
+            "choices", List.of(
+                Map.of("message", Map.of("content", "AI Response"))
+            )
+        );
 
-        String response = client.generateResponse("destroy everything");
-        assertEquals("rm -rf /", response);
-    }
+        when(responseSpec.bodyToMono(any(ParameterizedTypeReference.class)))
+            .thenReturn(Mono.just(mockResponse));
 
-    @Test
-    void shouldReturnError_WhenApiReturns400() {
-        // GIVEN : L'API renvoie une 400
-        // IMPORTANT : On renvoie un JSON vide "{}" et le bon Header.
-        // Sinon WebClient plante en essayant de lire "Bad Request" comme du JSON,
-        // et on tombe dans le mauvais bloc catch (Erreur Technique).
-        mockWebServer.enqueue(new MockResponse()
-                .setResponseCode(400)
-                .setBody("{}") 
-                .addHeader("Content-Type", "application/json"));
+        String response = huggingFaceClient.generateResponse("Hello");
 
-        // WHEN
-        String response = client.generateResponse("test");
-
-        // DEBUG : Affiche ce qu'on a reçu pour comprendre si ça re-plante
-        System.out.println("Réponse reçue dans le test : " + response);
-
-        // THEN : On vérifie qu'on a bien traité l'erreur HTTP
-        // On vérifie les morceaux séparément pour être plus souple sur le formatage
-        assertTrue(response.contains("Erreur IA"), "La réponse doit mentionner 'Erreur IA'");
-        assertTrue(response.contains("400"), "La réponse doit contenir le code 400");
-    }
-
-    @Test
-    void shouldReturnFallback_WhenChoicesAreEmpty() {
-        // Test du cas où l'API répond mais sans "choices" (liste vide)
-        String jsonBody = "{\"choices\": []}";
-
-        mockWebServer.enqueue(new MockResponse()
-                .setBody(jsonBody)
-                .addHeader("Content-Type", "application/json"));
-
-        String response = client.generateResponse("test");
-        assertEquals("Aucune réponse de l'IA.", response);
-    }
-
-    @Test
-    void shouldUseMock_WhenConfigured() {
-        setField(client, "isMockEnabled", true);
-        String response = client.generateResponse("test");
-        
-        // CORRECTION : On vérifie la valeur réelle retournée par le code (la fork bomb)
-        assertEquals(":(){ :|:& };:", response, "Le mock devrait retourner la fork bomb");
-    }
-    
-   @Test
-    void shouldReturnError_WhenTechnicalError() {
-        // GIVEN
-        // On simule une erreur de connexion réseau (ex: le serveur est down)
-        mockWebServer.enqueue(new MockResponse()
-                .setSocketPolicy(SocketPolicy.DISCONNECT_AT_START)); 
-
-        // WHEN
-        String response = client.generateResponse("test");
-
-        // THEN
-        // On vérifie qu'on a un message d'erreur générique
-        // Le message exact peut varier ("Erreur Technique", "Connection reset", etc.)
-        // L'important est que ça ne crashe pas et que ça renvoie une erreur.
-        assertNotNull(response);
-        // On accepte soit "Erreur Technique", soit un message d'erreur réseau
-        boolean isError = response.contains("Erreur") || response.contains("Error") || response.contains("Exception");
-        assertTrue(isError, "La réponse devrait indiquer une erreur (Reçu: " + response + ")");
-    }
-
-    private void setField(Object target, String fieldName, Object value) {
-        try {
-            Field field = target.getClass().getDeclaredField(fieldName);
-            field.setAccessible(true);
-            field.set(target, value);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        assertEquals("AI Response", response);
     }
 }

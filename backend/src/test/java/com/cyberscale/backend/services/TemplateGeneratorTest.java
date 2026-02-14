@@ -40,9 +40,9 @@ public class TemplateGeneratorTest {
 
         assertNotNull(result);
         assertTrue(result.contains("kind: Pod"));
-        assertFalse(result.contains("${POD_NAME}"), "Le placeholder ${POD_NAME} doit être remplacé");
-        assertTrue(result.contains("honeypot-mysql-"), "Le nom généré doit contenir le préfixe honeypot-mysql-");
-        assertFalse(result.contains("${RANDOM_PASS}"), "Le placeholder ${RANDOM_PASS} doit être remplacé");
+        assertFalse(result.contains("${POD_NAME}"), "Placeholder POD_NAME non remplacé");
+        assertTrue(result.contains("honeypot-mysql-"));
+        assertFalse(result.contains("${RANDOM_PASS}"), "Placeholder RANDOM_PASS non remplacé");
     }
 
     @Test
@@ -54,6 +54,6 @@ public class TemplateGeneratorTest {
             templateGenerator.generateYaml("unknown_type");
         });
 
-        assertTrue(e.getMessage().contains("Template introuvable"), "Le message d'erreur doit indiquer que le template est introuvable");
+        assertTrue(e.getMessage().contains("Template introuvable"));
     }
 }
