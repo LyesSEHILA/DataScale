@@ -1,15 +1,17 @@
 package com.cyberscale.backend.services;
 
 import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.command.ExecCreateCmdResponse;
 import com.github.dockerjava.api.exception.NotModifiedException;
-import com.github.dockerjava.core.command.ExecStartResultCallback;
+import com.github.dockerjava.api.model.Frame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 
@@ -22,8 +24,6 @@ public class ContainerService {
     public ContainerService(DockerClient dockerClient) {
         this.dockerClient = dockerClient;
     }
-
-    // --- Méthodes de base ---
 
     public String createContainer(String imageName) {
         CreateContainerResponse container = dockerClient.createContainerCmd(imageName)
@@ -71,7 +71,6 @@ public class ContainerService {
     }
 
     public String executeCommand(String containerId, String command) {
-        // Sécurité basique (Optionnel, selon tes besoins)
         if (isCommandDangerous(command)) {
             return "Command blocked for security reasons.";
         }
@@ -79,7 +78,8 @@ public class ContainerService {
         try {
             logger.info("Executing command '{}' on container {}", command, containerId);
 
-            String[] commandArray = command.split(" ");
+            // Utilisation de SH -C pour éviter les problèmes de parsing d'arguments
+            String[] commandArray = {"/bin/sh", "-c", command};
 
             ExecCreateCmdResponse execCreateCmdResponse = dockerClient.execCreateCmd(containerId)
                     .withAttachStdout(true)
@@ -89,8 +89,18 @@ public class ContainerService {
 
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             
+            // CORRECTION: Utilisation de ResultCallback.Adapter (Non déprécié)
             dockerClient.execStartCmd(execCreateCmdResponse.getId())
-                    .exec(new ExecStartResultCallback(outputStream, null))
+                    .exec(new ResultCallback.Adapter<Frame>() {
+                        @Override
+                        public void onNext(Frame item) {
+                            try {
+                                outputStream.write(item.getPayload());
+                            } catch (IOException e) {
+                                logger.error("Erreur lecture flux Docker", e);
+                            }
+                        }
+                    })
                     .awaitCompletion(5, TimeUnit.SECONDS);
 
             return outputStream.toString(StandardCharsets.UTF_8);
@@ -105,9 +115,7 @@ public class ContainerService {
         return createChallengeContainer(challengeId, "DEFAULT_FLAG");
     }
 
-    // ✅ La méthode est ici, correctement placée à la fin de la classe
     private boolean isCommandDangerous(String command) {
-        // Exemple simple de blocage
         return command.contains("rm -rf /") || command.contains(":(){:|:&};:");
     }
 }

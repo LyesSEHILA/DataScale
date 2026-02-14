@@ -3,6 +3,8 @@ package com.cyberscale.backend.services;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.*;
+import com.github.dockerjava.api.exception.DockerException;
+import com.github.dockerjava.api.exception.NotModifiedException;
 import com.github.dockerjava.api.model.Frame;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -11,88 +13,86 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.stubbing.Answer;
 
-import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class ContainerServiceTest {
+class ContainerServiceTest {
 
-    @Mock
-    private DockerClient dockerClient;
+    private static final String CONTAINER_ID = "container-id";
 
-    @Mock
-    private CreateContainerCmd createContainerCmd;
+    @Mock private DockerClient dockerClient;
+    @InjectMocks private ContainerService containerService;
 
-    @Mock
-    private CreateContainerResponse createContainerResponse;
-
-    @Mock
-    private StartContainerCmd startContainerCmd;
-
-    @Mock
-    private ExecCreateCmd execCreateCmd;
-
-    @Mock
-    private ExecCreateCmdResponse execCreateCmdResponse;
-
-    @Mock
-    private ExecStartCmd execStartCmd;
-
-    @InjectMocks
-    private ContainerService containerService;
+    @Mock private CreateContainerCmd createContainerCmd;
+    @Mock private CreateContainerResponse createContainerResponse;
+    @Mock private StartContainerCmd startContainerCmd;
+    @Mock private StopContainerCmd stopContainerCmd;
+    @Mock private RemoveContainerCmd removeContainerCmd;
+    @Mock private ExecCreateCmd execCreateCmd;
+    @Mock private ExecCreateCmdResponse execCreateCmdResponse;
+    @Mock private ExecStartCmd execStartCmd;
 
     @Test
-    void createContainer_Success() {
-        // ARRANGE
+    void createContainerSuccess() {
         when(dockerClient.createContainerCmd(anyString())).thenReturn(createContainerCmd);
-        when(createContainerCmd.withTty(true)).thenReturn(createContainerCmd);
-        when(createContainerCmd.withStdinOpen(true)).thenReturn(createContainerCmd);
+        when(createContainerCmd.withTty(anyBoolean())).thenReturn(createContainerCmd);
+        when(createContainerCmd.withStdinOpen(anyBoolean())).thenReturn(createContainerCmd);
         when(createContainerCmd.exec()).thenReturn(createContainerResponse);
-        when(createContainerResponse.getId()).thenReturn("container123");
+        when(createContainerResponse.getId()).thenReturn(CONTAINER_ID);
 
-        // ACT
-        String containerId = containerService.createContainer("ubuntu:latest");
-
-        // ASSERT
-        assertEquals("container123", containerId);
+        String res = containerService.createContainer("img");
+        assertEquals(CONTAINER_ID, res);
     }
 
     @Test
-    void executeCommand_Success() throws InterruptedException {
-        // ARRANGE
-        String containerId = "container123";
-        String command = "echo hello";
+    void startContainerFailure() {
+        when(dockerClient.startContainerCmd(anyString())).thenThrow(new DockerException("Err", 500));
+        assertThrows(RuntimeException.class, () -> containerService.startContainer(CONTAINER_ID));
+    }
 
-        // 1. Mock de la création de commande (ExecCreate)
-        when(dockerClient.execCreateCmd(containerId)).thenReturn(execCreateCmd);
+    @Test
+    void createChallengeContainerSuccess() {
+        when(dockerClient.createContainerCmd(anyString())).thenReturn(createContainerCmd);
+        lenient().when(createContainerCmd.withTty(anyBoolean())).thenReturn(createContainerCmd);
+        lenient().when(createContainerCmd.withStdinOpen(anyBoolean())).thenReturn(createContainerCmd);
+        lenient().when(createContainerCmd.withEnv(anyString())).thenReturn(createContainerCmd); // Fix varargs
+        
+        when(createContainerCmd.exec()).thenReturn(createContainerResponse);
+        when(createContainerResponse.getId()).thenReturn(CONTAINER_ID);
+        when(dockerClient.startContainerCmd(CONTAINER_ID)).thenReturn(startContainerCmd);
+
+        String id = containerService.createChallengeContainer("chall", "flag");
+        assertEquals(CONTAINER_ID, id);
+    }
+
+    @Test
+    void executeCommandSuccess() throws InterruptedException {
+        // Arrange
+        when(dockerClient.execCreateCmd(anyString())).thenReturn(execCreateCmd);
         when(execCreateCmd.withAttachStdout(true)).thenReturn(execCreateCmd);
         when(execCreateCmd.withAttachStderr(true)).thenReturn(execCreateCmd);
         when(execCreateCmd.withCmd(any(String[].class))).thenReturn(execCreateCmd);
         when(execCreateCmd.exec()).thenReturn(execCreateCmdResponse);
-        when(execCreateCmdResponse.getId()).thenReturn("exec123");
+        when(execCreateCmdResponse.getId()).thenReturn("exec-1");
 
-        // 2. Mock du démarrage de commande (ExecStart)
-        when(dockerClient.execStartCmd("exec123")).thenReturn(execStartCmd);
+        when(dockerClient.execStartCmd("exec-1")).thenReturn(execStartCmd);
 
-        // 3. Simulation du Callback asynchrone
-        // Au lieu de mocker awaitCompletion (qui n'existe pas sur la commande),
-        // on déclenche manuellement la fin du callback quand .exec() est appelé.
+        // Simulation du Callback
         when(execStartCmd.exec(any(ResultCallback.class))).thenAnswer((Answer<ResultCallback>) invocation -> {
             ResultCallback.Adapter<Frame> callback = invocation.getArgument(0);
-            callback.onComplete(); // Signale au service que la commande est finie
+            callback.onComplete(); // On termine immédiatement pour ne pas bloquer
             return callback;
         });
 
-        // ACT
-        String result = containerService.executeCommand(containerId, command);
-
-        // ASSERT
-        assertNotNull(result);
-        verify(dockerClient).execCreateCmd(containerId);
+        // Act
+        String res = containerService.executeCommand(CONTAINER_ID, "ls");
+        
+        // Assert
+        assertNotNull(res);
+        verify(dockerClient).execCreateCmd(CONTAINER_ID);
     }
 }
