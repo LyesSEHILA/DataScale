@@ -42,7 +42,7 @@ public class HuggingFaceClient {
         }
 
         Map<String, Object> body = Map.of(
-            "model", modelId,
+            "model", modelId != null ? modelId : "default-model", // Sécurité anti-null
             "messages", List.of(
                 Map.of("role", "user", "content", userPrompt)
             ),
@@ -53,6 +53,8 @@ public class HuggingFaceClient {
         long startTime = System.currentTimeMillis();
 
         try {
+            // Note: Nous utilisons .header("Content-Type") au lieu de .contentType()
+            // Le test doit refléter cela.
             Map<String, Object> response = webClient.post()
                     .uri(apiUrl)
                     .header("Authorization", "Bearer " + apiKey)

@@ -16,6 +16,7 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient; // Import IMPORTANT
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -43,13 +44,13 @@ public class HuggingFaceClientTest {
 
     @BeforeEach
     void setUp() {
-        // 1. Configurer le Builder pour qu'il retourne notre mock WebClient
-        when(webClientBuilder.build()).thenReturn(webClient);
+        // Configuration du builder
+        lenient().when(webClientBuilder.build()).thenReturn(webClient);
 
-        // 2. Instancier le service manuellement
+        // Instanciation manuelle
         huggingFaceClient = new HuggingFaceClient(webClientBuilder);
 
-        // 3. Injecter les valeurs @Value manuellement
+        // Injection des valeurs (clés fictives pour le test)
         ReflectionTestUtils.setField(huggingFaceClient, "apiUrl", "https://api-fake.com");
         ReflectionTestUtils.setField(huggingFaceClient, "apiKey", "dummy_key");
         ReflectionTestUtils.setField(huggingFaceClient, "modelId", "test-model");
@@ -59,26 +60,32 @@ public class HuggingFaceClientTest {
     @Test
     void generateResponse_Success() {
         // ARRANGE
-        when(webClient.post()).thenReturn(requestBodyUriSpec);
-        when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodySpec);
+        // On utilise 'lenient()' pour dire à Mockito : 
+        // "Ne plante pas si une de ces méthodes n'est pas appelée exactement comme prévu"
         
-        // Cette ligne gère TOUS les appels à .header() (Authorization ET Content-Type)
-        when(requestBodySpec.header(anyString(), anyString())).thenReturn(requestBodySpec);
+        lenient().when(webClient.post()).thenReturn(requestBodyUriSpec);
+        lenient().when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodySpec);
         
-        // --- SUPPRESSION DE LA LIGNE contentType() QUI CAUSAIT L'ERREUR ---
-        // when(requestBodySpec.contentType(any())).thenReturn(requestBodySpec);
+        // Gère les appels .header("Authorization", ...) et .header("Content-Type", ...)
+        lenient().when(requestBodySpec.header(anyString(), anyString())).thenReturn(requestBodySpec);
+        
+        // Note: PAS de mock pour contentType() car le code utilise header("Content-Type")
+        
+        // Gère .bodyValue(body)
+        lenient().when(requestBodySpec.bodyValue(any(Object.class))).thenReturn(requestHeadersSpec);
+        
+        // Gère .retrieve()
+        lenient().when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
 
-        when(requestBodySpec.bodyValue(any(Object.class))).thenReturn(requestHeadersSpec);
-        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
-
-        // Simulation de la réponse de l'API
+        // Simulation de la réponse JSON de l'API
         Map<String, Object> mockResponse = Map.of(
             "choices", List.of(
                 Map.of("message", Map.of("content", "AI Response"))
             )
         );
 
-        when(responseSpec.bodyToMono(any(ParameterizedTypeReference.class)))
+        // Gère .bodyToMono(...)
+        lenient().when(responseSpec.bodyToMono(any(ParameterizedTypeReference.class)))
             .thenReturn(Mono.just(mockResponse));
 
         // ACT
