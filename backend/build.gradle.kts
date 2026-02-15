@@ -41,6 +41,7 @@ dependencies {
     testImplementation("org.seleniumhq.selenium:selenium-java:4.18.1")
     testImplementation("io.github.bonigarcia:webdrivermanager:5.7.0")
     testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
+    testImplementation("org.springframework.security:spring-security-test")
 }
 
 // --- Configuration JaCoCo en Kotlin DSL ---
