@@ -6,7 +6,6 @@ import com.cyberscale.backend.dto.ExecutionRequest;
 import com.cyberscale.backend.services.ContainerService;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
-import com.cyberscale.backend.dto.DeployDecoyRequest;
 import com.cyberscale.backend.services.KubernetesService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

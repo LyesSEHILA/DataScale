@@ -1,7 +1,8 @@
 package com.cyberscale.backend.config.rabbitmq;
 
+import java.util.Queue;
+
 import org.springframework.amqp.core.*;
-import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
@@ -14,9 +15,13 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RabbitMQConfig {
 
+    public static final String EXCHANGE_NAME = "cyberscale.exchange";
+
     public static final String EXECUTION_QUEUE = "infra.execution";
     public static final String DEPLOY_QUEUE = "infra.deploy";
-    public static final String EXCHANGE_NAME = "cyberscale.exchange";
+
+    public static final String ROUTING_KEY_EXECUTION = "infra.execution";
+    public static final String ROUTING_KEY_DEPLOY = "infra.deploy";
 
     @Value("${app.rabbitmq.queue}")
     private String queueName;
@@ -55,7 +60,7 @@ public class RabbitMQConfig {
 
     @Bean
     public TopicExchange exchange() {
-        return new TopicExchange(exchangeName);
+        return new TopicExchange(EXCHANGE_NAME);
     }
 
     @Bean
@@ -70,12 +75,12 @@ public class RabbitMQConfig {
 
     @Bean
     public Binding executionBinding(@Qualifier("executionQueue") Queue executionQueue, TopicExchange exchange) {
-        return BindingBuilder.bind(executionQueue).to(exchange).with("infra.execution");
+        return BindingBuilder.bind(executionQueue).to(exchange).with(ROUTING_KEY_EXECUTION);
     }
 
     @Bean
     public Binding deployBinding(@Qualifier("deployQueue") Queue deployQueue, TopicExchange exchange) {
-        return BindingBuilder.bind(deployQueue).to(exchange).with("infra.deploy");
+        return BindingBuilder.bind(deployQueue).to(exchange).with(ROUTING_KEY_DEPLOY);
     }
 
     @Bean
