@@ -13,6 +13,7 @@ import java.util.concurrent.TimeUnit;
 public class KubernetesService {
 
     private static final Logger logger = LoggerFactory.getLogger(KubernetesService.class);
+    private static final String KUBECTL_CMD = "/usr/local/bin/kubectl";
     private final TemplateGenerator templateGenerator;
 
     public KubernetesService(TemplateGenerator templateGenerator) {
@@ -20,50 +21,59 @@ public class KubernetesService {
     }
 
     public void deployDecoy(String type) {
+        Path tempFile = null;
         try {
-            // 1. Générer le YAML unique
             String yamlContent = templateGenerator.generateYaml(type);
 
-            // 2. SÉCURITÉ : Vérifier la présence du runtime sécurisé "kata"
-            // (C'est crucial pour l'isolation des conteneurs malveillants)
             if (!yamlContent.contains("runtimeClassName: kata")) {
-                logger.error("ALERTE SÉCURITÉ: Tentative de déploiement sans isolation Kata Containers !");
+                logger.error("ALERTE SÉCURITÉ: Tentative de déploiement sans isolation Kata !");
                 throw new SecurityException("Déploiement refusé : Runtime Kata manquant.");
             }
 
-            // 3. Écrire le fichier temporaire
-            Path tempFile = Files.createTempFile("k8s-decoy-", ".yaml");
+            // 2. SÉCURITÉ : Créer le fichier avec des permissions restrictives (rw-------)
+            // Seul le propriétaire (l'app Java) peut lire/écrire ce fichier temporaire.
+            Set<PosixFilePermission> perms = PosixFilePermissions.fromString("rw-------");
+            tempFile = Files.createTempFile("k8s-decoy-", ".yaml", 
+                                          PosixFilePermissions.asFileAttribute(perms));
+            
             Files.writeString(tempFile, yamlContent);
-            logger.info("Fichier YAML temporaire créé : {}", tempFile.toAbsolutePath());
 
-            // 4. Exécuter kubectl apply
             executeKubectlApply(tempFile);
 
-            // 5. Nettoyage (supprimer le fichier temporaire)
-            Files.deleteIfExists(tempFile);
-
-        } catch (Exception e) {
+        } catch (InterruptedException e) {
+            // 3. RELIABILITY : Gérer correctement l'interruption du Thread
+            Thread.currentThread().interrupt();
+            throw new KubernetesDeploymentException("Le déploiement a été interrompu", e);
+        } catch (IOException | SecurityException e) {
+            // 4. MAINTAINABILITY : Utiliser l'exception personnalisée
             logger.error("Erreur lors du déploiement du leurre {}", type, e);
-            throw new RuntimeException("Echec déploiement K8s", e);
+            throw new KubernetesDeploymentException("Echec déploiement K8s pour " + type, e);
+        } finally {
+            // Nettoyage dans le finally pour être sûr que ça s'exécute
+            if (tempFile != null) {
+                try {
+                    Files.deleteIfExists(tempFile);
+                } catch (IOException e) {
+                    logger.warn("Impossible de supprimer le fichier temporaire: {}", tempFile, e);
+                }
+            }
         }
     }
 
     private void executeKubectlApply(Path yamlFile) throws IOException, InterruptedException {
         ProcessBuilder processBuilder = new ProcessBuilder(
-                "kubectl", "apply", "-f", yamlFile.toAbsolutePath().toString()
+                KUBECTL_CMD, "apply", "-f", yamlFile.toAbsolutePath().toString()
         );
         
-        // Rediriger les logs du processus vers nos logs Java
         processBuilder.redirectErrorStream(true);
-        
         Process process = processBuilder.start();
         
-        // Lire la sortie (optionnel mais recommandé pour debug)
+        // Lire la sortie pour le debug
         String output = new String(process.getInputStream().readAllBytes());
         
         boolean finished = process.waitFor(10, TimeUnit.SECONDS);
         if (!finished || process.exitValue() != 0) {
-            throw new IOException("kubectl a échoué : " + output);
+            throw new IOException("kubectl a échoué (Code " + process.exitValue() + "): " + output);
         }
         
         logger.info("Succès kubectl apply: \n{}", output);
