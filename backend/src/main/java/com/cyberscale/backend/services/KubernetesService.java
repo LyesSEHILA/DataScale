@@ -1,5 +1,6 @@
 package com.cyberscale.backend.services;
 
+import com.cyberscale.backend.exceptions.KubernetesDeploymentException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -7,6 +8,9 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 @Service
