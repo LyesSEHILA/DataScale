@@ -1,12 +1,12 @@
 package com.cyberscale.backend.config.rabbitmq;
 
-import org.springframework.amqp.core.Queue;
-
 import org.springframework.amqp.core.*;
+import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,7 +14,13 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RabbitMQConfig {
 
+    public static final String EXCHANGE_NAME = "cyberscale.exchange";
+
     public static final String EXECUTION_QUEUE = "infra.execution";
+    public static final String DEPLOY_QUEUE = "infra.deploy";
+
+    public static final String ROUTING_KEY_EXECUTION = "infra.execution";
+    public static final String ROUTING_KEY_DEPLOY = "infra.deploy";
 
     @Value("${app.rabbitmq.queue}")
     private String queueName;
@@ -47,18 +53,33 @@ public class RabbitMQConfig {
     }
 
     @Bean
-    public TopicExchange exchange() {
-        return new TopicExchange(exchangeName);
+    public Queue deployQueue() {
+        return new Queue(DEPLOY_QUEUE, true);
     }
 
     @Bean
-    public Binding binding(Queue queue, TopicExchange exchange) {
+    public TopicExchange exchange() {
+        return new TopicExchange(EXCHANGE_NAME);
+    }
+
+    @Bean
+    public Binding binding(@Qualifier("queue") Queue queue, TopicExchange exchange) {
         return BindingBuilder.bind(queue).to(exchange).with(routingKey);
     }
 
     @Bean
-    public Binding infraBinding(Queue infraQueue, TopicExchange exchange) {
+    public Binding infraBinding(@Qualifier("infraQueue") Queue infraQueue, TopicExchange exchange) {
         return BindingBuilder.bind(infraQueue).to(exchange).with(infraRoutingKey);
+    }
+
+    @Bean
+    public Binding executionBinding(@Qualifier("executionQueue") Queue executionQueue, TopicExchange exchange) {
+        return BindingBuilder.bind(executionQueue).to(exchange).with(ROUTING_KEY_EXECUTION);
+    }
+
+    @Bean
+    public Binding deployBinding(@Qualifier("deployQueue") Queue deployQueue, TopicExchange exchange) {
+        return BindingBuilder.bind(deployQueue).to(exchange).with(ROUTING_KEY_DEPLOY);
     }
 
     @Bean
