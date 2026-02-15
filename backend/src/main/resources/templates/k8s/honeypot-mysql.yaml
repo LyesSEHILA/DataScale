@@ -6,6 +6,7 @@ metadata:
     app: honeypot-mysql
     type: dynamic-trap
 spec:
+  runtimeClassName: kata
   automountServiceAccountToken: false
   
   containers:

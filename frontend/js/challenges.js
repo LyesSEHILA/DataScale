@@ -5,7 +5,9 @@ document.addEventListener("DOMContentLoaded", () => {
     // 1. Gestion Session
     const userId = localStorage.getItem('userId');
     const username = localStorage.getItem('userName') || "Utilisateur";
-
+    const deployBtn = document.getElementById('deploy-decoy-btn');
+    
+    
     if (!userId) {
         window.location.href = 'login.html';
         return;
@@ -26,6 +28,43 @@ document.addEventListener("DOMContentLoaded", () => {
     // 3. Charger les données
     loadUserScore(userId);     // <--- NOUVEAU
     loadChallenges(userId);    // <--- CORRECTION : On passe l'ID
+
+    // 4. Clic bouton
+
+    if (deployBtn) {
+        deployBtn.addEventListener('click', async () => {
+            const statusDiv = document.getElementById('deploy-status');
+            statusDiv.innerText = "⏳ Déploiement en cours...";
+            
+            const token = localStorage.getItem('jwt_token'); 
+            const userId = localStorage.getItem('user_id'); 
+
+            try {
+                const response = await fetch('/api/decoy', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        userId: userId,
+                        decoyType: 'mysql' // Le type attendu par votre backend
+                    })
+                });
+
+                if (response.ok) {
+                    statusDiv.innerText = "✅ Leurre déployé avec succès !";
+                    statusDiv.style.color = "green";
+                } else {
+                    statusDiv.innerText = "❌ Erreur lors du déploiement.";
+                    statusDiv.style.color = "red";
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+                statusDiv.innerText = "❌ Erreur de connexion.";
+            }
+        });
+    }  
 });
 
 // --- CHARGER LE SCORE ---
