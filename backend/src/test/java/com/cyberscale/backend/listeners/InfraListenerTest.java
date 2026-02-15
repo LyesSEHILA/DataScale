@@ -25,7 +25,7 @@ class InfraListenerTest {
     private InfraListener infraListener;
 
     @Test
-    void handleDeployRequest_ShouldCallKubernetesService() {
+    void handleDeployRequestShouldCallKubernetesService() {
         // ARRANGE
         DeployDecoyRequest request = new DeployDecoyRequest("u1", "mysql");
 
@@ -37,7 +37,7 @@ class InfraListenerTest {
     }
 
     @Test
-    void processExecution_ShouldCallContainerService() {
+    void processExecutionShouldCallContainerService() {
         ExecutionRequest request = new ExecutionRequest("container-1", "ls -la");
         infraListener.processExecution(request);
         verify(containerService).executeCommand("container-1", "ls -la");

@@ -29,7 +29,7 @@ class DecoyControllerTest {
 
     @Test
     @WithMockUser // Simule un utilisateur connecté
-    void deployDecoy_ShouldSendRabbitMessage() throws Exception {
+    void deployDecoyShouldSendRabbitMessage() throws Exception {
         DeployDecoyRequest request = new DeployDecoyRequest("user123", "mysql");
 
         mockMvc.perform(post("/api/decoy")

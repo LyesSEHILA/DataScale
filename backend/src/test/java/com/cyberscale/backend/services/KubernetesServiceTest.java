@@ -21,6 +21,8 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class KubernetesServiceTest {
 
+    private static final String DECOY_TYPE = "mysql";
+    
     @Mock
     private TemplateGenerator templateGenerator;
 
@@ -28,11 +30,12 @@ class KubernetesServiceTest {
     private KubernetesService kubernetesService;
 
     @Test
-    void deployDecoy_Success() throws IOException {
+    void deployDecoySuccess() throws IOException {
         // 1. ARRANGE
         // On simule un template valide (AVEC le runtime sécurisé kata)
         String validYaml = "apiVersion: v1\nkind: Pod\nspec:\n  runtimeClassName: kata";
-        when(templateGenerator.generateYaml("mysql")).thenReturn(validYaml);
+        
+        when(templateGenerator.generateYaml(DECOY_TYPE)).thenReturn(validYaml);
 
         // 2. Mock du ProcessBuilder (la commande système)
         // Cette syntaxe permet d'intercepter tous les "new ProcessBuilder()"
@@ -52,26 +55,26 @@ class KubernetesServiceTest {
                 })) {
 
             // 3. ACT
-            kubernetesService.deployDecoy("mysql");
+            kubernetesService.deployDecoy(DECOY_TYPE);
 
             // 4. ASSERT
             // On vérifie que le template a été appelé
-            verify(templateGenerator).generateYaml("mysql");
+            verify(templateGenerator).generateYaml(DECOY_TYPE);
             // On vérifie qu'un ProcessBuilder a bien été créé (c'est notre mock)
             assertEquals(1, mockedPb.constructed().size());
         }
     }
 
     @Test
-    void deployDecoy_SecurityCheck_ShouldFail() throws IOException {
+    void deployDecoySecurityCheckShouldFail() throws IOException {
         // On simule un template INVALIDE (SANS kata)
         String unsafeYaml = "apiVersion: v1\nkind: Pod\nspec:\n  runtimeClassName: standard";
         when(templateGenerator.generateYaml("hack")).thenReturn(unsafeYaml);
 
         // CORRECTION ICI : On attend l'exception métier, pas l'exception brute
-        KubernetesDeploymentException e = assertThrows(KubernetesDeploymentException.class, () -> {
-            kubernetesService.deployDecoy("hack");
-        });
+        KubernetesDeploymentException e = assertThrows(KubernetesDeploymentException.class, () -> 
+            kubernetesService.deployDecoy("hack")
+        );
         
         // On vérifie que la cause interne est bien une erreur de sécurité
         assertTrue(e.getCause() instanceof SecurityException, "La cause devrait être une SecurityException");
@@ -79,9 +82,9 @@ class KubernetesServiceTest {
     }
 
     @Test
-    void deployDecoy_KubectlFailure_ShouldThrowException() throws IOException {
+    void deployDecoyKubectlFailureShouldThrowException() throws IOException {
         String validYaml = "spec:\n  runtimeClassName: kata";
-        when(templateGenerator.generateYaml("mysql")).thenReturn(validYaml);
+        when(templateGenerator.generateYaml(DECOY_TYPE)).thenReturn(validYaml);
 
         try (MockedConstruction<ProcessBuilder> mockedPb = mockConstruction(ProcessBuilder.class,
                 (mock, context) -> {
@@ -93,9 +96,9 @@ class KubernetesServiceTest {
                     when(mockProcess.getInputStream()).thenReturn(new ByteArrayInputStream("Error".getBytes()));
                 })) {
 
-            assertThrows(KubernetesDeploymentException.class, () -> {
-                kubernetesService.deployDecoy("mysql");
-            });
+            assertThrows(KubernetesDeploymentException.class, () -> 
+                kubernetesService.deployDecoy(DECOY_TYPE)
+            );
         }
     }
 }
