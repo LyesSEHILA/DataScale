@@ -7,6 +7,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedConstruction;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -67,11 +68,13 @@ class KubernetesServiceTest {
 
     @Test
     void deployDecoySecurityCheckShouldFail() throws IOException {
+
+        ReflectionTestUtils.setField(kubernetesService, "requireKata", true);
+
         // On simule un template INVALIDE (SANS kata)
         String unsafeYaml = "apiVersion: v1\nkind: Pod\nspec:\n  runtimeClassName: standard";
         when(templateGenerator.generateYaml("hack")).thenReturn(unsafeYaml);
 
-        // CORRECTION ICI : On attend l'exception métier, pas l'exception brute
         KubernetesDeploymentException e = assertThrows(KubernetesDeploymentException.class, () -> 
             kubernetesService.deployDecoy("hack")
         );
