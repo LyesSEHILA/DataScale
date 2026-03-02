@@ -23,6 +23,9 @@ public class KubernetesService {
     @Value("${app.kubernetes.kubectl-path:/usr/bin/kubectl}")
     private String kubectlPath;
 
+    @Value("${app.kubernetes.require-kata:true}") 
+    private boolean requireKata;
+
     public KubernetesService(TemplateGenerator templateGenerator) {
         this.templateGenerator = templateGenerator;
     }
@@ -31,12 +34,12 @@ public class KubernetesService {
         Path tempFile = null;
         try {
             String yamlContent = templateGenerator.generateYaml(type);
-
-            if (!yamlContent.contains("runtimeClassName: kata")) {
+            
+            if (requireKata && !yamlContent.contains("runtimeClassName: kata")) {
                 logger.error("ALERTE SÉCURITÉ: Tentative de déploiement sans isolation Kata !");
                 throw new SecurityException("Déploiement refusé : Runtime Kata manquant.");
             }
-
+            
             Set<PosixFilePermission> perms = PosixFilePermissions.fromString("rw-------");
             tempFile = Files.createTempFile("k8s-decoy-", ".yaml", 
                                           PosixFilePermissions.asFileAttribute(perms));

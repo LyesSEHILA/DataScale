@@ -5,12 +5,13 @@ metadata:
   labels:
     app: honeypot-mysql
 spec:
-  runtimeClassName: kata
+  # runtimeClassName: kata
   automountServiceAccountToken: false
   
   volumes:
   - name: shared-logs
-    emptyDir: {}
+    emptyDir: 
+      sizeLimit: "200Mi"
 
   containers:
   - name: mysql
@@ -23,15 +24,29 @@ spec:
       mountPath: /var/log/mysql
     args: ["--log-error=/var/log/mysql/error.log"]
     resources:
+      requests:
+        cpu: "250m"
+        memory: "256Mi"
+        ephemeral-storage: "50Mi"
       limits:
-        memory: "512Mi"
         cpu: "500m"
+        memory: "512Mi"
+        ephemeral-storage: "200Mi"
 
   - name: log-spy
-    image: curlimages/curl:latest
+    image: curlimages/curl:8.4.0
     volumeMounts:
     - name: shared-logs
       mountPath: /var/log/mysql
+    resources:
+      requests:
+        cpu: "50m"
+        memory: "32Mi"
+        ephemeral-storage: "10Mi"
+      limits:
+        cpu: "100m"
+        memory: "64Mi"
+        ephemeral-storage: "50Mi"
     command: ["/bin/sh", "-c"]
     args:
       - >-
