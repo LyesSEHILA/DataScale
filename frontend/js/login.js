@@ -15,12 +15,10 @@ const handleLogin = async (e) => {
     const passwordInput = document.getElementById('password');
     const loginButton = document.getElementById('loginButton');
 
-    // Désactiver le bouton
     const originalText = loginButton.textContent;
     loginButton.disabled = true;
     loginButton.textContent = "Connexion...";
 
-    // Nettoyer les messages précédents
     const statusDiv = document.getElementById('statusMessage');
     if (statusDiv) statusDiv.classList.add('hidden');
 
@@ -41,6 +39,7 @@ const handleLogin = async (e) => {
             localStorage.setItem('userEmail', data.email);
             localStorage.setItem('userName', data.username); 
             localStorage.setItem('userId', data.id);
+            localStorage.setItem('token', data.token);
             
             displayStatus("Connexion réussie ! Redirection...", false);
             

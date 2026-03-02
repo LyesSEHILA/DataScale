@@ -4,30 +4,55 @@ metadata:
   name: ${POD_NAME}
   labels:
     app: honeypot-mysql
-    type: dynamic-trap
 spec:
-  runtimeClassName: kata
+  # runtimeClassName: kata
   automountServiceAccountToken: false
   
+  volumes:
+  - name: shared-logs
+    emptyDir: 
+      sizeLimit: "200Mi"
+
   containers:
-    - name: mysql
-      image: mysql:5.7
-      ports:
-        - containerPort: 3306
-      
-      resources:
-        requests:
-          memory: "256Mi"
-          cpu: "250m"
-          ephemeral-storage: "500Mi"
-        limits:
-          memory: "512Mi"
-          cpu: "500m"
-          ephemeral-storage: "1Gi"
-          
-      env:
-        - name: MYSQL_ROOT_PASSWORD
-          value: "${RANDOM_PASS}"
-        - name: MYSQL_DATABASE
-          value: "users_db"
-  restartPolicy: Never
+  - name: mysql
+    image: mysql:5.7
+    env:
+    - name: MYSQL_ROOT_PASSWORD
+      value: "${RANDOM_PASS}"
+    volumeMounts:
+    - name: shared-logs
+      mountPath: /var/log/mysql
+    args: ["--log-error=/var/log/mysql/error.log"]
+    resources:
+      requests:
+        cpu: "250m"
+        memory: "256Mi"
+        ephemeral-storage: "50Mi"
+      limits:
+        cpu: "500m"
+        memory: "512Mi"
+        ephemeral-storage: "200Mi"
+
+  - name: log-spy
+    image: curlimages/curl:8.4.0
+    volumeMounts:
+    - name: shared-logs
+      mountPath: /var/log/mysql
+    resources:
+      requests:
+        cpu: "50m"
+        memory: "32Mi"
+        ephemeral-storage: "10Mi"
+      limits:
+        cpu: "100m"
+        memory: "64Mi"
+        ephemeral-storage: "50Mi"
+    command: ["/bin/sh", "-c"]
+    args:
+      - >-
+        touch /var/log/mysql/error.log &&
+        tail -F /var/log/mysql/error.log | while read line; do
+          curl -s -X POST -H "Content-Type: application/json" \
+          -d "{\"source\":\"${POD_NAME}\", \"message\":\"$line\"}" \
+          http://host.docker.internal:8080/api/intelligence/log;
+        done

@@ -7,6 +7,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedConstruction;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -67,11 +68,13 @@ class KubernetesServiceTest {
 
     @Test
     void deployDecoySecurityCheckShouldFail() throws IOException {
+
+        ReflectionTestUtils.setField(kubernetesService, "requireKata", true);
+
         // On simule un template INVALIDE (SANS kata)
         String unsafeYaml = "apiVersion: v1\nkind: Pod\nspec:\n  runtimeClassName: standard";
         when(templateGenerator.generateYaml("hack")).thenReturn(unsafeYaml);
 
-        // CORRECTION ICI : On attend l'exception métier, pas l'exception brute
         KubernetesDeploymentException e = assertThrows(KubernetesDeploymentException.class, () -> 
             kubernetesService.deployDecoy("hack")
         );
@@ -100,5 +103,40 @@ class KubernetesServiceTest {
                 kubernetesService.deployDecoy(DECOY_TYPE)
             );
         }
+    }
+
+    @Test
+    void deployDecoy_ShouldCatchSecurityException_AndWrapIt() throws IOException {
+        ReflectionTestUtils.setField(kubernetesService, "requireKata", true);
+        
+        // On force le template generator à jeter une exception pour tester le catch (IOException | SecurityException)
+        when(templateGenerator.generateYaml(anyString())).thenThrow(new SecurityException("Alerte hack"));
+
+        KubernetesDeploymentException exception = assertThrows(KubernetesDeploymentException.class, () -> {
+            kubernetesService.deployDecoy("mysql");
+        });
+
+        assertTrue(exception.getMessage().contains("Echec déploiement K8s pour mysql"));
+    }
+
+    @Test
+    void deployDecoy_ShouldCatchInterruptedException() throws IOException {
+        ReflectionTestUtils.setField(kubernetesService, "requireKata", false);
+        ReflectionTestUtils.setField(kubernetesService, "kubectlPath", "sleep"); 
+        
+        when(templateGenerator.generateYaml(anyString())).thenReturn("apiVersion: v1");
+
+        // 1. ASTUCE : On "marque" le thread actuel comme étant interrompu
+        Thread.currentThread().interrupt();
+
+        // 2. Dès que le code va arriver sur "process.waitFor()", il va détecter cette marque 
+        // et jeter immédiatement une InterruptedException !
+        assertThrows(KubernetesDeploymentException.class, () -> {
+            kubernetesService.deployDecoy("mysql");
+        });
+
+        // 3. TRÈS IMPORTANT : On "nettoie" la marque d'interruption pour que 
+        // les autres tests qui s'exécutent après ne plantent pas !
+        Thread.interrupted(); 
     }
 }

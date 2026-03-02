@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/decoy")
+@CrossOrigin(origins = "*")
 public class DecoyController {
 
     private final RabbitTemplate rabbitTemplate;

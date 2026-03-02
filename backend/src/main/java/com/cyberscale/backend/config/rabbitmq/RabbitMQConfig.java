@@ -18,9 +18,12 @@ public class RabbitMQConfig {
 
     public static final String EXECUTION_QUEUE = "infra.execution";
     public static final String DEPLOY_QUEUE = "infra.deploy";
+    public static final String INTELLIGENCE_QUEUE = "intelligence.logs";
+    
 
     public static final String ROUTING_KEY_EXECUTION = "infra.execution";
     public static final String ROUTING_KEY_DEPLOY = "infra.deploy";
+    public static final String ROUTING_KEY_INTELLIGENCE = "intelligence.log";
 
     @Value("${app.rabbitmq.queue}")
     private String queueName;
@@ -58,6 +61,11 @@ public class RabbitMQConfig {
     }
 
     @Bean
+    public Queue intelligenceQueue() {
+        return new Queue(INTELLIGENCE_QUEUE, true);
+    }
+
+    @Bean
     public TopicExchange exchange() {
         return new TopicExchange(EXCHANGE_NAME);
     }
@@ -80,6 +88,11 @@ public class RabbitMQConfig {
     @Bean
     public Binding deployBinding(@Qualifier("deployQueue") Queue deployQueue, TopicExchange exchange) {
         return BindingBuilder.bind(deployQueue).to(exchange).with(ROUTING_KEY_DEPLOY);
+    }
+
+    @Bean
+    public Binding intelligenceBinding(@Qualifier("intelligenceQueue") Queue intelligenceQueue, TopicExchange exchange) {
+        return BindingBuilder.bind(intelligenceQueue).to(exchange).with(ROUTING_KEY_INTELLIGENCE);
     }
 
     @Bean
