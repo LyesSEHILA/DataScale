@@ -36,11 +36,11 @@ document.addEventListener("DOMContentLoaded", () => {
             const statusDiv = document.getElementById('deploy-status');
             statusDiv.innerText = "⏳ Déploiement en cours...";
             
-            const token = localStorage.getItem('jwt_token'); 
-            const userId = localStorage.getItem('user_id'); 
+            const token = localStorage.getItem('token'); 
+            const userId = localStorage.getItem('userId'); 
 
             try {
-                const response = await fetch('/api/decoy', {
+                const response = await fetch('http://localhost:8080/api/decoy', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -48,7 +48,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     },
                     body: JSON.stringify({
                         userId: userId,
-                        decoyType: 'mysql' // Le type attendu par votre backend
+                        decoyType: 'mysql' 
                     })
                 });
 
@@ -76,7 +76,6 @@ async function loadUserScore(userId) {
         const response = await fetch(`${API_USER}/${userId}`);
         if(response.ok) {
             const user = await response.json();
-            // Animation simple du compteur
             pointsElem.textContent = user.points || 0;
         }
     } catch(e) {
@@ -127,14 +126,12 @@ function renderChallenges(challenges, container) {
 
         const isValidated = challenge.isValidated;
         
-        // Style du bouton selon l'état
         const btnClass = isValidated 
             ? "bg-green-50 text-green-700 border border-green-200 cursor-default" 
             : "bg-gray-900 text-white hover:bg-gray-800 shadow-lg transition transform hover:-translate-y-0.5";
         
         const btnText = isValidated ? 'Challenge Validé <i class="fas fa-check-circle"></i>' : "Lancer le défi";
         
-        // CORRECTION PRÉCÉDENTE : Ajout des quotes autour des IDs
         const btnAction = isValidated ? "" : `onclick="startChallenge('${challenge.id}', '${challenge.title}')"`;
         
         const validatedBadge = isValidated 
@@ -176,7 +173,7 @@ function renderChallenges(challenges, container) {
 }
 
 function startChallenge(id, title) {
-    localStorage.setItem('currentChallengeId', id); // On le garde au cas où
+    localStorage.setItem('currentChallengeId', id);
     
     if(confirm(`Voulez-vous entrer dans l'arène pour résoudre : "${title}" ?`)) {
         window.location.href = `arena.html?challengeId=${id}`;

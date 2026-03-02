@@ -5,6 +5,7 @@ import com.cyberscale.backend.dto.builder.TopologyRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -18,6 +19,8 @@ public class BuilderService {
     private static final Logger logger = LoggerFactory.getLogger(BuilderService.class);
     private static final String WORKSPACE_DIR = System.getProperty("java.io.tmpdir") + "/cyberscale-labs/";
     private static final String LABEL_REGEX = "[^a-z0-9]";
+    @Value("${app.docker.path:/usr/bin/docker}") 
+    private String dockerPath;
 
     public String deployTopology(TopologyRequest topology) throws IOException {
         String deploymentId = UUID.randomUUID().toString();
@@ -42,8 +45,9 @@ public class BuilderService {
     }
 
     protected void executeDockerCompose(String deploymentId, String composeFilePath) throws IOException {
-        ProcessBuilder pb = new ProcessBuilder("/usr/bin/docker", "compose", "-p", "lab_" + deploymentId, "-f", composeFilePath, "up", "-d");
         
+        ProcessBuilder pb = new ProcessBuilder(dockerPath, "compose", "-p", "lab_" + deploymentId, "-f", composeFilePath, "up", "-d");
+
         Map<String, String> env = pb.environment();
         env.clear();
         env.put("PATH", "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin");

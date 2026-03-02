@@ -4,6 +4,7 @@ import com.cyberscale.backend.exceptions.KubernetesDeploymentException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -17,8 +18,10 @@ import java.util.concurrent.TimeUnit;
 public class KubernetesService {
 
     private static final Logger logger = LoggerFactory.getLogger(KubernetesService.class);
-    private static final String KUBECTL_CMD = "/usr/local/bin/kubectl";
     private final TemplateGenerator templateGenerator;
+
+    @Value("${app.kubernetes.kubectl-path:/usr/bin/kubectl}")
+    private String kubectlPath;
 
     public KubernetesService(TemplateGenerator templateGenerator) {
         this.templateGenerator = templateGenerator;
@@ -34,8 +37,6 @@ public class KubernetesService {
                 throw new SecurityException("Déploiement refusé : Runtime Kata manquant.");
             }
 
-            // 2. SÉCURITÉ : Créer le fichier avec des permissions restrictives (rw-------)
-            // Seul le propriétaire (l'app Java) peut lire/écrire ce fichier temporaire.
             Set<PosixFilePermission> perms = PosixFilePermissions.fromString("rw-------");
             tempFile = Files.createTempFile("k8s-decoy-", ".yaml", 
                                           PosixFilePermissions.asFileAttribute(perms));
@@ -45,15 +46,12 @@ public class KubernetesService {
             executeKubectlApply(tempFile);
 
         } catch (InterruptedException e) {
-            // 3. RELIABILITY : Gérer correctement l'interruption du Thread
             Thread.currentThread().interrupt();
             throw new KubernetesDeploymentException("Le déploiement a été interrompu", e);
         } catch (IOException | SecurityException e) {
-            // 4. MAINTAINABILITY : Utiliser l'exception personnalisée
             logger.error("Erreur lors du déploiement du leurre {}", type, e);
             throw new KubernetesDeploymentException("Echec déploiement K8s pour " + type, e);
         } finally {
-            // Nettoyage dans le finally pour être sûr que ça s'exécute
             if (tempFile != null) {
                 try {
                     Files.deleteIfExists(tempFile);
@@ -66,13 +64,12 @@ public class KubernetesService {
 
     private void executeKubectlApply(Path yamlFile) throws IOException, InterruptedException {
         ProcessBuilder processBuilder = new ProcessBuilder(
-                KUBECTL_CMD, "apply", "-f", yamlFile.toAbsolutePath().toString()
+                kubectlPath, "apply", "-f", yamlFile.toAbsolutePath().toString()
         );
         
         processBuilder.redirectErrorStream(true);
         Process process = processBuilder.start();
         
-        // Lire la sortie pour le debug
         String output = new String(process.getInputStream().readAllBytes());
         
         boolean finished = process.waitFor(10, TimeUnit.SECONDS);
