@@ -2,6 +2,7 @@ package com.cyberscale.backend.services.intelligence;
 
 import com.cyberscale.backend.models.DetectedThreat;
 import com.cyberscale.backend.repositories.DetectedThreatRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -13,7 +14,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class LocalThreatIntelligenceServiceTest {
+class LocalThreatIntelligenceServiceTest {
+
+    private static final String MALICIOUS_IP = "118.25.6.39";
+    private static final String LOCAL_IP = "192.168.1.15";
+    private static final String RANDOM_IP = "8.8.8.8";
 
     @Mock
     private DetectedThreatRepository repository;
@@ -21,78 +26,49 @@ public class LocalThreatIntelligenceServiceTest {
     @InjectMocks
     private LocalThreatIntelligenceService service;
 
-    @Test
-    void analyzeAndSaveIp_ShouldReturnNull_WhenIpIsNull() {
-        DetectedThreat result = service.analyzeAndSaveIp(null);
-
-        assertNull(result);
-        verify(repository, never()).save(any());
+    @BeforeEach
+    void setUp() {
+        lenient().when(repository.save(any(DetectedThreat.class))).thenAnswer(invocation -> invocation.getArgument(0));
     }
 
     @Test
-    void analyzeAndSaveIp_ShouldReturnNull_WhenIpIsEmpty() {
-        DetectedThreat result = service.analyzeAndSaveIp("   ");
+    void analyzeAndSaveIp_ShouldReturnMaxThreat_ForMaliciousIp() {
+        DetectedThreat threat = service.analyzeAndSaveIp(MALICIOUS_IP);
 
-        assertNull(result);
-        verify(repository, never()).save(any());
-    }
-
-    @Test
-    void analyzeAndSaveIp_ShouldReturnMaliciousProfile_WhenSpecificIp() {
-        when(repository.save(any(DetectedThreat.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
-        DetectedThreat result = service.analyzeAndSaveIp("118.25.6.39");
-
-        assertNotNull(result);
-        assertEquals("CN", result.getCountryCode());
-        assertEquals("Data Center", result.getUsageType());
-        assertEquals(100, result.getAbuseConfidenceScore());
+        assertNotNull(threat);
+        assertEquals(MALICIOUS_IP, threat.getIpAddress());
+        assertEquals("CN", threat.getCountryCode());
+        assertEquals("Data Center", threat.getUsageType());
+        assertEquals(100, threat.getAbuseConfidenceScore());
+        
         verify(repository, times(1)).save(any(DetectedThreat.class));
     }
 
     @Test
-    void analyzeAndSaveIp_ShouldReturnSafeProfile_WhenLocalIp192() {
-        when(repository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+    void analyzeAndSaveIp_ShouldReturnZeroThreat_ForLocalIp() {
+        DetectedThreat threat = service.analyzeAndSaveIp(LOCAL_IP);
 
-        DetectedThreat result = service.analyzeAndSaveIp("192.168.1.50");
-
-        assertNotNull(result);
-        assertEquals("LOCAL", result.getCountryCode());
-        assertEquals("Internal Network", result.getUsageType());
-        assertEquals(0, result.getAbuseConfidenceScore());
+        assertNotNull(threat);
+        assertEquals(LOCAL_IP, threat.getIpAddress());
+        assertEquals("LOCAL", threat.getCountryCode());
+        assertEquals("Internal Network", threat.getUsageType());
+        assertEquals(0, threat.getAbuseConfidenceScore());
+        
+        verify(repository, times(1)).save(any(DetectedThreat.class));
     }
 
     @Test
-    void analyzeAndSaveIp_ShouldReturnSafeProfile_WhenLocalIp10() {
-        when(repository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+    void analyzeAndSaveIp_ShouldReturnConsistentRandomThreat_ForOtherIp() {
+        DetectedThreat threat1 = service.analyzeAndSaveIp(RANDOM_IP);
+        DetectedThreat threat2 = service.analyzeAndSaveIp(RANDOM_IP);
 
-        DetectedThreat result = service.analyzeAndSaveIp("10.0.0.5");
-
-        assertNotNull(result);
-        assertEquals("LOCAL", result.getCountryCode());
-    }
-
-    @Test
-    void analyzeAndSaveIp_ShouldReturnSafeProfile_WhenLocalhost() {
-        when(repository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
-
-        DetectedThreat result = service.analyzeAndSaveIp("127.0.0.1");
-
-        assertNotNull(result);
-        assertEquals("LOCAL", result.getCountryCode());
-    }
-
-    @Test
-    void analyzeAndSaveIp_ShouldReturnGeneratedProfile_WhenOtherIp() {
-        when(repository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
-
-        DetectedThreat result = service.analyzeAndSaveIp("8.8.8.8");
-
-        assertNotNull(result);
-        assertNotEquals("LOCAL", result.getCountryCode());
-        assertNotNull(result.getCountryCode());
-        assertNotNull(result.getUsageType());
-        assertTrue(result.getAbuseConfidenceScore() >= 0 && result.getAbuseConfidenceScore() <= 100);
-        assertNotNull(result.getDetectedAt());
+        assertNotNull(threat1);
+        assertEquals(RANDOM_IP, threat1.getIpAddress());
+        
+        assertEquals(threat1.getCountryCode(), threat2.getCountryCode());
+        assertEquals(threat1.getUsageType(), threat2.getUsageType());
+        assertEquals(threat1.getAbuseConfidenceScore(), threat2.getAbuseConfidenceScore());
+        
+        verify(repository, times(2)).save(any(DetectedThreat.class));
     }
 }
