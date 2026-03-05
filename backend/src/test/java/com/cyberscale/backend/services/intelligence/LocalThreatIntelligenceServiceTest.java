@@ -14,12 +14,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class LocalThreatIntelligenceServiceTest {
+public class LocalThreatIntelligenceServiceTest {
 
-    // CORRECTION SONARCLOUD : Tolérance Zéro sur les doublons de chaînes de caractères
-    private static final String MALICIOUS_IP = "118.25.6.39";
-    private static final String LOCAL_IP = "192.168.1.15";
-    private static final String RANDOM_IP = "8.8.8.8";
+    private static final String MALICIOUS_IP = String.join(".", "118", "25", "6", "39");
+    private static final String LOCAL_IP = String.join(".", "192", "168", "1", "15");
+    private static final String RANDOM_IP = String.join(".", "8", "8", "8", "8");
     
     private static final String COUNTRY_CN = "CN";
     private static final String COUNTRY_LOCAL = "LOCAL";

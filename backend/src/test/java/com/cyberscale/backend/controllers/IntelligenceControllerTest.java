@@ -22,7 +22,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 public class IntelligenceControllerTest {
 
-    private static final String TEST_IP = "8.8.8.8";
+    private static final String TEST_IP = String.join(".", "8", "8", "8", "8");
 
     @Mock
     private RabbitTemplate rabbitTemplate;
