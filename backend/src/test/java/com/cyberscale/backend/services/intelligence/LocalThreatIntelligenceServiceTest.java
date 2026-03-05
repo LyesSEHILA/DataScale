@@ -16,9 +16,16 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class LocalThreatIntelligenceServiceTest {
 
+    // CORRECTION SONARCLOUD : Tolérance Zéro sur les doublons de chaînes de caractères
     private static final String MALICIOUS_IP = "118.25.6.39";
     private static final String LOCAL_IP = "192.168.1.15";
     private static final String RANDOM_IP = "8.8.8.8";
+    
+    private static final String COUNTRY_CN = "CN";
+    private static final String COUNTRY_LOCAL = "LOCAL";
+    
+    private static final String USAGE_DATACENTER = "Data Center";
+    private static final String USAGE_INTERNAL = "Internal Network";
 
     @Mock
     private DetectedThreatRepository repository;
@@ -37,8 +44,8 @@ class LocalThreatIntelligenceServiceTest {
 
         assertNotNull(threat);
         assertEquals(MALICIOUS_IP, threat.getIpAddress());
-        assertEquals("CN", threat.getCountryCode());
-        assertEquals("Data Center", threat.getUsageType());
+        assertEquals(COUNTRY_CN, threat.getCountryCode());
+        assertEquals(USAGE_DATACENTER, threat.getUsageType());
         assertEquals(100, threat.getAbuseConfidenceScore());
         
         verify(repository, times(1)).save(any(DetectedThreat.class));
@@ -50,8 +57,8 @@ class LocalThreatIntelligenceServiceTest {
 
         assertNotNull(threat);
         assertEquals(LOCAL_IP, threat.getIpAddress());
-        assertEquals("LOCAL", threat.getCountryCode());
-        assertEquals("Internal Network", threat.getUsageType());
+        assertEquals(COUNTRY_LOCAL, threat.getCountryCode());
+        assertEquals(USAGE_INTERNAL, threat.getUsageType());
         assertEquals(0, threat.getAbuseConfidenceScore());
         
         verify(repository, times(1)).save(any(DetectedThreat.class));

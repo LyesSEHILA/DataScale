@@ -22,6 +22,8 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 public class IntelligenceControllerTest {
 
+    private static final String TEST_IP = "8.8.8.8";
+
     @Mock
     private RabbitTemplate rabbitTemplate;
 
@@ -35,19 +37,29 @@ public class IntelligenceControllerTest {
     void receiveLog_ShouldSendToRabbitMQ_AndReturnOk() {
         Map<String, String> fakeLog = Map.of("source", "honeypot", "message", "Erreur SQL");
         ResponseEntity<Void> response = intelligenceController.receiveLog(fakeLog);
-        assertEquals(200, response.getStatusCodeValue());
+        
+        assertEquals(HttpStatus.OK, response.getStatusCode());
         verify(rabbitTemplate).convertAndSend(RabbitMQConfig.EXCHANGE_NAME, RabbitMQConfig.ROUTING_KEY_INTELLIGENCE, fakeLog);
     }
 
     @Test
     void analyzeIp_ShouldReturnThreat_WhenServiceSucceeds() {
         DetectedThreat mockThreat = new DetectedThreat();
-        mockThreat.setIpAddress("8.8.8.8");
-        when(threatIntelligenceService.analyzeAndSaveIp("8.8.8.8")).thenReturn(mockThreat);
+        mockThreat.setIpAddress(TEST_IP);
+        when(threatIntelligenceService.analyzeAndSaveIp(TEST_IP)).thenReturn(mockThreat);
 
-        ResponseEntity<DetectedThreat> response = intelligenceController.analyzeIp("8.8.8.8");
+        ResponseEntity<DetectedThreat> response = intelligenceController.analyzeIp(TEST_IP);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals("8.8.8.8", response.getBody().getIpAddress());
+        assertEquals(TEST_IP, response.getBody().getIpAddress());
+    }
+
+    @Test
+    void analyzeIp_ShouldReturn500_WhenServiceFails() {
+        when(threatIntelligenceService.analyzeAndSaveIp(anyString())).thenReturn(null);
+
+        ResponseEntity<DetectedThreat> response = intelligenceController.analyzeIp("invalid-ip");
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
     }
 }
