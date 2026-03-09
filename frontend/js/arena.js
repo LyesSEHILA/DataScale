@@ -290,6 +290,8 @@ function connectToRedTeamAlerts() {
 }
 
 // Gestion Alertes (Version Améliorée)
+// Gestion Alertes (Version Améliorée pour textes longs)
+// Gestion Alertes (Version Dynamique selon le rôle de l'IA)
 function showRedTeamAlert(text) {
     const container = document.getElementById('ai-alert-container');
     const messageSpan = document.getElementById('ai-alert-message');
@@ -299,32 +301,79 @@ function showRedTeamAlert(text) {
     if (container && messageSpan) {
         if (alertTimeout) { clearTimeout(alertTimeout); alertTimeout = null; }
         
-        messageSpan.innerHTML = text.replace(/\n/g, "<br>");
+        let baseClass = "bg-gray-900/95 border-2 p-6 rounded-lg shadow-[0_0_50px_rgba(0,0,0,0.8)] backdrop-blur-md flex items-start gap-5 transition-colors max-h-96 overflow-y-auto custom-scrollbar relative";
         
-        let baseClass = "bg-gray-900/95 border-2 p-6 rounded-lg shadow-[0_0_50px_rgba(0,0,0,0.8)] backdrop-blur-md flex items-start gap-5 cursor-pointer transition-colors max-h-[80vh] overflow-y-auto";
-        
+        let formattedText = text;
+        let title = "";
+        let colorBorder = "";
+        let colorText = "";
+        let iconClass = "";
+
+        // 1. Détection du type de message (Conseil vs Attaque)
         if (text.startsWith("💡") || text.startsWith("ℹ️")) {
-            container.querySelector('div').className = `${baseClass} border-blue-500 hover:bg-blue-900/80`;
-            titleSpan.textContent = "ℹ️ CONSEIL IA";
-            titleSpan.className = "font-mono text-blue-400 font-bold border-b border-blue-800 pb-1";
-            icon.className = "fas fa-lightbulb text-4xl text-blue-500 animate-pulse";
-            messageSpan.textContent = text.substring(2).trim();
+            // --- L'IA EST UN COACH (Tutoriel ou Aide) ---
+            colorBorder = "border-blue-500";
+            colorText = "text-blue-400";
+            title = "ℹ️ CONSEIL IA";
+            iconClass = "fas fa-lightbulb text-blue-500 animate-pulse mt-2 text-4xl";
+            
+            // Nettoyage du préfixe envoyé par le backend
+            formattedText = text.replace(/^(💡|ℹ️) (CONSEIL :|INFO :)\n\n/, "");
+            if (formattedText === text) { formattedText = text.substring(2).trim(); }
+
         } else {
-            container.querySelector('div').className = `${baseClass} border-red-500 hover:bg-red-900/80`;
-            titleSpan.textContent = "⚠️ RED TEAM RESPONSE";
-            titleSpan.className = "font-mono text-red-400 font-bold border-b border-red-800 pb-1";
-            icon.className = "fas fa-biohazard text-4xl text-red-500 animate-pulse";
-            messageSpan.textContent = text;
+            // --- L'IA EST UN ADVERSAIRE ---
+            formattedText = text.replace(/^⚠️ ACTION ADVERSE :\n\n/, ""); // Nettoyage propre
+            
+            if (CURRENT_GAME_MODE === "RED_TEAM") {
+                // Le joueur attaque, donc l'IA DÉFEND (Blue Team)
+                colorBorder = "border-cyan-500";
+                colorText = "text-cyan-400";
+                title = "🛡️ BLUE TEAM RESPONSE (DÉFENSE)";
+                iconClass = "fas fa-shield-alt text-cyan-500 animate-pulse mt-2 text-4xl";
+                
+            } else if (CURRENT_GAME_MODE === "BLUE_TEAM") {
+                // Le joueur défend, donc l'IA ATTAQUE (Red Team)
+                colorBorder = "border-red-500";
+                colorText = "text-red-400";
+                title = "💀 RED TEAM RESPONSE (ATTAQUE)";
+                iconClass = "fas fa-biohazard text-red-500 animate-pulse mt-2 text-4xl";
+                
+            } else {
+                // Fallback de sécurité
+                colorBorder = "border-orange-500";
+                colorText = "text-orange-400";
+                title = "⚠️ ACTION ADVERSE";
+                iconClass = "fas fa-exclamation-triangle text-orange-500 animate-pulse mt-2 text-4xl";
+            }
         }
+
+        // 2. Application dynamique des styles Tailwind
+        container.querySelector('div').className = `${baseClass} ${colorBorder}`;
+        
+        titleSpan.innerHTML = `${title} <span class='text-xs float-right text-gray-500 font-normal cursor-pointer hover:text-white' onclick='closeAiAlert()'>[Fermer ✖]</span>`;
+        titleSpan.className = `font-mono ${colorText} font-bold border-b border-gray-700 pb-2 mb-2 block w-full`;
+        
+        icon.className = iconClass;
+        
+        // 3. Affichage du texte
+        messageSpan.innerHTML = formattedText.replace(/\n/g, "<br>");
 
         container.style.display = 'block'; 
         container.classList.add('alert-shake');
         setTimeout(() => { container.classList.remove('alert-shake'); }, 500);
 
-        const startAutoClose = () => { alertTimeout = setTimeout(() => { container.style.display = 'none'; }, 30000); };
+        const startAutoClose = () => { alertTimeout = setTimeout(() => { closeAiAlert(); }, 60000); };
         startAutoClose();
+        
         container.onmouseenter = () => { if (alertTimeout) clearTimeout(alertTimeout); };
         container.onmouseleave = () => { startAutoClose(); };
-        container.onclick = () => { container.style.display = 'none'; if (alertTimeout) clearTimeout(alertTimeout); };
     }
+}
+
+// Nouvelle petite fonction pour fermer l'alerte
+window.closeAiAlert = function() {
+    const container = document.getElementById('ai-alert-container');
+    if(container) container.style.display = 'none';
+    if(alertTimeout) clearTimeout(alertTimeout);
 }
