@@ -27,6 +27,11 @@
             20%, 40%, 60%, 80% { transform: translateX(-49%) rotate(1deg); }
         }
         .alert-shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+        /* Scrollbar custom pour la popup IA */
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.4); }
     </style>
 </head>
 <body class="bg-gray-900 h-screen flex overflow-hidden text-gray-300">

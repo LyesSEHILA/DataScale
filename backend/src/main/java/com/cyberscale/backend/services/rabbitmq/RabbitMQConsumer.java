@@ -6,7 +6,7 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
-import com.cyberscale.backend.dto.GameEventDTO; // 👈 IMPORTANT
+import com.cyberscale.backend.dto.GameEventDTO;
 import com.cyberscale.backend.services.ai.HuggingFaceClient;
 
 @Service
@@ -16,9 +16,8 @@ public class RabbitMQConsumer {
 
     private final HuggingFaceClient aiClient;
     private final RabbitMQProducer producer;
-    private final SimpMessagingTemplate messagingTemplate; // 👈 Pour le WebSocket
+    private final SimpMessagingTemplate messagingTemplate;
 
-    // On ajoute messagingTemplate dans le constructeur
     public RabbitMQConsumer(HuggingFaceClient aiClient, RabbitMQProducer producer, SimpMessagingTemplate messagingTemplate) {
         this.aiClient = aiClient;
         this.producer = producer;
@@ -29,83 +28,120 @@ public class RabbitMQConsumer {
     public void receiveGameEvent(GameEventDTO event) {
         String rawMessage = event.getAction();
         
-        // Valeurs par défaut
         String mode = "TUTORIAL";
         String command = rawMessage;
         boolean isHelpRequest = false;
 
-        // 1. Décodage du message (Format: "MODE|COMMANDE")
         if (rawMessage.contains("|")) {
             String[] parts = rawMessage.split("\\|", 2);
             mode = parts[0];
             command = parts[1];
         }
 
-        // 2. Détection de la demande d'aide (Format spécial envoyé par askForHelp: "HELP|commande")
-        // Attention : Si le frontend envoie "MODE|HELP|commande", il faut adapter le split.
-        // Simplifions : Le frontend envoie dans le champ 'command' la valeur "HELP|ls"
-        // Donc rawMessage reçu ici sera : "TUTORIAL|HELP|ls"
-        
         if (command.startsWith("HELP|")) {
             isHelpRequest = true;
-            command = command.substring(5); // On enlève "HELP|" pour garder juste "ls"
+            command = command.substring(5);
         }
 
         logger.info("🎮 Mode: {} | Help: {} | Cible: {}", mode, isHelpRequest, command);
 
         String prompt = "";
 
-        // --- GÉNÉRATION DU PROMPT ---
+        // --- GÉNÉRATION DU PROMPT STRICT (PROMPT ENGINEERING) ---
         
-        if (isHelpRequest) {
-            // === MODE COACH / AIDE ===
-            prompt = "Tu es un mentor expert en Cybersécurité. L'utilisateur est en mode " + mode + ". ";
-            
-            if (command.equals("GENERAL_CONTEXT") || command.isEmpty()) {
-                prompt += "Il demande de l'aide générale. Donne-lui un objectif clair lié à son mode de jeu (Tutoriel, Red Team ou Blue Team) et suggère une commande à taper.";
-            } else {
-                prompt += "Il vient de taper la commande : '" + command + "' et demande de l'aide dessus. " +
-                          "Explique brièvement à quoi elle sert, si elle était pertinente dans ce contexte, et donne une astuce ou une commande suivante logique.";
-            }
-            prompt += " Réponds en français, sois concis (max 2 phrases) et encourageant.";
+        String frenchRule = "RÉPONDS OBLIGATOIREMENT ET STRICTEMENT EN FRANÇAIS. ";
 
+        if (isHelpRequest) {
+            if (command.equals("GENERAL_CONTEXT") || command.isEmpty()) {
+                prompt = frenchRule + """
+                    Tu es un mentor expert en Cybersécurité. L'utilisateur est en mode %s et demande de l'aide générale.
+                    Réponds OBLIGATOIREMENT avec ce format exact :
+                    OBJECTIF: <1 phrase EN FRANÇAIS donnant un but clair>
+                    COMMANDE: <la commande suggérée>
+                    Ne fais aucune phrase d'introduction ni de conclusion.
+                    """.formatted(mode);
+            } else {
+                prompt = frenchRule + """
+                    Tu es un mentor expert en Cybersécurité. L'utilisateur a tapé la commande : '%s'.
+                    Réponds OBLIGATOIREMENT avec ce format exact :
+                    EXPLICATION: <1 phrase très courte EN FRANÇAIS expliquant la commande>
+                    ASTUCE: <1 conseil EN FRANÇAIS ou la prochaine commande logique>
+                    Ne fais aucune phrase d'introduction ni de conclusion.
+                    """.formatted(command);
+            }
         } else {
-            // === MODE JEU / ACTION (Code précédent) ===
             switch (mode) {
                 case "TUTORIAL":
-                    prompt = "Tu es un Instructeur Linux. L'élève a tapé : '" + command + "'. " +
-                             "Explique en 1 phrase simple le but de cette commande.";
+                    prompt = frenchRule + """
+                        Tu es un Instructeur Linux. L'élève a tapé : '%s'.
+                        Réponds OBLIGATOIREMENT avec ce format exact :
+                        EXPLICATION: <1 phrase très courte et simple EN FRANÇAIS expliquant la commande>
+                        Ne dis rien d'autre.
+                        """.formatted(command);
                     break;
                 case "RED_TEAM":
-                    prompt = "Tu es une IA Blue Team (SysAdmin). Un attaquant a fait : '" + command + "'. " +
-                             "Bloque-le ou trace-le. Réponds UNIQUEMENT par une commande Linux défensive.";
+                    prompt = frenchRule + """
+                        Tu es une IA Blue Team (SysAdmin). Un attaquant a tapé : '%s'.
+                        Contre-attaque ou trace-le.
+                        Réponds OBLIGATOIREMENT avec ce format exact :
+                        COMMANDE: <1 seule commande Linux défensive>
+                        EXPLICATION: <1 phrase très courte EN FRANÇAIS expliquant ta défense>
+                        Ne donne aucune explication en anglais, ne dis rien d'autre.
+                        """.formatted(command);
                     break;
                 case "BLUE_TEAM":
-                    prompt = "Tu es une IA Red Team (Hacker). Le défenseur a fait : '" + command + "'. " +
-                             "Attaque-le. Réponds UNIQUEMENT par une commande Linux offensive.";
+                    prompt = frenchRule + """
+                        Tu es une IA Red Team (Hacker). Le défenseur a tapé : '%s'.
+                        Attaque-le.
+                        Réponds OBLIGATOIREMENT avec ce format exact :
+                        COMMANDE: <1 seule commande Linux offensive>
+                        EXPLICATION: <1 phrase très courte EN FRANÇAIS expliquant ton attaque>
+                        Ne donne aucune explication en anglais, ne dis rien d'autre.
+                        """.formatted(command);
                     break;
                 default:
-                    prompt = "Réponds par une commande Linux.";
+                    prompt = "Réponds par une commande Linux courte. Explique-la en français.";
             }
         }
 
         try {
             // Appel IA
             String response = aiClient.generateResponse(prompt);
-            
-            // Nettoyage
             String cleanResponse = response.replaceAll("```bash", "").replaceAll("```", "").trim();
 
-            logger.info("🤖 [IA] Réponse : {}", cleanResponse);
+            logger.info("🤖 [IA] Réponse brute : {}", cleanResponse);
+
+            // --- PARSING DE LA RÉPONSE (Séparation Commande / Explication) ---
+            String infraCommand = cleanResponse; // Par défaut
+            String displayMessage = cleanResponse;
+
+            // Si on est en mode combat (et non en mode aide), on sépare la commande de l'explication
+            if (!isHelpRequest && (mode.equals("RED_TEAM") || mode.equals("BLUE_TEAM"))) {
+                if (cleanResponse.contains("COMMANDE:") && cleanResponse.contains("EXPLICATION:")) {
+                    try {
+                        String[] parts = cleanResponse.split("EXPLICATION:");
+                        infraCommand = parts[0].replace("COMMANDE:", "").trim();
+                        String explanation = parts[1].trim();
+                        
+                        // Mise en forme propre pour l'interface web
+                        displayMessage = "💻 " + infraCommand + "\n\n📖 " + explanation;
+                    } catch (Exception e) {
+                        logger.warn("⚠️ Impossible de parser la réponse de l'IA : {}", cleanResponse);
+                    }
+                }
+            }
 
             // LOGIQUE D'ENVOI
             if (isHelpRequest || mode.equals("TUTORIAL")) {
-                String icon = isHelpRequest ? "💡 " : "ℹ️ ";
-                messagingTemplate.convertAndSend("/topic/arena/alerts", icon + cleanResponse);
+                String icon = isHelpRequest ? "💡 CONSEIL :\n\n" : "ℹ️ INFO :\n\n";
+                messagingTemplate.convertAndSend("/topic/arena/alerts", icon + displayMessage);
             } else {
-                // Si c'est du combat (Red/Blue Team), on exécute ET on affiche
-                producer.sendInfraCommand(cleanResponse);
-                messagingTemplate.convertAndSend("/topic/arena/alerts", "⚠️ " + cleanResponse);
+                // On exécute UNIQUEMENT la commande bash dans Docker
+                logger.info("💀 Envoi infra (Bash pur) : {}", infraCommand);
+                producer.sendInfraCommand(infraCommand);
+                
+                // On affiche la commande ET l'explication au joueur
+                messagingTemplate.convertAndSend("/topic/arena/alerts", "⚠️ ACTION ADVERSE :\n\n" + displayMessage);
             }
 
         } catch (Exception e) {

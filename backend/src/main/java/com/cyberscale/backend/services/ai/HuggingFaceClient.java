@@ -44,10 +44,9 @@ public class HuggingFaceClient {
         Map<String, Object> body = Map.of(
             "model", modelId,
             "messages", List.of(
-                // On envoie le prompt tel quel (RabbitMQConsumer a déjà fait le travail de rédaction)
                 Map.of("role", "user", "content", userPrompt)
             ),
-            "max_tokens", 50,   // 🚀 FORCE l'IA à être concise (accélère énormément)
+            "max_tokens", 400,  // 🚀 Augmenté pour éviter que la réponse ne soit coupée
             "temperature", 0.7  // Créativité modérée
         );
 
