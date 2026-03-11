@@ -149,6 +149,7 @@ function initTerminal() {
     const terminalContainer = document.getElementById('terminal');
     term.open(terminalContainer);
     fitAddon.fit();
+
     window.addEventListener('resize', () => fitAddon.fit());
 
     term.write('Connexion à l\'architecture déployée... \r\n');

@@ -3,7 +3,6 @@ package com.cyberscale.backend.services;
 import com.cyberscale.backend.dto.ChallengeDTO;
 import com.cyberscale.backend.models.Challenge;
 import com.cyberscale.backend.models.User;
-import com.cyberscale.backend.models.UserChallenge;
 import com.cyberscale.backend.repositories.ChallengeRepository;
 import com.cyberscale.backend.repositories.UserChallengeRepository;
 import com.cyberscale.backend.repositories.UserRepository;
@@ -29,6 +28,7 @@ class ArenaServiceTest {
     @Mock private UserRepository userRepository;
     @Mock private ChallengeRepository challengeRepository;
     @Mock private UserChallengeRepository userChallengeRepository;
+    @Mock private ContainerService containerService;
 
     @InjectMocks private ArenaService arenaService;
 
