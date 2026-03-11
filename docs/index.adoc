@@ -1,4 +1,4 @@
-= Documentation Projet CyberScale v1.0.0
+= Documentation Projet CyberScale v1.0.1
 :toc: left
 :toclevels: 3
 :sectnums:
@@ -8,7 +8,7 @@
 :experimental:
 
 [abstract]
-Documentation technique et fonctionnelle de la plateforme CyberScale. Cette version v1.0.0 marque l'aboutissement du projet avec une architecture conteneurisée complète, des modules d'attaque et de défense, et un tableau de bord unifié.
+Documentation technique et fonctionnelle de la plateforme CyberScale. Cette version v1.0.1 apporte une stabilisation de l'infrastructure avec l'intégration de RabbitMQ pour l'asynchronisme et une meilleure orchestration Docker/Kubernetes.
 
 == Présentation
 
@@ -19,43 +19,33 @@ Projet réalisé dans le cadre du cursus DevOps par :
 * *Hassan Jatta* - Lead Backend
 * *Abdoulaye* - Lead Frontend
 
-=== Vision et Objectifs
+=== Vision et Objectifs (v1.0.1)
 
-CyberScale a pour mission de fournir une évaluation "360 degrés" des compétences en cybersécurité.
-
-*.Concept Clé : La Matrice de Compétences*
-
-Nous positionnons l'utilisateur sur deux axes complémentaires :
-
-. *L'Axe Théorique (X)* : Maîtrise des concepts, normes (ISO 27001), et lois (RGPD).
-. *L'Axe Technique (Y)* : Capacité opérationnelle (Pentest, Scripting, Analyse de logs).
-
-=== Analyse de la Concurrence
-
-Le marché est polarisé :
-
-* *CTF (RootMe)* : Excellent pour la technique pure, mais austère et sans théorie.
-* *Certifications (CISSP)* : Très théoriques, coûteuses, sans pratique immédiate.
-
-**CyberScale** réunit ces deux mondes : nous ne formons pas que des hackers, mais des professionnels complets (Red Team & Blue Team).
+CyberScale a pour mission de fournir une évaluation "360 degrés" des compétences en cybersécurité. La version v1.0.1 met l'accent sur la résilience et la scalabilité de l'infrastructure.
 
 == Architecture et Technique
 
-=== Architecture Détaillée
+=== Architecture Détaillée (v1.0.1)
 
-Pour garantir une meilleure lisibilité, l'architecture est présentée en deux vues distinctes.
+Pour garantir une meilleure lisibilité, l'architecture est présentée en trois vues distinctes.
+
+==== Vue Infrastructure : Orchestration & Messages (Nouveau)
+Ce diagramme illustre le flux de données entre le frontend, le backend et les services d'infrastructure (RabbitMQ, Docker, Kubernetes). 
+
+* **RabbitMQ** : Gère les files d'attente pour l'exécution asynchrone des commandes.
+* **Kubernetes** : Utilisé pour le déploiement dynamique de leurres (honeypots).
+
+.Architecture Technique Globale (v1.0.1)
+[plantuml, architecture_v1_0_1, png]
+....
+include::uml/architecture_v1_0_1.puml[]
+....
 
 ==== Vue Logique : Traitement & Services
 Ce diagramme illustre la couche "Intelligente" de CyberScale. On y voit comment les Contrôleurs (API) orchestrent les Services métiers. Notez particulièrement l'interaction entre `ArenaController` et le `ContainerService` (gestion Docker), ainsi que le générateur de logs pour la Blue Team.
 
-.Architecture Logique (Contrôleurs & Services)
-image::uml/diagram_partie1[align="center", pdfwidth="95%"]
-
 ==== Vue de Données : Persistance
 Ce diagramme présente la structure de la base de données PostgreSQL (Entités JPA). Il met en évidence la centralisation des données autour de l'entité `User`, qui est liée à ses résultats de quiz, ses challenges réussis et ses examens.
-
-.Modèle de Données (Entités JPA)
-image::uml/diagram_partie2[align="center", pdfwidth="95%"]
 
 === Stack Technique
 
@@ -64,31 +54,34 @@ image::uml/diagram_partie2[align="center", pdfwidth="95%"]
 | Domaine | Technologies
 
 | *Backend*
-| Java 21, Spring Boot 3 (Security, JPA, WebSocket)
+| Java 21, Spring Boot 3.4.11 (Security, JPA, WebSocket)
 
 | *Données*
-| PostgreSQL 16 (Production)
+| PostgreSQL 16 (Production), H2 (Développement)
+
+| *Messaging*
+| **RabbitMQ 3** (Management)
+
+| *Orchestration*
+| **Docker Engine**, **Kubernetes** (Honeypots)
 
 | *Frontend*
-| HTML5, CSS3, JavaScript (Vanilla), Xterm.js (Terminal Web)
+| HTML5, CSS3, JavaScript (Vanilla), Tailwind CSS, Xterm.js
 
 | *DevOps*
-| Docker, Docker Compose, GitHub Actions (CI/CD), SonarCloud
+| GitHub Actions (CI/CD), SonarCloud, JaCoCo
 
 | *Tests*
-| JUnit 5, Selenium (E2E), Cucumber (BDD)
+| JUnit 5, Selenium (E2E), Cucumber (BDD), Mockito
 |===
 
-=== Focus : La Dockerisation (Cœur du Projet)
+=== Focus : La Dockerisation & Flags Dynamiques
 
 C'est l'innovation technique majeure de cette release. Pour permettre aux utilisateurs de s'entraîner sans risque, nous avons développé un orchestrateur de conteneurs interne.
 
-* **Isolation Totale :** Chaque challenge technique lance un conteneur Docker dédié à l'utilisateur. Il est impossible d'impacter le serveur hôte.
-* **Gestion du Cycle de Vie :**
-** *Création* : Instanciation à la volée via l'API `docker-java` lors du clic sur "Démarrer".
-** *Communication* : Un tunnel **WebSocket** relie le terminal Web (`Xterm.js`) à l'entrée/sortie standard du conteneur Linux.
-** *Nettoyage* : Une tâche planifiée (`ContainerCleanupTask`) détruit automatiquement les conteneurs inactifs ou terminés pour libérer les ressources.
-* **Sécurité :** Les conteneurs sont éphémères et n'ont aucun accès réseau vers l'extérieur (sauf si nécessaire pour le scénario).
+* **Flags Dynamiques :** Contrairement à la v1.0.0, chaque conteneur possède désormais un flag unique généré à la volée (`CHALLENGE_FLAG`), empêchant le partage de solutions.
+* **Isolation Totale :** Chaque challenge technique lance un conteneur Docker dédié à l'utilisateur.
+* **Communication :** Un tunnel **WebSocket** relie le terminal Web (`Xterm.js`) à l'entrée/sortie standard du conteneur via RabbitMQ pour une exécution robuste.
 
 .Fonctionnement de l'architecture dockerisé
 image::images/docker[Docker, 600, align="center"]
