@@ -46,6 +46,8 @@ public class SecurityConfig {
                 .requestMatchers("/h2-console/**").permitAll()
                 .requestMatchers("/ws-cyberscale/**").permitAll()
                 .requestMatchers("/ws/terminal/**").permitAll()
+                .requestMatchers("/api/auth/**").permitAll() 
+                .requestMatchers("/api/intelligence/**").permitAll()
                 .anyRequest().authenticated()
             )
             .headers(headers -> headers.frameOptions(frame -> frame.disable()));

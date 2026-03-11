@@ -1,72 +1,113 @@
 package com.cyberscale.backend.services;
 
-import org.springframework.stereotype.Service;
-
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerResponse;
-import com.github.dockerjava.api.exception.DockerException;
+import com.github.dockerjava.api.command.ExecCreateCmdResponse;
+import com.github.dockerjava.api.exception.NotModifiedException;
+import com.github.dockerjava.core.command.ExecStartResultCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
 
-/**
- * Service gérant le cycle de vie des conteneurs Docker pour les challenges.
- * Il permet de créer, démarrer et nettoyer des environnements isolés.
- */
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.concurrent.TimeUnit;
+
 @Service
 public class ContainerService {
 
     private static final Logger logger = LoggerFactory.getLogger(ContainerService.class);
-
     private final DockerClient dockerClient;
 
-    // Injection DockerClient
     public ContainerService(DockerClient dockerClient) {
         this.dockerClient = dockerClient;
     }
 
-    /**
-     * Instancie un conteneur Docker à partir d'une image donnée.
-     * @param imageId L'identifiant ou le nom de l'image Docker.
-     * @return L'identifiant unique du conteneur créé.
-     * @throws RuntimeException Si l'API Docker renvoie une erreur lors de la création.
-     */
-    public String createContainer(String imageId) {
-        try {
-            CreateContainerResponse container = dockerClient.createContainerCmd(imageId)
-                    .withTty(true)
-                    .withStdinOpen(true)
-                    .exec();
+    // --- Méthodes de base ---
 
-            return container.getId();
-        } catch (DockerException e) {
-            throw new RuntimeException("Erreur lors de la création du conteneur : " + e.getMessage(), e);
-        }
+    public String createContainer(String imageName) {
+        CreateContainerResponse container = dockerClient.createContainerCmd(imageName)
+                .withTty(true)
+                .withStdinOpen(true)
+                .exec();
+        return container.getId();
     }
 
-    /**
-     * Démarre un conteneur existant qui a été créé précédemment.
-     * @param containerId L'identifiant du conteneur à démarrer.
-     * @throws RuntimeException Si le démarrage échoue.
-     */
+    public String createChallengeContainer(String challengeId, String dynamicFlag) {
+        logger.info("Creating container for challenge {} with dynamic flag", challengeId);
+        
+        String imageName = "cyberscale/base-challenge"; 
+
+        CreateContainerResponse container = dockerClient.createContainerCmd(imageName)
+                .withTty(true)
+                .withStdinOpen(true)
+                .withEnv("CHALLENGE_FLAG=" + dynamicFlag) 
+                .exec();
+        
+        String containerId = container.getId();
+        startContainer(containerId);
+        
+        return containerId;
+    }
+
     public void startContainer(String containerId) {
-        try {
-            dockerClient.startContainerCmd(containerId).exec();
-        } catch (DockerException e) {
-            throw new RuntimeException("Erreur lors du démarrage du conteneur : " + e.getMessage(), e);
-        }
+        dockerClient.startContainerCmd(containerId).exec();
     }
 
-    /**
-     * Arrête et supprime définitivement un conteneur.
-     * @param containerId L'identifiant du conteneur à nettoyer.
-     */
     public void stopAndRemoveContainer(String containerId) {
         try {
             dockerClient.stopContainerCmd(containerId).exec();
-            
-            dockerClient.removeContainerCmd(containerId).exec();
-        } catch (DockerException e) {
-            logger.error("Erreur lors du nettoyage du conteneur {}", containerId, e);
+        } catch (NotModifiedException e) {
+            logger.debug("Container {} already stopped", containerId);
+        } catch (Exception e) {
+            logger.error("Error stopping container {}", containerId, e);
         }
+
+        try {
+            dockerClient.removeContainerCmd(containerId).exec();
+        } catch (Exception e) {
+            logger.error("Error removing container {}", containerId, e);
+        }
+    }
+
+    public String executeCommand(String containerId, String command) {
+        // Sécurité basique (Optionnel, selon tes besoins)
+        if (isCommandDangerous(command)) {
+            return "Command blocked for security reasons.";
+        }
+
+        try {
+            logger.info("Executing command '{}' on container {}", command, containerId);
+
+            String[] commandArray = command.split(" ");
+
+            ExecCreateCmdResponse execCreateCmdResponse = dockerClient.execCreateCmd(containerId)
+                    .withAttachStdout(true)
+                    .withAttachStderr(true)
+                    .withCmd(commandArray)
+                    .exec();
+
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            
+            dockerClient.execStartCmd(execCreateCmdResponse.getId())
+                    .exec(new ExecStartResultCallback(outputStream, null))
+                    .awaitCompletion(5, TimeUnit.SECONDS);
+
+            return outputStream.toString(StandardCharsets.UTF_8);
+
+        } catch (Exception e) {
+            logger.error("Execution failed for command '{}'", command, e);
+            return "Error executing command";
+        }
+    }
+    
+    public String startChallengeEnvironment(String challengeId) {
+        return createChallengeContainer(challengeId, "DEFAULT_FLAG");
+    }
+
+    // ✅ La méthode est ici, correctement placée à la fin de la classe
+    private boolean isCommandDangerous(String command) {
+        // Exemple simple de blocage
+        return command.contains("rm -rf /") || command.contains(":(){:|:&};:");
     }
 }

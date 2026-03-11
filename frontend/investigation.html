@@ -15,7 +15,6 @@
         body { font-family: 'Inter', sans-serif; }
         .font-mono { font-family: 'JetBrains Mono', monospace; }
         
-        /* Ajustements pour intégrer Bootstrap dans le Dark Mode Tailwind */
         .modal-content { background-color: #1e293b; border-color: #3b82f6; color: #e2e8f0; }
         .modal-header { border-bottom-color: #334155; }
         .modal-footer { border-top-color: #334155; }
@@ -45,7 +44,7 @@
                 <i class="fas fa-laptop-code w-5"></i> Training Arena
             </a>
             <a href="challenges.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-700/50 hover:text-white rounded-xl transition-all">
-                <i class="fas fa-flag w-5"></i> Challenges
+                <i class="fas fa-flag w-5"></i> Challenges CTF
             </a>
             <a href="phishing.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-700/50 hover:text-white rounded-xl transition-all">
                 <i class="fas fa-envelope-open-text w-5"></i> Phishing Sim
@@ -159,6 +158,37 @@
         </main>
     </div>
 
+    <div class="modal fade" id="reportModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow-2xl border border-red-500/50">
+                <div class="modal-header border-red-500/20 bg-slate-800">
+                    <h5 class="modal-title text-red-500 font-mono font-bold flex items-center gap-2">
+                        <i class="fas fa-radar"></i> Centre d'Investigation Threat Intel
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body bg-slate-900 text-slate-300 font-mono">
+                    <label class="block mb-2 text-sm text-blue-400">IP Suspecte à analyser :</label>
+                    <div class="flex gap-2 mb-4">
+                        <input type="text" id="suspectIpInput" class="flex-1 bg-black border border-slate-600 text-green-400 p-2 rounded focus:outline-none focus:border-blue-500 font-mono placeholder-slate-700" placeholder="ex: 118.25.6.39">
+                        <button type="button" id="analyzeIpBtn" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded transition flex items-center gap-2">
+                            <i class="fas fa-search"></i> Analyser
+                        </button>
+                    </div>
+
+                    <div id="threatIntelResult" class="hidden">
+                        </div>
+
+                    <div id="validationResult" class="mt-4"></div>
+                </div>
+                <div class="modal-footer border-red-500/20 bg-slate-800">
+                    <button type="button" class="px-4 py-2 border border-slate-600 rounded text-slate-400 hover:bg-slate-700 transition" data-bs-dismiss="modal">Fermer</button>
+                    <button type="button" class="px-4 py-2 bg-red-600 hover:bg-red-500 text-white font-bold rounded shadow-lg shadow-red-600/20 transition hidden" id="validateIpBtn">NEUTRALISER (Ban IP)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="modal fade" id="introModal" tabindex="-1" data-bs-backdrop="static">
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content shadow-2xl border border-blue-500/50">
@@ -172,35 +202,14 @@
                         <ul class="list-none space-y-2 text-sm">
                             <li><i class="fas fa-check text-blue-500 mr-2"></i>1. Analysez le graphique pour repérer le pic d'activité.</li>
                             <li><i class="fas fa-check text-blue-500 mr-2"></i>2. Filtrez les logs (Status 404).</li>
-                            <li><i class="fas fa-check text-blue-500 mr-2"></i>3. Isolez l'IP source de l'attaque.</li>
+                            <li><i class="fas fa-check text-blue-500 mr-2"></i>3. Isolez l'IP source de l'attaque et analysez-la via la base Threat Intel.</li>
                         </ul>
                     </div>
-                    <p class="text-sm text-slate-500">Utilisez le bouton "SIGNALER MENACE" pour neutraliser l'IP.</p>
                 </div>
                 <div class="modal-footer border-blue-500/20 bg-slate-800">
                     <button type="button" class="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded transition shadow-lg shadow-blue-500/20" data-bs-dismiss="modal">
                         ACCEPTER LA MISSION
                     </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="reportModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content shadow-2xl border border-red-500/50">
-                <div class="modal-header border-red-500/20 bg-slate-800">
-                    <h5 class="modal-title text-red-500 font-mono font-bold">Rapport d'Incident</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body bg-slate-900 text-slate-300 font-mono">
-                    <label class="block mb-2 text-sm text-red-400">IP Suspecte identifiée :</label>
-                    <input type="text" id="suspectIpInput" class="w-full bg-black border border-red-500/30 text-red-400 p-2 rounded focus:outline-none focus:border-red-500 placeholder-red-900/50" placeholder="ex: 192.168.X.X">
-                    <div id="validationResult" class="mt-4"></div>
-                </div>
-                <div class="modal-footer border-red-500/20 bg-slate-800">
-                    <button type="button" class="px-4 py-2 border border-slate-600 rounded text-slate-400 hover:bg-slate-700 transition" data-bs-dismiss="modal">Annuler</button>
-                    <button type="button" class="px-4 py-2 bg-red-600 hover:bg-red-500 text-white font-bold rounded shadow-lg shadow-red-600/20 transition" id="validateIpBtn">NEUTRALISER</button>
                 </div>
             </div>
         </div>

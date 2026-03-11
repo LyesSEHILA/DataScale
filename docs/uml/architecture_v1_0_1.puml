@@ -1,0 +1,54 @@
+@startuml
+title Architecture Technique - CyberScale v1.0.1
+
+actor "Utilisateur" as User
+node "Navigateur Web" as Browser {
+    component "Xterm.js (Terminal)" as UI
+    component "Frontend (JS/CSS)" as Front
+}
+
+node "Serveur Backend (Spring Boot 3.4)" as Backend {
+    component "ArenaController" as ArenaCtrl
+    component "ArenaService" as ArenaSvc
+    component "ContainerService" as ContainerSvc
+    component "InfraListener" as Listener
+    component "Security (JWT/BCrypt)" as Security
+}
+
+queue "RabbitMQ" as RMQ {
+    queue "execution_queue" as ExQueue
+    queue "deploy_queue" as DepQueue
+}
+
+node "Infrastructure" as Infra {
+    node "Docker Engine" as Docker {
+        artifact "Challenge Containers" as Cont
+    }
+    node "Kubernetes Cluster" as K8s {
+        artifact "Honeypots / Decoys" as Decoys
+    }
+}
+
+database "PostgreSQL / H2" as DB
+
+' Interactions
+User --> Front : Accède
+User --> UI : Tape des commandes
+Front --> ArenaCtrl : Appels API REST
+UI <--> ArenaCtrl : WebSocket (STOMP)
+
+ArenaCtrl --> ArenaSvc : Logique métier
+ArenaSvc --> ContainerSvc : Orchestration Docker
+ContainerSvc --> Docker : Création/Exécution
+
+' Flux Asynchrone
+ArenaCtrl --> RMQ : Produit Event (sendGameEvent)
+RMQ ..> Listener : Consomme
+Listener --> ContainerSvc : Exécute commande
+Listener --> K8s : Déploiement leurres
+
+' Persistance
+ArenaSvc --> DB : Score / Flags
+Security --> DB : Auth
+
+@enduml

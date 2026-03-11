@@ -5,7 +5,9 @@ document.addEventListener("DOMContentLoaded", () => {
     // 1. Gestion Session
     const userId = localStorage.getItem('userId');
     const username = localStorage.getItem('userName') || "Utilisateur";
-
+    const deployBtn = document.getElementById('deploy-decoy-btn');
+    
+    
     if (!userId) {
         window.location.href = 'login.html';
         return;
@@ -26,6 +28,43 @@ document.addEventListener("DOMContentLoaded", () => {
     // 3. Charger les données
     loadUserScore(userId);     // <--- NOUVEAU
     loadChallenges(userId);    // <--- CORRECTION : On passe l'ID
+
+    // 4. Clic bouton
+
+    if (deployBtn) {
+        deployBtn.addEventListener('click', async () => {
+            const statusDiv = document.getElementById('deploy-status');
+            statusDiv.innerText = "⏳ Déploiement en cours...";
+            
+            const token = localStorage.getItem('token'); 
+            const userId = localStorage.getItem('userId'); 
+
+            try {
+                const response = await fetch('http://localhost:8080/api/decoy', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        userId: userId,
+                        decoyType: 'mysql' 
+                    })
+                });
+
+                if (response.ok) {
+                    statusDiv.innerText = "✅ Leurre déployé avec succès !";
+                    statusDiv.style.color = "green";
+                } else {
+                    statusDiv.innerText = "❌ Erreur lors du déploiement.";
+                    statusDiv.style.color = "red";
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+                statusDiv.innerText = "❌ Erreur de connexion.";
+            }
+        });
+    }  
 });
 
 // --- CHARGER LE SCORE ---
@@ -37,7 +76,6 @@ async function loadUserScore(userId) {
         const response = await fetch(`${API_USER}/${userId}`);
         if(response.ok) {
             const user = await response.json();
-            // Animation simple du compteur
             pointsElem.textContent = user.points || 0;
         }
     } catch(e) {
@@ -88,14 +126,12 @@ function renderChallenges(challenges, container) {
 
         const isValidated = challenge.isValidated;
         
-        // Style du bouton selon l'état
         const btnClass = isValidated 
             ? "bg-green-50 text-green-700 border border-green-200 cursor-default" 
             : "bg-gray-900 text-white hover:bg-gray-800 shadow-lg transition transform hover:-translate-y-0.5";
         
         const btnText = isValidated ? 'Challenge Validé <i class="fas fa-check-circle"></i>' : "Lancer le défi";
         
-        // CORRECTION PRÉCÉDENTE : Ajout des quotes autour des IDs
         const btnAction = isValidated ? "" : `onclick="startChallenge('${challenge.id}', '${challenge.title}')"`;
         
         const validatedBadge = isValidated 
@@ -138,7 +174,8 @@ function renderChallenges(challenges, container) {
 
 function startChallenge(id, title) {
     localStorage.setItem('currentChallengeId', id);
+    
     if(confirm(`Voulez-vous entrer dans l'arène pour résoudre : "${title}" ?`)) {
-        window.location.href = 'arena.html';
+        window.location.href = `arena.html?challengeId=${id}`;
     }
 }

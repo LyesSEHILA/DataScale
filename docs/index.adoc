@@ -1,4 +1,4 @@
-= Documentation Projet CyberScale v1.0.0
+= Documentation Projet CyberScale v1.0.1
 :toc: left
 :toclevels: 3
 :sectnums:
@@ -8,7 +8,7 @@
 :experimental:
 
 [abstract]
-Documentation technique et fonctionnelle de la plateforme CyberScale. Cette version v1.0.0 marque l'aboutissement du projet avec une architecture conteneurisée complète, des modules d'attaque et de défense, et un tableau de bord unifié.
+Documentation technique et fonctionnelle de la plateforme CyberScale. Cette version v1.0.1 apporte une stabilisation de l'infrastructure avec l'intégration de RabbitMQ pour l'asynchronisme et une meilleure orchestration Docker/Kubernetes.
 
 == Présentation
 
@@ -19,49 +19,30 @@ Projet réalisé dans le cadre du cursus DevOps par :
 * *Hassan Jatta* - Lead Backend
 * *Abdoulaye* - Lead Frontend
 
-=== Vision et Objectifs
+=== Vision et Objectifs (v1.0.1)
 
-CyberScale a pour mission de fournir une évaluation "360 degrés" des compétences en cybersécurité.
-
-*.Concept Clé : La Matrice de Compétences*
-
-Nous positionnons l'utilisateur sur deux axes complémentaires :
-
-. *L'Axe Théorique (X)* : Maîtrise des concepts, normes (ISO 27001), et lois (RGPD).
-. *L'Axe Technique (Y)* : Capacité opérationnelle (Pentest, Scripting, Analyse de logs).
-
-=== Analyse de la Concurrence
-
-Le marché est polarisé :
-
-* *CTF (RootMe)* : Excellent pour la technique pure, mais austère et sans théorie.
-* *Certifications (CISSP)* : Très théoriques, coûteuses, sans pratique immédiate.
-
-**CyberScale** réunit ces deux mondes : nous ne formons pas que des hackers, mais des professionnels complets (Red Team & Blue Team).
+CyberScale a pour mission de fournir une évaluation "360 degrés" des compétences en cybersécurité. La version v1.0.1 met l'accent sur la résilience et la scalabilité de l'infrastructure.
 
 == Architecture et Technique
 
-=== Architecture Détaillée
+=== Architecture Détaillée (v1.0.1)
 
-image::uml/Capture d’écran du 2026-01-18 17-10-18.png[align="center", pdfwidth="95%"]
+Pour garantir une meilleure lisibilité, l'architecture est présentée en trois vues distinctes.
 
-image::uml/Capture d’écran du 2026-01-18 17-12-32.png[align="center", pdfwidth="95%"]
+==== Vue Infrastructure : Orchestration & Messages (Nouveau)
+Ce diagramme illustre le flux de données entre le frontend, le backend et les services d'infrastructure (RabbitMQ, Docker, Kubernetes). 
 
-image::uml/Capture d’écran du 2026-01-18 17-13-26.png[align="center", pdfwidth="95%"]
+* **RabbitMQ** : Gère les files d'attente pour l'exécution asynchrone des commandes.
+* **Kubernetes** : Utilisé pour le déploiement dynamique de leurres (honeypots).
 
-Pour garantir une meilleure lisibilité, l'architecture est présentée en deux vues distinctes.
+.Architecture Technique Globale (v1.0.1)
+image::uml/architecture_v1_0_1.png[align="center", pdfwidth="95%"]
 
 ==== Vue Logique : Traitement & Services
 Ce diagramme illustre la couche "Intelligente" de CyberScale. On y voit comment les Contrôleurs (API) orchestrent les Services métiers. Notez particulièrement l'interaction entre `ArenaController` et le `ContainerService` (gestion Docker), ainsi que le générateur de logs pour la Blue Team.
 
-.Architecture Logique (Contrôleurs & Services)
-image::uml/diagram_partie1[align="center", pdfwidth="95%"]
-
 ==== Vue de Données : Persistance
 Ce diagramme présente la structure de la base de données PostgreSQL (Entités JPA). Il met en évidence la centralisation des données autour de l'entité `User`, qui est liée à ses résultats de quiz, ses challenges réussis et ses examens.
-
-.Modèle de Données (Entités JPA)
-image::uml/diagram_partie2[align="center", pdfwidth="95%"]
 
 === Stack Technique
 
@@ -70,31 +51,34 @@ image::uml/diagram_partie2[align="center", pdfwidth="95%"]
 | Domaine | Technologies
 
 | *Backend*
-| Java 21, Spring Boot 3 (Security, JPA, WebSocket)
+| Java 21, Spring Boot 3.4.11 (Security, JPA, WebSocket)
 
 | *Données*
-| PostgreSQL 16 (Production)
+| PostgreSQL 16 (Production), H2 (Développement)
+
+| *Messaging*
+| **RabbitMQ 3** (Management)
+
+| *Orchestration*
+| **Docker Engine**, **Kubernetes** (Honeypots)
 
 | *Frontend*
-| HTML5, CSS3, JavaScript (Vanilla), Xterm.js (Terminal Web)
+| HTML5, CSS3, JavaScript (Vanilla), Tailwind CSS, Xterm.js
 
 | *DevOps*
-| Docker, Docker Compose, GitHub Actions (CI/CD), SonarCloud
+| GitHub Actions (CI/CD), SonarCloud, JaCoCo
 
 | *Tests*
-| JUnit 5, Selenium (E2E), Cucumber (BDD)
+| JUnit 5, Selenium (E2E), Cucumber (BDD), Mockito
 |===
 
-=== Focus : La Dockerisation (Cœur du Projet)
+=== Focus : La Dockerisation & Flags Dynamiques
 
 C'est l'innovation technique majeure de cette release. Pour permettre aux utilisateurs de s'entraîner sans risque, nous avons développé un orchestrateur de conteneurs interne.
 
-* **Isolation Totale :** Chaque challenge technique lance un conteneur Docker dédié à l'utilisateur. Il est impossible d'impacter le serveur hôte.
-* **Gestion du Cycle de Vie :**
-** *Création* : Instanciation à la volée via l'API `docker-java` lors du clic sur "Démarrer".
-** *Communication* : Un tunnel **WebSocket** relie le terminal Web (`Xterm.js`) à l'entrée/sortie standard du conteneur Linux.
-** *Nettoyage* : Une tâche planifiée (`ContainerCleanupTask`) détruit automatiquement les conteneurs inactifs ou terminés pour libérer les ressources.
-* **Sécurité :** Les conteneurs sont éphémères et n'ont aucun accès réseau vers l'extérieur (sauf si nécessaire pour le scénario).
+* **Flags Dynamiques :** Contrairement à la v1.0.0, chaque conteneur possède désormais un flag unique généré à la volée (`CHALLENGE_FLAG`), empêchant le partage de solutions.
+* **Isolation Totale :** Chaque challenge technique lance un conteneur Docker dédié à l'utilisateur.
+* **Communication :** Un tunnel **WebSocket** relie le terminal Web (`Xterm.js`) à l'entrée/sortie standard du conteneur via RabbitMQ pour une exécution robuste.
 
 .Fonctionnement de l'architecture dockerisé
 image::images/docker[Docker, 600, align="center"]
@@ -112,9 +96,9 @@ Afin de peupler la base de données du Quiz, l'IA nous a assistés dans la réda
 * **Aide au Débogage Docker** :
 Lors de la configuration complexe des conteneurs isolés pour l'Arena, l'IA a servi d'assistant pour analyser certaines erreurs obscures liées aux permissions Linux et aux WebSockets.
 
-== Fonctionnalités (Features v1.0.0)
+== Fonctionnalités (Features v1.0.1)
 
-Cette version finale intègre l'ensemble des modules prévus.
+Cette version apporte des améliorations majeures sur l'infrastructure et la sécurité des épreuves.
 
 === F1: Onboarding & Quiz Adaptatif 
 *Objectif*:: Évaluer le bagage théorique initial.
@@ -123,42 +107,33 @@ Cette version finale intègre l'ensemble des modules prévus.
 .Wireframe Quiz
 image::wireframes/F2_Quiz.png[width=600, align="center"]
 
-=== F2: Cyber Arena (Red Team) 
+=== F2: Cyber Arena (Red Team) - *Amélioré v1.0.1*
 *Objectif*:: Tester les compétences offensives (Linux, Pentest).
-*Scénario*:: L'utilisateur accède à un vrai terminal Linux. Il doit naviguer, décoder des fichiers et exploiter des failles pour trouver des "flags" (`CTF{...}`).
-*Validation*:: Le flag est validé par un script interne au conteneur qui notifie le backend en temps réel.
+*Scénario*:: L'utilisateur accède à un vrai terminal Linux isolé par Docker.
+*Nouveauté v1.0.1*:: **Flags Dynamiques**. Le flag est désormais généré à la volée (`CHALLENGE_FLAG`) et stocké temporairement en mémoire pour l'utilisateur, empêchant toute triche par partage de solutions.
 
 .Interface du Terminal Web
 image::images/terminal.png[Terminal Arena, 600, align="center"]
-
 
 === F3: Module Phishing (Facteur Humain) 
 *Objectif*:: Tester la vigilance face à l'ingénierie sociale.
 *Fonctionnement*:: Simulation d'une boîte mail avec des courriels piégés (Urgence RH, Faux support). L'utilisateur doit analyser les en-têtes et décider de signaler ou cliquer.
 
-.Interface de Phishing
-image::images/phishing1.png[Simulation Phishing, 600, align="center"]
-
-.Phishing Réussi
-image::images/phishing2.png[Simulation Phishing, 600, align="center"]
-
 === F4: Module Investigation (Blue Team) 
 *Objectif*:: Former à la défense et à l'analyse de logs (Forensics).
-*Technique*:: Un générateur de logs (`LogGenerator`) crée dynamiquement des milliers de lignes de trafic web réaliste, en y cachant une attaque unique (ex: Injection SQL). L'utilisateur doit filtrer et identifier l'IP malveillante.
-
-.Accueil dans le menu d'Investigation
-image::images/logs.png[Screenshot Investigation, 600, align="center"]
-
-.Affichage des Logs
-image::images/logs2.png[Screenshot Investigation, 600, align="center"]
+*Technique*:: Un générateur de logs (`LogGenerator`) crée dynamiquement des milliers de lignes de trafic web réaliste.
 
 === F5: Dashboard Unifié & Certification 
 *Objectif*:: Centraliser la progression.
-*Évolution v1.0*:: Le Dashboard agrège désormais les scores de tous les modules (Quiz + Arena + Logs + Phishing) pour calculer une moyenne globale.
-*Recommandations*:: Si le score est faible, le système suggère des ressources externes ciblées. Si le score est élevé (>80%), il débloque des certifications virtuelles.
+*Évolution*:: Agrégation des scores de tous les modules pour calculer une moyenne globale et débloquer des certifications.
 
-.Tableau de Bord Global
-image::images/dashboard1.png[Score Dashboard, 600, align="center"]
+=== F6: Asynchronisme & Robustesse (RabbitMQ) - *Nouveau v1.0.1*
+*Objectif*:: Assurer une exécution fluide et scalable des commandes.
+*Technique*:: Utilisation de **RabbitMQ** pour traiter les événements de jeu et les commandes de l'Arena de manière asynchrone, évitant les blocages du thread principal.
+
+=== F7: Défense Active & Leurres (Kubernetes) - *Nouveau v1.0.1*
+*Objectif*:: Simuler des environnements de défense réseau complexes.
+*Innovation*:: Intégration de **KubernetesService** pour le déploiement automatique de leurres (honeypots) en réponse à des menaces détectées.
 
 == Gestion de Projet & Qualité 
 

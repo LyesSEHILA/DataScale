@@ -20,15 +20,23 @@
 
 **CyberScale** est une plateforme éducative "360 degrés" permettant d'évaluer et d'améliorer ses compétences en cybersécurité. Elle combine théorie et pratique dans un environnement gamifié.
 
-Le projet repose sur une approche unique à deux axes :
-1.  **Théorie (Gouvernance) :** Normes ISO 27001, RGPD, gestion des risques.
-2.  **Technique (Opérationnel) :** Pentest, analyse de logs, scripting.
+🚀 **Version actuelle : v1.0.1 (Release "Stabilization & Infra")**
 
 🚀 **Version actuelle : v1.0.0 (Release Officielle)**
 
----
+### 🎮 Cyber Arena (Nouveau !)
+Un **terminal Linux réel** orchestré par Docker directement dans le navigateur.
+* **Isolation Docker :** Chaque utilisateur dispose de son propre conteneur temporaire.
+* **Flags Dynamiques :** Système de protection contre la triche avec des flags générés à la volée.
+* **Mode CTF (Capture The Flag) :** Trouvez les flags cachés et validez-les via la commande `submit <flag>`.
 
-## ✨ Fonctionnalités Clés (v1.0.0)
+### 🏗️ Infrastructure Asynchrone
+* **RabbitMQ :** Traitement des événements de jeu et orchestration infra en arrière-plan.
+* **Kubernetes Ready :** Service de déploiement de "leurres" (honeypots) intégré.
+
+### 🎓 Mode Certification & Phishing
+* **Simulateur d'Examen :** CEH, CompTIA Security+, CISSP avec algorithme prédictif.
+* **Module Phishing :** Analyse et simulation de campagnes d'emails malveillants.
 
 ### 🎮 Cyber Arena (Red Team)
 Un véritable **terminal Linux** isolé dans un conteneur Docker, accessible via le navigateur.

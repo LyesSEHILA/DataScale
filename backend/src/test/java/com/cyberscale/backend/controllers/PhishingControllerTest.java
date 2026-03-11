@@ -1,6 +1,7 @@
 package com.cyberscale.backend.controllers;
 
 import com.cyberscale.backend.services.PhishingService;
+import com.cyberscale.backend.services.rabbitmq.RabbitMQProducer;
 import com.cyberscale.backend.config.SecurityConfig;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +11,8 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean; // Spring Boot 3.4+
 import org.springframework.test.web.servlet.MockMvc;
+import com.cyberscale.backend.services.rabbitmq.RabbitMQProducer;
+
 
 import java.util.Map;
 
@@ -30,6 +33,9 @@ class PhishingControllerTest {
 
     @MockitoBean
     private PhishingService phishingService;
+
+    @MockitoBean 
+    private RabbitMQProducer rabbitMQProducer;
 
     // --- Test: POST /api/phishing/analyze ---
 
