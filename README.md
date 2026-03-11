@@ -22,24 +22,25 @@
 1.  **Théorie :** Connaissances normatives (ISO 27001, RGPD) et concepts.
 2.  **Technique :** Maîtrise des outils (Nmap, Wireshark) et pratique.
 
-🚀 **Version actuelle : v0.2.0 (Release "Arena & Gamification")**
+🚀 **Version actuelle : v1.0.1 (Release "Stabilization & Infra")**
 
 ---
 
 ## ✨ Fonctionnalités Clés
 
 ### 🎮 Cyber Arena (Nouveau !)
-Un **terminal Linux simulé** directement dans le navigateur pour s'entraîner sans risques.
-* Commandes réelles : `ls`, `cat`, `sudo`, etc.
-* Système de fichiers virtuel avec missions cachées.
+Un **terminal Linux réel** orchestré par Docker directement dans le navigateur.
+* **Isolation Docker :** Chaque utilisateur dispose de son propre conteneur temporaire.
+* **Flags Dynamiques :** Système de protection contre la triche avec des flags générés à la volée.
 * **Mode CTF (Capture The Flag) :** Trouvez les flags cachés et validez-les via la commande `submit <flag>`.
 
-### 🎓 Mode Certification
-Préparez-vous aux examens réels avec nos simulateurs :
-* **CEH (Certified Ethical Hacker)**
-* **CompTIA Security+**
-* **CISSP**
-* Algorithme prédictif estimant votre probabilité de réussite.
+### 🏗️ Infrastructure Asynchrone
+* **RabbitMQ :** Traitement des événements de jeu et orchestration infra en arrière-plan.
+* **Kubernetes Ready :** Service de déploiement de "leurres" (honeypots) intégré.
+
+### 🎓 Mode Certification & Phishing
+* **Simulateur d'Examen :** CEH, CompTIA Security+, CISSP avec algorithme prédictif.
+* **Module Phishing :** Analyse et simulation de campagnes d'emails malveillants.
 
 ### 📊 Dashboard & Gamification
 * Suivi du score en temps réel.
