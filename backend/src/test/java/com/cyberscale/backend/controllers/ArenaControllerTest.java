@@ -1,30 +1,31 @@
 package com.cyberscale.backend.controllers;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-
-import jakarta.servlet.ServletException;
-
 import org.junit.jupiter.api.Test;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.cyberscale.backend.config.SecurityConfig;
 import com.cyberscale.backend.models.User;
 import com.cyberscale.backend.repositories.UserRepository;
 import com.cyberscale.backend.services.ArenaService;
 import com.cyberscale.backend.services.ContainerService;
 import com.cyberscale.backend.services.rabbitmq.RabbitMQProducer;
-import com.cyberscale.backend.config.SecurityConfig;
 
 @SpringBootTest
 @AutoConfigureMockMvc(addFilters = false)
@@ -76,16 +77,13 @@ class ArenaControllerTest {
     }
 
     @Test
-    void startArenaException() {
+    void startArenaException() throws Exception {
         when(arenaService.startChallengeEnvironment(anyLong(), eq("C1")))
             .thenThrow(new RuntimeException("Docker HS"));
 
-        ServletException exception = assertThrows(ServletException.class, () -> {
-            mockMvc.perform(post("/api/arena/start/C1"));
-        });
-
-        assertTrue(exception.getCause() instanceof RuntimeException);
-        assertTrue(exception.getCause().getMessage().contains("Docker HS"));
+        mockMvc.perform(post("/api/arena/start/C1"))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.error").value("Docker HS"));
     }
 
     @Test

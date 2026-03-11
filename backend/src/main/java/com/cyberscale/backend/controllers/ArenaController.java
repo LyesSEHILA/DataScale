@@ -52,12 +52,11 @@ public class ArenaController {
         @JsonProperty("mode") String mode
     ) {}
 
-    // 👇 C'EST ICI QUE CA BLOQUAIT : J'ai ajouté le champ 'mode'
     public record CommandRequest(
         @JsonProperty("userId") String userId,
         @JsonProperty("containerId") String containerId,
         @JsonProperty("command") String command,
-        @JsonProperty("mode") String mode // <--- IL MANQUAIT CETTE LIGNE
+        @JsonProperty("mode") String mode 
     ) {}
 
     @MessageMapping("/arena") 
@@ -66,18 +65,34 @@ public class ArenaController {
         return message;
     }
 
+    /**
+     * Démarre l'environnement pour un challenge spécifique.
+     * @param challengeId L'ID du challenge à lancer.
+     * @return L'ID du conteneur créé pour permettre au front de s'y connecter.
+     */
     @PostMapping("/start/{challengeId}")
     public ResponseEntity<?> startArena(@PathVariable String challengeId) {
-        // ⚠️ TODO: Récupérer le vrai ID via le token JWT (SecurityContext)
-        // Pour l'instant, on utilise l'ID 1 ou 4 en dur pour que ça marche avec ton test frontend actuel
-        Long tempUserId = 4L; // Correspond à ton utilisateur de test actuel
-        
-        // Appel avec les DEUX paramètres
-        String containerId = arenaService.startChallengeEnvironment(tempUserId, challengeId);
-        
-        return ResponseEntity.ok(Map.of("containerId", containerId));
+        try {
+            // ⚠️ TODO: Récupérer le vrai ID via le token JWT (SecurityContext)
+            // Pour l'instant, on utilise l'ID 1 ou 4 en dur pour que ça marche avec ton test frontend actuel
+            Long tempUserId = 4L; 
+            
+            // Appel avec les DEUX paramètres
+            String containerId = arenaService.startChallengeEnvironment(tempUserId, challengeId);
+            
+            return ResponseEntity.ok(Map.of("containerId", containerId));
+        } catch (Exception e) {
+            logger.error("Erreur lors du démarrage de l'arène", e);
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+        }
     }
 
+    /**
+     * Arrête et supprime un conteneur actif.
+     * Appelé lorsque l'utilisateur quitte la page du challenge.
+     * @param containerId L'ID du conteneur a détruire.
+     * @return code HTTP 200.
+     */
     @PostMapping("/stop/{containerId}")
     public ResponseEntity<Void> stopArena(@PathVariable String containerId) {
         arenaService.stopChallengeEnvironment(containerId);
@@ -95,34 +110,6 @@ public class ArenaController {
             logger.error("Error executing command for user {}", request.userId(), e);
             return ResponseEntity.internalServerError().body(Map.of("error", "Command execution failed"));
         }
-    }
-
-    /**
-     * Démarre l'environnement pour un challenge spécifique.
-     * @param challengeId L'ID du challenge à lancer.
-     * @return L'ID du conteneur crée pour permettre au front de s'y connecter.
-     */
-    @PostMapping("/start/{challengeId}")
-    public ResponseEntity<?> startArena(@PathVariable String challengeId) {
-        try {
-            String containerId = arenaService.startChallengeEnvironment(challengeId);
-            
-            return ResponseEntity.ok(Map.of("containerId", containerId));
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
-        }
-    }
-
-    /**
-     * Arrête et supprime un conteneur actif.
-     * Appele lorsque l'utilisateur quitte la page du challenge.
-     * @param containerId L'ID du conteneur a detruire.
-     * @return code HTTP 200.
-     */
-    @PostMapping("/stop/{containerId}")
-    public ResponseEntity<?> stopArena(@PathVariable String containerId) {
-        arenaService.stopChallengeEnvironment(containerId);
-        return ResponseEntity.ok().build();
     }
 
     /**

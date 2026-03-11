@@ -3,6 +3,7 @@ package com.cyberscale.backend.services;
 import com.cyberscale.backend.dto.ChallengeDTO;
 import com.cyberscale.backend.models.Challenge;
 import com.cyberscale.backend.models.User;
+import com.cyberscale.backend.models.UserChallenge; // <--- L'IMPORT MANQUANT EST ICI !
 import com.cyberscale.backend.repositories.ChallengeRepository;
 import com.cyberscale.backend.repositories.UserChallengeRepository;
 import com.cyberscale.backend.repositories.UserRepository;
@@ -24,7 +25,6 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class ArenaServiceTest {
 
-    @Mock private ContainerService containerService;
     @Mock private UserRepository userRepository;
     @Mock private ChallengeRepository challengeRepository;
     @Mock private UserChallengeRepository userChallengeRepository;
@@ -39,7 +39,7 @@ class ArenaServiceTest {
         Challenge c2 = new Challenge("2", "Web", "Desc", "F", 60);    // Moyen
         Challenge c3 = new Challenge("3", "Net", "Desc", "F", 150);   // Hardcore
 
-        // ✅ CORRECTION 1 : Utilisation du constructeur (pas de setChallenge)
+        // ✅ Utilisation du constructeur
         UserChallenge uc = new UserChallenge(new User(), c1);
 
         when(challengeRepository.findAll()).thenReturn(List.of(c1, c2, c3));
@@ -54,7 +54,7 @@ class ArenaServiceTest {
         assertEquals("MOYEN", result.get(1).difficulty());
         assertEquals("HARDCORE", result.get(2).difficulty());
         
-        // ✅ CORRECTION 2 : isValidated() au lieu de isDone()
+        // ✅ isValidated() au lieu de isDone()
         assertTrue(result.get(0).isValidated());
         assertFalse(result.get(1).isValidated());
     }
@@ -66,7 +66,7 @@ class ArenaServiceTest {
 
         List<ChallengeDTO> result = arenaService.getAllChallenges(null);
 
-        // ✅ CORRECTION 3 : isValidated() au lieu de isDone()
+        // ✅ isValidated() au lieu de isDone()
         assertFalse(result.get(0).isValidated());
         verify(userChallengeRepository, never()).findByUserId(any());
     }
