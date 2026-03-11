@@ -36,10 +36,7 @@ Ce diagramme illustre le flux de données entre le frontend, le backend et les s
 * **Kubernetes** : Utilisé pour le déploiement dynamique de leurres (honeypots).
 
 .Architecture Technique Globale (v1.0.1)
-[plantuml, architecture_v1_0_1, png]
-....
-include::uml/architecture_v1_0_1.puml[]
-....
+image::uml/architecture_v1_0_1.png[align="center", pdfwidth="95%"]
 
 ==== Vue Logique : Traitement & Services
 Ce diagramme illustre la couche "Intelligente" de CyberScale. On y voit comment les Contrôleurs (API) orchestrent les Services métiers. Notez particulièrement l'interaction entre `ArenaController` et le `ContainerService` (gestion Docker), ainsi que le générateur de logs pour la Blue Team.
