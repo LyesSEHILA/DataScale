@@ -36,10 +36,7 @@ Ce diagramme illustre le flux de données entre le frontend, le backend et les s
 * **Kubernetes** : Utilisé pour le déploiement dynamique de leurres (honeypots).
 
 .Architecture Technique Globale (v1.0.1)
-[plantuml, architecture_v1_0_1, png]
-....
-include::uml/architecture_v1_0_1.puml[]
-....
+image::uml/architecture_v1_0_1.png[align="center", pdfwidth="95%"]
 
 ==== Vue Logique : Traitement & Services
 Ce diagramme illustre la couche "Intelligente" de CyberScale. On y voit comment les Contrôleurs (API) orchestrent les Services métiers. Notez particulièrement l'interaction entre `ArenaController` et le `ContainerService` (gestion Docker), ainsi que le générateur de logs pour la Blue Team.
@@ -99,9 +96,9 @@ Afin de peupler la base de données du Quiz, l'IA nous a assistés dans la réda
 * **Aide au Débogage Docker** :
 Lors de la configuration complexe des conteneurs isolés pour l'Arena, l'IA a servi d'assistant pour analyser certaines erreurs obscures liées aux permissions Linux et aux WebSockets.
 
-== Fonctionnalités (Features v1.0.0)
+== Fonctionnalités (Features v1.0.1)
 
-Cette version finale intègre l'ensemble des modules prévus.
+Cette version apporte des améliorations majeures sur l'infrastructure et la sécurité des épreuves.
 
 === F1: Onboarding & Quiz Adaptatif 
 *Objectif*:: Évaluer le bagage théorique initial.
@@ -110,42 +107,33 @@ Cette version finale intègre l'ensemble des modules prévus.
 .Wireframe Quiz
 image::wireframes/F2_Quiz.png[width=600, align="center"]
 
-=== F2: Cyber Arena (Red Team) 
+=== F2: Cyber Arena (Red Team) - *Amélioré v1.0.1*
 *Objectif*:: Tester les compétences offensives (Linux, Pentest).
-*Scénario*:: L'utilisateur accède à un vrai terminal Linux. Il doit naviguer, décoder des fichiers et exploiter des failles pour trouver des "flags" (`CTF{...}`).
-*Validation*:: Le flag est validé par un script interne au conteneur qui notifie le backend en temps réel.
+*Scénario*:: L'utilisateur accède à un vrai terminal Linux isolé par Docker.
+*Nouveauté v1.0.1*:: **Flags Dynamiques**. Le flag est désormais généré à la volée (`CHALLENGE_FLAG`) et stocké temporairement en mémoire pour l'utilisateur, empêchant toute triche par partage de solutions.
 
 .Interface du Terminal Web
 image::images/terminal.png[Terminal Arena, 600, align="center"]
-
 
 === F3: Module Phishing (Facteur Humain) 
 *Objectif*:: Tester la vigilance face à l'ingénierie sociale.
 *Fonctionnement*:: Simulation d'une boîte mail avec des courriels piégés (Urgence RH, Faux support). L'utilisateur doit analyser les en-têtes et décider de signaler ou cliquer.
 
-.Interface de Phishing
-image::images/phishing1.png[Simulation Phishing, 600, align="center"]
-
-.Phishing Réussi
-image::images/phishing2.png[Simulation Phishing, 600, align="center"]
-
 === F4: Module Investigation (Blue Team) 
 *Objectif*:: Former à la défense et à l'analyse de logs (Forensics).
-*Technique*:: Un générateur de logs (`LogGenerator`) crée dynamiquement des milliers de lignes de trafic web réaliste, en y cachant une attaque unique (ex: Injection SQL). L'utilisateur doit filtrer et identifier l'IP malveillante.
-
-.Accueil dans le menu d'Investigation
-image::images/logs.png[Screenshot Investigation, 600, align="center"]
-
-.Affichage des Logs
-image::images/logs2.png[Screenshot Investigation, 600, align="center"]
+*Technique*:: Un générateur de logs (`LogGenerator`) crée dynamiquement des milliers de lignes de trafic web réaliste.
 
 === F5: Dashboard Unifié & Certification 
 *Objectif*:: Centraliser la progression.
-*Évolution v1.0*:: Le Dashboard agrège désormais les scores de tous les modules (Quiz + Arena + Logs + Phishing) pour calculer une moyenne globale.
-*Recommandations*:: Si le score est faible, le système suggère des ressources externes ciblées. Si le score est élevé (>80%), il débloque des certifications virtuelles.
+*Évolution*:: Agrégation des scores de tous les modules pour calculer une moyenne globale et débloquer des certifications.
 
-.Tableau de Bord Global
-image::images/dashboard1.png[Score Dashboard, 600, align="center"]
+=== F6: Asynchronisme & Robustesse (RabbitMQ) - *Nouveau v1.0.1*
+*Objectif*:: Assurer une exécution fluide et scalable des commandes.
+*Technique*:: Utilisation de **RabbitMQ** pour traiter les événements de jeu et les commandes de l'Arena de manière asynchrone, évitant les blocages du thread principal.
+
+=== F7: Défense Active & Leurres (Kubernetes) - *Nouveau v1.0.1*
+*Objectif*:: Simuler des environnements de défense réseau complexes.
+*Innovation*:: Intégration de **KubernetesService** pour le déploiement automatique de leurres (honeypots) en réponse à des menaces détectées.
 
 == Gestion de Projet & Qualité 
 
