@@ -1,0 +1,72 @@
+@startuml
+' --- Thème Clair et Lisible ---
+skinparam backgroundColor white
+skinparam roundcorner 10
+skinparam sequence {
+    ArrowColor black
+    LifeLineBorderColor black
+    ParticipantBorderColor black
+    ParticipantBackgroundColor #F0F0F0
+}
+
+title Architecture Technique Avancée : Infrastructure & IA
+
+actor "Utilisateur (Analyste)" as User
+
+box "Interface (Frontend)" #E3F2FD
+    participant "Dashboard\nTemps Réel" as UI
+end box
+
+box "Serveur (Backend)" #F3E5F5
+    participant "API Spring Boot\n(Orchestrateur)" as API
+end box
+
+box "Moteur d'IA" #E8F5E9
+    participant "Gemini / LLM API\n(Analyse IA)" as AI
+end box
+
+box "Infrastructure & Cyber-Intelligence" #FFF3E0
+    participant "Kubernetes\n(Honeypots)" as K8s
+    participant "Docker\n(Kata Containers)" as Docker
+    participant "RabbitMQ\n(Bus d'Alertes)" as RMQ
+    participant "Threat Intel API\n(Sources Externes)" as Intel
+end box
+
+== 1. Infrastructure Défensive (Honeypots) ==
+User -> UI : Commande "Déployer Leurre"
+UI -> API : Requête de déploiement
+API -> K8s : Provisionne Pod MySQL (Isolé)
+K8s --> API : Confirmation (IP active)
+API --> UI : Leurre opérationnel sur le cluster
+
+== 2. Détection & Alertes Temps Réel ==
+K8s -> RMQ : Tentative d'intrusion détectée
+RMQ -> API : Événement d'attaque poussé
+API -> UI : Notification WebSocket (Push)
+UI -> User : Alerte : "Intrusion sur le Leurre !"
+
+== 3. Analyse par Intelligence Artificielle ==
+User -> UI : Demande "Analyse de l'Attaque"
+UI -> API : Envoie les logs de l'attaque
+API -> AI : Soumet les traces (Logs/IP/Commandes)
+AI -> AI : Corrélation et pattern matching
+AI --> API : Rapport d'analyse (Origine, Risque, Remédiation)
+API --> UI : Assistant IA : "Voici le diagnostic de l'attaque..."
+
+== 4. Investigation & Cyber-Intelligence ==
+User -> UI : Recherche IP/Hash suspect
+UI -> API : Demande de réputation
+API -> Intel : Interroge VirusTotal/AbuseIPDB
+Intel --> API : Données de Threat Intel
+API -> AI : "IA, résume le danger de cette IP"
+AI --> API : Synthèse textuelle claire
+API --> UI : Rapport complet (Données + Analyse IA)
+
+== 5. Entraînement Technique (Sandboxing) ==
+User -> UI : Lance Challenge CTF
+UI -> API : Créer environnement
+API -> Docker : Démarre Micro-VM (Kata Containers)
+Docker --> API : Instance prête et isolée
+API --> UI : Accès Terminal Sécurisé
+
+@enduml

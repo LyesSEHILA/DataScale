@@ -42,11 +42,11 @@ class PhishingControllerTest {
     @Test
     void analyzeClick_ShouldReturnSuccessResponse() throws Exception {
         // 1. Mock du service
-        when(phishingService.analyzeClick(eq("S1"), eq("trap-btn")))
+        when(phishingService.analyzeClick(eq(1L), eq("trap-btn")))
                 .thenReturn(Map.of("isTrap", true, "message", "Bravo !"));
 
         // 2. Requête JSON
-        String jsonRequest = "{\"scenarioId\": \"S1\", \"elementId\": \"trap-btn\"}";
+        String jsonRequest = "{\"scenarioId\": 1, \"elementId\": \"trap-btn\"}";
 
         // 3. Appel & Vérification
         mockMvc.perform(post("/api/phishing/analyze")
@@ -59,10 +59,10 @@ class PhishingControllerTest {
 
     @Test
     void analyzeClick_ShouldHandleSafeElement() throws Exception {
-        when(phishingService.analyzeClick(eq("S1"), eq("safe-text")))
+        when(phishingService.analyzeClick(eq(1L), eq("safe-text")))
                 .thenReturn(Map.of("isTrap", false, "message", "Raté"));
 
-        String jsonRequest = "{\"scenarioId\": \"S1\", \"elementId\": \"safe-text\"}";
+        String jsonRequest = "{\"scenarioId\": 1, \"elementId\": \"safe-text\"}";
 
         mockMvc.perform(post("/api/phishing/analyze")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -75,10 +75,10 @@ class PhishingControllerTest {
 
     @Test
     void getScenarioInfo_ShouldReturnDetails() throws Exception {
-        when(phishingService.getScenarioInfo("S1"))
+        when(phishingService.getScenarioInfo(1L))
                 .thenReturn(Map.of("totalTraps", 5, "lesson", "Attention aux liens"));
 
-        mockMvc.perform(get("/api/phishing/info/S1"))
+        mockMvc.perform(get("/api/phishing/info/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalTraps").value(5))
                 .andExpect(jsonPath("$.lesson").value("Attention aux liens"));

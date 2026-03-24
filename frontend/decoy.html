@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deception Center - CyberScale</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        #intrusion-alert-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(220, 38, 38, 0.5); z-index: 10000;
+            flex-direction: column; align-items: center; justify-content: center;
+            color: white; animation: pulse-overlay 0.5s infinite;
+            text-shadow: 0 0 20px black;
+        }
+        @keyframes pulse-overlay { 0% { opacity: 0.7; } 50% { opacity: 1; } 100% { opacity: 0.7; } }
+    </style>
+</head>
+<body class="bg-slate-900 h-screen flex overflow-hidden text-slate-200">
+
+    <div id="intrusion-alert-overlay">
+        <i class="fas fa-radiation text-9xl mb-6"></i>
+        <h1 class="text-7xl font-black mb-4 uppercase tracking-tighter text-center px-10">INTRUSION DÉTECTÉE</h1>
+        <p id="overlay-msg" class="text-2xl font-mono bg-black/80 p-4 rounded border border-red-500 text-center max-w-2xl"></p>
+        <button onclick="document.getElementById('intrusion-alert-overlay').style.display='none'"
+                class="mt-6 px-6 py-2 border border-white/40 rounded-xl text-sm hover:bg-white/10 transition">
+            Fermer
+        </button>
+    </div>
+
+    <!-- Sidebar via composant partagé -->
+    <div id="sidebar-placeholder"></div>
+    <script src="js/sidebar.js"></script>
+
+    <main class="flex-1 flex flex-col min-w-0 overflow-hidden bg-slate-900">
+        <div class="flex-1 p-8 overflow-y-auto">
+            <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                <div>
+                    <h1 class="text-3xl font-bold text-white">Deception Center</h1>
+                    <p class="text-slate-400">Déploiement et monitoring des leurres actifs.</p>
+                </div>
+            </header>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+                <!-- Panneau Provisioning -->
+                <div class="lg:col-span-1 space-y-6">
+                    <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl">
+                        <h2 class="text-xl font-bold text-white mb-6">Provisioning</h2>
+
+                        <button id="deploy-mysql-btn"
+                                class="w-full p-6 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold flex flex-col items-center gap-3 shadow-lg shadow-blue-900/40 transition-all">
+                            <i class="fas fa-database text-4xl"></i>
+                            <span>DEPLOY MYSQL DECOY</span>
+                        </button>
+
+                        <button id="test-alert-btn"
+                                class="w-full mt-4 p-4 bg-red-600/10 hover:bg-red-600/20 text-red-400 border border-red-500/40 hover:border-red-500/70 rounded-xl font-bold flex items-center justify-center gap-2 transition-all">
+                            <i class="fas fa-bolt"></i>
+                            <span>SIMULER UNE ATTAQUE</span>
+                        </button>
+
+                        <p class="text-xs text-slate-500 text-center mt-3 italic">
+                            Déclenche une alerte de test sans leurre réel.
+                        </p>
+                    </div>
+
+                    <!-- Compteur d'alertes -->
+                    <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow-xl">
+                        <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">Statistiques</h3>
+                        <div class="flex justify-between items-center">
+                            <span class="text-slate-400 text-sm">Intrusions détectées</span>
+                            <span id="alert-count" class="text-2xl font-bold text-red-400">0</span>
+                        </div>
+                        <div class="mt-3 flex justify-between items-center">
+                            <span class="text-slate-400 text-sm">Session actuelle</span>
+                            <span id="session-count" class="text-2xl font-bold text-orange-400">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Feed -->
+                <div class="lg:col-span-2">
+                    <div class="bg-slate-800 rounded-2xl border border-red-500/20 overflow-hidden h-[560px] flex flex-col shadow-xl">
+                        <div class="bg-red-500/10 p-4 border-b border-red-500/20 flex justify-between items-center">
+                            <h2 class="text-red-500 font-bold flex items-center gap-2">
+                                <i class="fas fa-radiation animate-pulse"></i> LIVE INTRUSION FEED
+                            </h2>
+                            <span id="ws-status" class="text-xs font-mono px-2 py-1 rounded border border-slate-600 text-slate-500">
+                                <i class="fas fa-circle text-[8px] mr-1"></i> Connexion...
+                            </span>
+                        </div>
+                        <div id="intrusion-feed" class="p-4 overflow-y-auto flex-1 font-mono text-xs space-y-3">
+                            <p id="feed-placeholder" class="text-slate-500 italic p-2">
+                                Chargement de l'historique...
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <script src="js/auth-guard.js"></script>
+    <script>
+        const API_ALERTS = "http://localhost:8080/api/intelligence/alerts";
+        const API_TEST   = "http://localhost:8080/api/intelligence/log/test";
+        const API_DECOY  = "http://localhost:8080/api/decoy";
+
+        let stompClient = null;
+        let sessionAlertCount = 0;
+
+        // ─── Son d'alerte (oscillateur Web Audio — aucune dépendance externe) ───
+        function playAlertSound() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(880, ctx.currentTime);
+                osc.frequency.setValueAtTime(440, ctx.currentTime + 0.1);
+                osc.frequency.setValueAtTime(880, ctx.currentTime + 0.2);
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+                osc.start(ctx.currentTime);
+                osc.stop(ctx.currentTime + 0.5);
+            } catch (e) {}
+        }
+
+        // ─── Indicateur de statut WebSocket ───
+        function setWsStatus(connected) {
+            const el = document.getElementById("ws-status");
+            el.innerHTML = connected
+                ? '<i class="fas fa-circle text-[8px] mr-1 text-green-400"></i><span class="text-green-400">Connecté</span>'
+                : '<i class="fas fa-circle text-[8px] mr-1 text-red-400"></i><span class="text-red-400">Déconnecté — reconnexion...</span>';
+        }
+
+        // ─── Connexion WebSocket avec reconnexion automatique ───
+        function connect() {
+            const socket = new SockJS("http://localhost:8080/ws-cyberscale");
+            stompClient = Stomp.over(socket);
+            stompClient.debug = null;
+            stompClient.connect({}, function () {
+                setWsStatus(true);
+                stompClient.subscribe("/topic/arena/alerts", function (msg) {
+                    let body = msg.body;
+                    try {
+                        const parsed = JSON.parse(body);
+                        if (typeof parsed === "string") body = parsed;
+                    } catch (e) {}
+
+                    if (body.includes("[ALERTE INTRUSION]")) {
+                        sessionAlertCount++;
+                        document.getElementById("session-count").textContent = sessionAlertCount;
+                        handleIntrusion(body, new Date().toISOString());
+                    }
+                });
+            }, function () {
+                setWsStatus(false);
+                setTimeout(connect, 5000);
+            });
+        }
+
+        // ─── Affichage d'une alerte dans le feed ───
+        function handleIntrusion(text, isoDate, isHistorical) {
+            playAlertSound();
+
+            if (!isHistorical) {
+                const overlay = document.getElementById("intrusion-alert-overlay");
+                const overlayMsg = document.getElementById("overlay-msg");
+                const lines = text.split("\n");
+                overlayMsg.textContent = lines[2] || lines[1] || "ACCÈS NON AUTORISÉ DÉTECTÉ";
+                overlay.style.display = "flex";
+                setTimeout(() => { overlay.style.display = "none"; }, 5000);
+            }
+
+            const feed = document.getElementById("intrusion-feed");
+            const placeholder = document.getElementById("feed-placeholder");
+            if (placeholder) placeholder.remove();
+
+            const time = isoDate
+                ? new Date(isoDate).toLocaleTimeString('fr-FR')
+                : new Date().toLocaleTimeString('fr-FR');
+
+            const div = document.createElement("div");
+            div.className = isHistorical
+                ? "bg-slate-700/20 border border-slate-600/50 p-4 rounded-xl"
+                : "bg-red-900/20 border border-red-500/50 p-4 rounded-xl animate-pulse";
+
+            div.innerHTML = `
+                <div class="flex justify-between mb-2">
+                    <span class="${isHistorical ? 'text-slate-400' : 'text-red-400'} font-bold">
+                        <i class="fas ${isHistorical ? 'fa-history' : 'fa-skull-crossbones'} mr-2"></i>
+                        ${isHistorical ? 'Historique' : 'INTRUSION LIVE'}
+                    </span>
+                    <span class="text-slate-500">${time}</span>
+                </div>
+                <div class="text-slate-300 text-xs whitespace-pre-wrap">${text.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>
+            `;
+
+            if (!isHistorical) {
+                setTimeout(() => div.classList.remove("animate-pulse"), 2000);
+                feed.prepend(div);
+            } else {
+                feed.appendChild(div);
+            }
+        }
+
+        // ─── Chargement de l'historique des alertes ───
+        async function loadAlertHistory() {
+            try {
+                const res = await fetch(API_ALERTS);
+                if (!res.ok) throw new Error("API indisponible");
+                const alerts = await res.json();
+
+                const feed = document.getElementById("intrusion-feed");
+                const placeholder = document.getElementById("feed-placeholder");
+
+                // Mise à jour du compteur total
+                document.getElementById("alert-count").textContent = alerts.length;
+
+                if (alerts.length === 0) {
+                    if (placeholder) placeholder.textContent = "Scanner réseau actif... En attente de détection sur les leurres.";
+                    return;
+                }
+
+                if (placeholder) placeholder.remove();
+
+                // Afficher du plus récent au plus ancien
+                alerts.forEach(alert => {
+                    const text = `⚠️ [ALERTE INTRUSION]\nSOURCE: ${alert.source}\nLOG: ${alert.message}`;
+                    handleIntrusion(text, alert.detectedAt, true);
+                });
+
+            } catch (e) {
+                const placeholder = document.getElementById("feed-placeholder");
+                if (placeholder) {
+                    placeholder.textContent = "Scanner réseau actif... En attente de détection sur les leurres.";
+                    placeholder.className = "text-slate-500 italic p-2";
+                }
+            }
+        }
+
+        // ─── Déploiement du leurre ───
+        async function deployDecoy(type) {
+            const btn = document.getElementById("deploy-mysql-btn");
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin text-2xl"></i><span>PROVISIONING...</span>';
+            btn.disabled = true;
+            try {
+                const res = await fetch(API_DECOY, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ decoyType: type })
+                });
+                if (res.ok) {
+                    btn.innerHTML = '<i class="fas fa-check-circle text-2xl text-green-400"></i><span>DEPLOYED</span>';
+                    btn.classList.replace("bg-blue-600", "bg-green-700");
+                    btn.classList.replace("hover:bg-blue-500", "hover:bg-green-600");
+                } else {
+                    btn.innerHTML = '<i class="fas fa-times-circle text-2xl"></i><span>ERREUR SERVEUR</span>';
+                    btn.disabled = false;
+                }
+            } catch (e) {
+                btn.innerHTML = '<i class="fas fa-times-circle text-2xl"></i><span>ERREUR RÉSEAU</span>';
+                btn.disabled = false;
+            }
+        }
+
+        // ─── Simulation d'attaque ───
+        document.getElementById("test-alert-btn").addEventListener("click", async () => {
+            const btn = document.getElementById("test-alert-btn");
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Envoi...</span>';
+            try {
+                await fetch(API_TEST, { method: "POST" });
+            } catch (e) {}
+            setTimeout(() => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-bolt"></i><span>SIMULER UNE ATTAQUE</span>';
+            }, 3000);
+        });
+
+        document.getElementById("deploy-mysql-btn").addEventListener("click", () => deployDecoy("mysql"));
+
+        // ─── Init ───
+        loadAlertHistory();
+        connect();
+    </script>
+</body>
+</html>
