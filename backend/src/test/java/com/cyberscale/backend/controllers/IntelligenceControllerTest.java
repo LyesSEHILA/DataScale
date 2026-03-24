@@ -41,7 +41,7 @@ class IntelligenceControllerTest {
 
     @Test
     void receiveLog_ShouldSendToRabbitMQ() throws Exception {
-        String jsonLog = "{\"ip\": \"1.1.1.1\", \"message\": \"Tentative SSH\"}";
+        String jsonLog = "{\"ip\": \"192.0.2.1\", \"message\": \"Tentative SSH\"}";
 
         mockMvc.perform(post("/api/intelligence/log")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -54,17 +54,17 @@ class IntelligenceControllerTest {
     @Test
     void analyzeIp_ShouldReturnThreatAnalysis() throws Exception {
         DetectedThreat mockThreat = new DetectedThreat();
-        mockThreat.setIpAddress("1.1.1.1");
+        mockThreat.setIpAddress("192.0.2.1");
         mockThreat.setCountryCode("FR");
         mockThreat.setAbuseConfidenceScore(85);
         mockThreat.setDetectedAt(LocalDateTime.now());
 
-        when(threatIntelligenceService.analyzeAndSaveIp(eq("1.1.1.1"))).thenReturn(mockThreat);
+        when(threatIntelligenceService.analyzeAndSaveIp(eq("192.0.2.1"))).thenReturn(mockThreat);
 
         mockMvc.perform(get("/api/intelligence/analyze-ip")
-                .param("ip", "1.1.1.1"))
+                .param("ip", "192.0.2.1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.ipAddress").value("1.1.1.1"))
+                .andExpect(jsonPath("$.ipAddress").value("192.0.2.1"))
                 .andExpect(jsonPath("$.countryCode").value("FR"))
                 .andExpect(jsonPath("$.abuseConfidenceScore").value(85));
     }
