@@ -18,32 +18,25 @@
 
 ### 🔥 Nouveautés de la v2.0.0
 *   🚀 **Auto-Scale Infrastructure** : Déploiement dynamique de topologies réseaux complexes.
-*   💻 **Enhanced Cyber Arena** : Terminaux Linux (Kali/Ubuntu) isolés avec persistance de session.
+*   💻 **Enhanced Cyber Arena** : Terminaux Linux (Kali/Ubuntu) isolés orchestrés par Docker avec persistance de session.
 *   🤖 **AI Intelligence Layer** : Génération de scénarios d'attaque réalistes via LLM.
 *   🛡️ **Security Hardening** : Isolation stricte des workspaces et correction des permissions critiques.
 
-### 🎮 Cyber Arena (Nouveau !)
-Un **terminal Linux réel** orchestré par Docker directement dans le navigateur.
-* **Isolation Docker :** Chaque utilisateur dispose de son propre conteneur temporaire.
-* **Flags Dynamiques :** Système de protection contre la triche avec des flags générés à la volée.
-* **Mode CTF (Capture The Flag) :** Trouvez les flags cachés et validez-les via la commande `submit <flag>`.
-
-### 🏗️ Infrastructure Asynchrone
-* **RabbitMQ :** Traitement des événements de jeu et orchestration infra en arrière-plan.
-* **Kubernetes Ready :** Service de déploiement de "leurres" (honeypots) intégré.
+---
 
 ## 🎮 Modules de Formation
 
 ### 🔴 Red Team : Cyber Arena
 Environnement de terminal réel orchestré via Docker pour l'entraînement offensif.
 - **Isolation Native** : Chaque utilisateur dispose de son propre namespace Linux.
-- **CTF Integration** : Système de validation de flags dynamique.
-- **DooD Architecture** : Utilisation du socket Docker pour une performance maximale.
+- **CTF Integration** : Trouvez les flags cachés et validez-les via la commande `submit <flag>`.
+- **DooD Architecture** : Utilisation du socket Docker (Docker-out-of-Docker) pour une performance native.
 
 ### 🔵 Blue Team : SOC & Investigation
 Devenez analyste en traitant des incidents de sécurité générés en temps réel.
 - **SIEM Simulation** : Détection de patterns (SQLi, Brute-force, XSS).
 - **Honeypot Orchestrator** : Déployez des leurres Kubernetes en un clic.
+- **Infrastructure Asynchrone** : RabbitMQ pour le traitement des événements en arrière-plan.
 
 ### 🧠 Academy & Phishing
 - **Email Simulator** : Apprenez à déjouer l'ingénierie sociale complexe.

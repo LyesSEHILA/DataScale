@@ -8,8 +8,8 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import jakarta.annotation.PostConstruct;
+import java.security.SecureRandom;
 import java.util.Map;
-import java.util.Random;
 
 /**
  * Service émettant des notifications de phishing en temps réel via WebSockets.
@@ -20,7 +20,7 @@ public class PhishingNotificationService {
     private static final Logger logger = LoggerFactory.getLogger(PhishingNotificationService.class);
     private final SimpMessagingTemplate messagingTemplate;
     private final PhishingService phishingService;
-    private final Random random = new Random();
+    private final SecureRandom random = new SecureRandom();
 
     @Autowired
     public PhishingNotificationService(SimpMessagingTemplate messagingTemplate, PhishingService phishingService) {
@@ -31,7 +31,7 @@ public class PhishingNotificationService {
     /**
      * Génère un premier mail dès le démarrage pour éviter une boîte vide.
      */
-    @jakarta.annotation.PostConstruct
+    @PostConstruct
     public void init() {
         logger.info(" Initialisation du module Phishing...");
         phishingService.generateRandomPhishingEmail();

@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.security.SecureRandom;
 import java.util.*;
 
 /**
@@ -21,7 +22,7 @@ public class PhishingService {
     @Autowired
     private EmailScenarioRepository repository;
 
-    private final Random random = new Random();
+    private final SecureRandom random = new SecureRandom();
 
     private final String[] SENDERS = {"Support Microsoft", "Banque Populaire", "Service RH", "PayPal Support", "IT Department", "Amazon Prime", "Netflix France"};
     private final String[] SUBJECTS = {"Action requise : Sécurité compte", "Facture impayée", "Virement en attente de validation", "Votre abonnement expire", "Tentative de connexion bloquée"};
