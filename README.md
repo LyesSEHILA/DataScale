@@ -22,7 +22,15 @@
 *   🤖 **AI Intelligence Layer** : Génération de scénarios d'attaque réalistes via LLM.
 *   🛡️ **Security Hardening** : Isolation stricte des workspaces et correction des permissions critiques.
 
----
+### 🎮 Cyber Arena (Nouveau !)
+Un **terminal Linux réel** orchestré par Docker directement dans le navigateur.
+* **Isolation Docker :** Chaque utilisateur dispose de son propre conteneur temporaire.
+* **Flags Dynamiques :** Système de protection contre la triche avec des flags générés à la volée.
+* **Mode CTF (Capture The Flag) :** Trouvez les flags cachés et validez-les via la commande `submit <flag>`.
+
+### 🏗️ Infrastructure Asynchrone
+* **RabbitMQ :** Traitement des événements de jeu et orchestration infra en arrière-plan.
+* **Kubernetes Ready :** Service de déploiement de "leurres" (honeypots) intégré.
 
 ## 🎮 Modules de Formation
 
