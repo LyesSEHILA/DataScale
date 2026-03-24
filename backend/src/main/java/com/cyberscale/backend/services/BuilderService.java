@@ -17,7 +17,10 @@ import java.util.UUID;
 public class BuilderService {
 
     private static final Logger logger = LoggerFactory.getLogger(BuilderService.class);
-    private static final String WORKSPACE_DIR = System.getProperty("java.io.tmpdir") + "/cyberscale-labs/";
+    
+    @Value("${app.builder.workspace-dir:#{systemProperties['java.io.tmpdir']}/cyberscale-labs/}")
+    private String workspaceDir;
+
     private static final String LABEL_REGEX = "[^a-z0-9]";
     @Value("${app.docker.path:/usr/bin/docker}") 
     private String dockerPath;
@@ -26,7 +29,7 @@ public class BuilderService {
         String deploymentId = UUID.randomUUID().toString();
         String composeContent = generateDockerComposeYaml(topology, deploymentId);
         
-        File deployDir = new File(WORKSPACE_DIR + deploymentId);
+        File deployDir = new File(workspaceDir, deploymentId);
         if (!deployDir.exists() && !deployDir.mkdirs()) {
             throw new IOException("Impossible de créer le dossier de travail : " + deployDir.getAbsolutePath());
         }

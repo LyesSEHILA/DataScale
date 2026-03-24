@@ -1,139 +1,133 @@
-// Templates HTML pour l'intérieur des mails (Aspect réaliste Gmail)
-const scenariosHTML = {
-    "SCENARIO_1": `
-        <div style="margin-bottom: 20px;">
-            <h2 style="margin: 0 0 10px 0; font-size: 22px;">URGENT : Validation de sécurité requise</h2>
-            <div style="display:flex; align-items:center;">
-                <div style="width:40px; height:40px; background:#ccc; border-radius:50%; margin-right:10px; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold;">S</div>
-                <div>
-                    <div><strong>Support IT</strong> <span style="font-size:12px; color:#555;">&lt;<span id="sender-email" class="interactive">security-check@google-account-update.com</span>&gt;</span></div>
-                    <div style="font-size:12px; color:#555;">À moi <span class="material-icons" style="font-size:12px;">arrow_drop_down</span></div>
-                </div>
-            </div>
-        </div>
-        <div style="font-family: Arial, sans-serif; color: #333;">
-            <p>Bonjour <span id="generic-greeting" class="interactive">utilisateur</span>,</p>
-            <p>Nous avons détecté une connexion inhabituelle sur votre compte.</p>
-            <p style="background-color:#fff3cd; padding:5px; border-left:4px solid #ffc107;"><span id="urgency-text" class="interactive">Action requise sous 2 heures pour éviter le blocage.</span></p>
-            <br>
-            <a id="fake-link-btn" class="interactive" href="#" style="background-color: #1a73e8; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; display: inline-block;">Vérifier mon activité</a>
-            <br><br>
-            <p style="font-size:12px; color:#888;">Merci,<br>L'équipe Sécurité.</p>
-        </div>
-    `,
-    "SCENARIO_2": `
-        <div style="margin-bottom: 20px;">
-            <h2 style="margin: 0 0 10px 0;">Facture Impayée #9928</h2>
-            <div><strong>Équipe RH</strong> <span style="color:#555;">&lt;<span id="sender-hr" class="interactive">rh-service@gmail.com</span>&gt;</span></div>
-        </div>
-        <div>
-            <p>Bonjour,</p>
-            <p>Veuillez trouver ci-joint la facture pour <span id="typo-body" class="interactive">votre salair</span>.</p>
-            <div style="background:#f1f3f4; padding:10px; border-radius:4px; width:200px; margin-top:20px;">
-                <span class="material-icons" style="color:red; vertical-align:middle;">description</span> 
-                <span id="attachment-exe" class="interactive" style="font-weight:bold;">facture.exe</span>
-            </div>
-        </div>
-    `,
-    "SCENARIO_3": `
-        <div style="margin-bottom: 20px;">
-            <h2 style="margin: 0 0 10px 0;">Virement Urgent - Confidentiel</h2>
-            <div><strong>Michel (PDG)</strong> <span style="color:#555;">&lt;<span id="fake-ceo" class="interactive">michel.pdg@company-group.net</span>&gt;</span></div>
-        </div>
-        <div>
-            <p>Salut,</p>
-            <p>J'ai besoin d'un virement urgent pour un fournisseur. C'est confidentiel.</p>
-            <p>IBAN : <span id="iban-foreign" class="interactive">LT89 3300 4400...</span> (Lituanie)</p>
-            <p>Fais-le maintenant, je compte sur toi.</p>
-            <p>Michel.</p>
-        </div>
-    `
-};
-
 // Variables d'état
 let currentScenarioId = null;
 let trapsFound = 0;
-let totalTraps = -1; // -1 = Pas encore chargé (Empêche la victoire immédiate)
+let totalTraps = -1; 
 let foundIds = new Set();
 
-// Ouvre un mail (Passe de la liste à la lecture)
+const API_PHISHING = "http://localhost:8080/api/phishing";
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadInbox();
+});
+
+async function loadInbox() {
+    try {
+        const response = await fetch(`${API_PHISHING}/inbox`);
+        if (!response.ok) return;
+
+        const emails = await response.json();
+        const emailList = document.querySelector('.email-list');
+        emailList.innerHTML = "";
+
+        if (!Array.isArray(emails)) return;
+
+        emails.sort((a, b) => b.id - a.id).forEach(email => {
+            const row = `
+                <div class="email-row unread" id="email-row-${email.id}" onclick="openScenario(${email.id})">
+                    <div class="col-check"><span class="material-icons">check_box_outline_blank</span></div>
+                    <div class="col-star"><span class="material-icons">star_border</span></div>
+                    <div class="col-sender">${(email.sender || "Inconnu").split('<')[0].trim()}</div>
+                    <div class="col-content">
+                        <span class="subject">${email.subject || "(Pas d'objet)"}</span>
+                        <span class="separator">-</span>
+                        <span class="snippet">${(email.contentHtml || "").replace(/<[^>]*>?/gm, '').substring(0, 60)}...</span>
+                    </div>
+                    <div class="col-date">À l'instant</div>
+                </div>
+            `;
+            emailList.innerHTML += row;
+        });
+    } catch (e) {
+        console.error("Erreur loadInbox:", e);
+    }
+}
+
 async function openScenario(scenarioId) {
     currentScenarioId = scenarioId;
-    
-    // Reset complet
     trapsFound = 0;
     totalTraps = -1; 
     foundIds.clear();
     
-    // UI : Masquer liste / Afficher lecteur
     document.getElementById('inbox-view').classList.add('hidden');
     document.getElementById('reading-view').classList.remove('hidden');
     document.getElementById('feedback-alert').classList.add('hidden');
+
+    const row = document.getElementById(`email-row-${scenarioId}`);
+    if (row) {
+        row.classList.remove('unread');
+        row.classList.add('read');
+    }
     
-    // Injecter HTML
-    const contentArea = document.getElementById('email-content-area');
-    contentArea.innerHTML = scenariosHTML[scenarioId] || "<p>Erreur de chargement.</p>";
-
-    // Reset Compteur UI
-    updateCounterUI();
-
-    // Appel Backend pour savoir combien de pièges chercher
     try {
-        const response = await fetch(`http://localhost:8080/api/phishing/info/${scenarioId}`);
+        const response = await fetch(`${API_PHISHING}/info/${scenarioId}`);
+        if (!response.ok) return;
+
         const data = await response.json();
+        const contentArea = document.getElementById('email-content-area');
         
-        totalTraps = data.totalTraps;
-        document.getElementById('lesson-text').textContent = data.lesson;
+        const sender = data.sender || "Inconnu <inconnu@fake.com>";
+        const senderInitial = sender[0];
+        const senderName = sender.split('<')[0];
+        const senderMail = sender.includes('<') ? sender.split('<')[1].replace('>', '') : sender;
+
+        contentArea.innerHTML = `
+            <div style="margin-bottom: 20px;">
+                <h2 style="margin: 0 0 10px 0; font-size: 22px;">${data.subject || "(Pas d'objet)"}</h2>
+                <div style="display:flex; align-items:center;">
+                    <div style="width:40px; height:40px; background:#1a73e8; border-radius:50%; margin-right:10px; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold;">${senderInitial}</div>
+                    <div>
+                        <div><strong>${senderName}</strong> <span id="sender-email" class="interactive" style="font-size:12px; color:#555;">&lt;${senderMail}&gt;</span></div>
+                        <div style="font-size:12px; color:#555;">À moi</div>
+                    </div>
+                </div>
+            </div>
+            <div class="email-body-text" style="color: #202124;">${data.contentHtml || "<p><i>Contenu vide</i></p>"}</div>
+        `;
+
+        totalTraps = data.totalTraps || 0;
+        document.getElementById('lesson-text').textContent = data.lesson || "Méfiez-vous des emails suspects.";
         
-        updateCounterUI(); // Mettre à jour avec le vrai total (ex: 0 / 4)
-        
-        // Activer les clics
+        updateCounterUI();
         attachInteraction();
 
     } catch (e) {
-        console.error("Erreur API:", e);
+        console.error("Erreur openScenario:", e);
     }
 }
 
-// Ferme le mail (Retour Inbox)
-function closeEmail() {
-    document.getElementById('reading-view').classList.add('hidden');
-    document.getElementById('inbox-view').classList.remove('hidden');
-    document.getElementById('victory-modal').classList.add('hidden');
-}
-
-// Gère les clics sur les éléments interactifs
 function attachInteraction() {
     const elements = document.querySelectorAll('.interactive');
     elements.forEach(el => {
         el.addEventListener('click', async (e) => {
             e.preventDefault();
-            e.stopPropagation();
+            const target = e.currentTarget;
+            const elementId = target.id;
+            
+            if (!elementId || foundIds.has(elementId)) return;
 
-            const elementId = e.target.id;
-            if (foundIds.has(elementId)) return; // Déjà trouvé
-
-            // Appel API d'analyse
-            const response = await fetch('http://localhost:8080/api/phishing/analyze', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ scenarioId: currentScenarioId, elementId: elementId })
-            });
-            const result = await response.json();
-
-            showFeedback(result, e.target);
+            try {
+                const response = await fetch(`${API_PHISHING}/analyze`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ scenarioId: currentScenarioId, elementId: elementId })
+                });
+                if (response.ok) {
+                    const result = await response.json();
+                    showFeedback(result, target);
+                }
+            } catch (err) {
+                console.error("Erreur d'analyse:", err);
+            }
         });
     });
 }
 
-// Affiche le feedback (Vert/Rouge)
 function showFeedback(result, element) {
     const alertBox = document.getElementById('feedback-alert');
     alertBox.classList.remove('hidden', 'success', 'error');
     alertBox.textContent = result.message;
 
     if (result.isTrap) {
-        // C'est un piège !
         alertBox.classList.add('success');
         element.classList.add('trap-found');
         
@@ -144,7 +138,6 @@ function showFeedback(result, element) {
             checkVictory();
         }
     } else {
-        // C'est safe (erreur utilisateur)
         alertBox.classList.add('error');
         element.classList.add('trap-safe');
         setTimeout(() => element.classList.remove('trap-safe'), 500);
@@ -157,24 +150,20 @@ function updateCounterUI() {
 }
 
 function checkVictory() {
-    // La victoire n'est possible que si totalTraps a été chargé (> 0)
     if (totalTraps > 0 && trapsFound >= totalTraps) {
-        
-        // 1. Afficher l'animation Radar
         const scanOverlay = document.getElementById('scan-overlay');
         scanOverlay.classList.remove('hidden');
-
-        // 2. Attendre 3 secondes avant d'afficher le résultat final
         setTimeout(() => {
-            // Cacher le radar
             scanOverlay.classList.add('hidden');
-            
-            // Afficher la modale de victoire
             document.getElementById('victory-modal').classList.remove('hidden');
-            
-            // Son de succès (optionnel)
-            // new Audio('assets/sounds/success.mp3').play().catch(() => {}); 
-            
         }, 3000); 
     }
+}
+
+function closeEmail() {
+    document.getElementById("reading-view").classList.add("hidden");
+    document.getElementById("inbox-view").classList.remove("hidden");
+    document.getElementById("feedback-alert").classList.add("hidden");
+    document.getElementById("victory-modal").classList.add("hidden");
+    document.getElementById("scan-overlay").classList.add("hidden");
 }
