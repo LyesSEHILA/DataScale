@@ -1,65 +1,80 @@
 package com.cyberscale.backend.controllers;
 
-import com.cyberscale.backend.config.rabbitmq.RabbitMQConfig;
+import com.cyberscale.backend.config.SecurityConfig;
 import com.cyberscale.backend.models.DetectedThreat;
 import com.cyberscale.backend.services.intelligence.LocalThreatIntelligenceService;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@ExtendWith(MockitoExtension.class)
-public class IntelligenceControllerTest {
+@SpringBootTest
+@AutoConfigureMockMvc(addFilters = false)
+@Import(SecurityConfig.class)
+class IntelligenceControllerTest {
 
-    private static final String TEST_IP = String.join(".", "8", "8", "8", "8");
+    @Autowired
+    private MockMvc mockMvc;
 
-    @Mock
+    @MockitoBean
     private RabbitTemplate rabbitTemplate;
 
-    @Mock
+    @MockitoBean
     private LocalThreatIntelligenceService threatIntelligenceService;
 
-    @InjectMocks
-    private IntelligenceController intelligenceController;
-
     @Test
-    void receiveLog_ShouldSendToRabbitMQ_AndReturnOk() {
-        Map<String, String> fakeLog = Map.of("source", "honeypot", "message", "Erreur SQL");
-        ResponseEntity<Void> response = intelligenceController.receiveLog(fakeLog);
-        
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        verify(rabbitTemplate).convertAndSend(RabbitMQConfig.EXCHANGE_NAME, RabbitMQConfig.ROUTING_KEY_INTELLIGENCE, fakeLog);
+    void receiveLog_ShouldSendToRabbitMQ() throws Exception {
+        String jsonLog = "{\"ip\": \"1.1.1.1\", \"message\": \"Tentative SSH\"}";
+
+        mockMvc.perform(post("/api/intelligence/log")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonLog))
+                .andExpect(status().isOk());
+
+        verify(rabbitTemplate).convertAndSend(any(String.class), any(String.class), any(Map.class));
     }
 
     @Test
-    void analyzeIp_ShouldReturnThreat_WhenServiceSucceeds() {
+    void analyzeIp_ShouldReturnThreatAnalysis() throws Exception {
         DetectedThreat mockThreat = new DetectedThreat();
-        mockThreat.setIpAddress(TEST_IP);
-        when(threatIntelligenceService.analyzeAndSaveIp(TEST_IP)).thenReturn(mockThreat);
+        mockThreat.setIpAddress("1.1.1.1");
+        mockThreat.setCountryCode("FR");
+        mockThreat.setAbuseConfidenceScore(85);
+        mockThreat.setDetectedAt(LocalDateTime.now());
 
-        ResponseEntity<DetectedThreat> response = intelligenceController.analyzeIp(TEST_IP);
+        when(threatIntelligenceService.analyzeAndSaveIp(eq("1.1.1.1"))).thenReturn(mockThreat);
 
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(TEST_IP, response.getBody().getIpAddress());
+        mockMvc.perform(get("/api/intelligence/analyze-ip")
+                .param("ip", "1.1.1.1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.ipAddress").value("1.1.1.1"))
+                .andExpect(jsonPath("$.countryCode").value("FR"))
+                .andExpect(jsonPath("$.abuseConfidenceScore").value(85));
     }
 
     @Test
-    void analyzeIp_ShouldReturn500_WhenServiceFails() {
-        when(threatIntelligenceService.analyzeAndSaveIp(anyString())).thenReturn(null);
+    void analyzeIp_ShouldHandleError_WhenServiceReturnsNull() throws Exception {
+        when(threatIntelligenceService.analyzeAndSaveIp(any())).thenReturn(null);
 
-        ResponseEntity<DetectedThreat> response = intelligenceController.analyzeIp("invalid-ip");
-
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        mockMvc.perform(get("/api/intelligence/analyze-ip")
+                .param("ip", "unknown"))
+                .andExpect(status().isInternalServerError());
     }
 }

@@ -1,75 +1,110 @@
 package com.cyberscale.backend.services;
 
+import com.cyberscale.backend.models.EmailScenario;
+import com.cyberscale.backend.models.IQuestion;
+import com.cyberscale.backend.repositories.EmailScenarioRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
+@ExtendWith(MockitoExtension.class)
 class PhishingServiceTest {
 
+    @Mock
+    private EmailScenarioRepository repository;
+
+    @InjectMocks
     private PhishingService phishingService;
+
+    private EmailScenario mockScenario;
 
     @BeforeEach
     void setUp() {
-        phishingService = new PhishingService();
+        mockScenario = new EmailScenario();
+        mockScenario.setId(1L);
+        mockScenario.setSender("Support IT <security@fake.com>");
+        mockScenario.setSubject("Alerte Sécurité");
+        mockScenario.setContentHtml("<p>Cliquez ici</p>");
+        mockScenario.setTraps(List.of(
+            Map.of("id", "btn-verify", "message", "Lien frauduleux")
+        ));
     }
 
-    // --- Tests de analyzeClick ---
-
     @Test
-    void analyzeClick_ShouldReturnTrue_WhenTrapIsClicked() {
-        // Test avec un vrai piège du SCENARIO_1 (ex: sender-email)
-        Map<String, Object> result = phishingService.analyzeClick("SCENARIO_1", "sender-email");
+    void generateRandomPhishingEmail_ShouldSaveAndReturnScenario() {
+        when(repository.save(any(EmailScenario.class))).thenReturn(mockScenario);
+
+        EmailScenario result = phishingService.generateRandomPhishingEmail();
 
         assertNotNull(result);
-        assertEquals(true, result.get("isTrap"));
-        assertTrue(result.get("message").toString().contains("Bien vu"));
+        assertEquals("Alerte Sécurité", result.getSubject());
+        verify(repository, times(1)).save(any(EmailScenario.class));
     }
 
     @Test
-    void analyzeClick_ShouldReturnFalse_WhenSafeElementIsClicked() {
-        // Test avec un élément qui n'est PAS un piège
-        Map<String, Object> result = phishingService.analyzeClick("SCENARIO_1", "safe-text-element");
+    void getAllEmails_ShouldReturnList() {
+        when(repository.findAll()).thenReturn(List.of(mockScenario));
+
+        List<EmailScenario> result = phishingService.getAllEmails();
+
+        assertEquals(1, result.size());
+        assertEquals(mockScenario.getId(), result.get(0).getId());
+    }
+
+    @Test
+    void analyzeClick_ShouldReturnTrapFeedback_WhenIdMatches() {
+        when(repository.findById(1L)).thenReturn(Optional.of(mockScenario));
+
+        Map<String, Object> result = phishingService.analyzeClick(1L, "btn-verify");
+
+        assertTrue((Boolean) result.get("isTrap"));
+        assertTrue(result.get("message").toString().contains("Lien frauduleux"));
+    }
+
+    @Test
+    void analyzeClick_ShouldReturnSafeFeedback_WhenIdDoesNotMatch() {
+        when(repository.findById(1L)).thenReturn(Optional.of(mockScenario));
+
+        Map<String, Object> result = phishingService.analyzeClick(1L, "safe-element");
+
+        assertFalse((Boolean) result.get("isTrap"));
+        assertTrue(result.get("message").toString().contains("correct"));
+    }
+
+    @Test
+    void analyzeClick_ShouldReturnError_WhenInputsAreNull() {
+        Map<String, Object> result = phishingService.analyzeClick(null, null);
+        assertEquals("error", result.get("status"));
+    }
+
+    @Test
+    void getScenarioInfo_ShouldReturnMap_WhenExists() {
+        when(repository.findById(1L)).thenReturn(Optional.of(mockScenario));
+
+        Map<String, Object> result = phishingService.getScenarioInfo(1L);
 
         assertNotNull(result);
-        assertEquals(false, result.get("isTrap"));
-        assertTrue(result.get("message").toString().contains("légitime"));
+        assertEquals(1, result.get("totalTraps"));
+        assertEquals("Alerte Sécurité", result.get("subject"));
     }
 
     @Test
-    void analyzeClick_ShouldReturnFalse_WhenScenarioDoesNotExist() {
-        // Test avec un ID de scénario inconnu
-        Map<String, Object> result = phishingService.analyzeClick("SCENARIO_999", "sender-email");
+    void getScenarioInfo_ShouldReturnNull_WhenNotExists() {
+        when(repository.findById(99L)).thenReturn(Optional.empty());
 
-        // Doit être considéré comme "pas un piège" car le scénario n'existe pas
-        assertEquals(false, result.get("isTrap"));
-    }
+        Map<String, Object> result = phishingService.getScenarioInfo(99L);
 
-    @Test
-    void analyzeClick_ShouldHandleNullInputs() {
-        Map<String, Object> r1 = phishingService.analyzeClick(null, "sender-email");
-        Map<String, Object> r2 = phishingService.analyzeClick("SCENARIO_1", null);
-
-        assertEquals("error", r1.get("status"));
-        assertEquals("error", r2.get("status"));
-    }
-
-    // --- Tests de getScenarioInfo ---
-
-    @Test
-    void getScenarioInfo_ShouldReturnData_WhenScenarioExists() {
-        Map<String, Object> info = phishingService.getScenarioInfo("SCENARIO_1");
-
-        assertNotNull(info);
-        // On sait qu'il y a 4 pièges dans le scénario 1
-        assertEquals(4, info.get("totalTraps"));
-        assertTrue(info.get("lesson").toString().contains("Typosquatting"));
-    }
-
-    @Test
-    void getScenarioInfo_ShouldReturnNull_WhenScenarioUnknown() {
-        Map<String, Object> info = phishingService.getScenarioInfo("SCENARIO_UNKNOWN");
-        assertNull(info);
+        assertNull(result);
     }
 }

@@ -3,35 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boîte de réception - lyes.sehila@cyberscale.com - Gmail</title>
-    <link rel="stylesheet" href="css/phishing.css">
+    <title>Phishing Sim - CyberScale</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/phishing.css">
 </head>
-<body>
+<body class="bg-slate-900 h-screen flex overflow-hidden text-slate-200">
 
-    <div class="ds-sidebar">
-        <div class="ds-logo">CyberScale 🛡️</div>
-        <ul class="ds-menu">
-            <li><a href="dashboard.html"><i class="fas fa-home"></i> Tableau de bord</a></li>
-            <li><a href="arena.html"><i class="fas fa-terminal"></i> Training Arena</a></li>
-            <li><a href="challenges.html"><i class="fas fa-flag"></i> Challenges</a></li>
-            <li><a href="quiz-intro.html"><i class="fas fa-graduation-cap"></i> Quiz</a></li>
-            <li class="active"><a href="phishing.html"><i class="fas fa-fish"></i> Phishing Sim</a></li>
-            <li><a href="index.html" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Déconnexion</a></li>
-            <li><a href="investigation.html"><i class="fas fa-user-secret"></i> Investigation</a></li>
-        </ul>
-    </div>
+    <!-- Sidebar DataScale (Harmonisée) -->
+    <div id="sidebar-placeholder"></div>
+    <script src="js/sidebar.js"></script>
 
-    <div class="gmail-wrapper">
+    <!-- GMAIL WRAPPER (Zone de simulation claire) -->
+    <div class="gmail-wrapper flex-1 flex flex-col min-w-0">
         
+        <!-- Header Gmail Style -->
         <header class="gb_header">
             <div class="gb_left">
                 <span class="material-icons menu-icon">menu</span>
-                <img src="https://ssl.gstatic.com/ui/v1/icons/mail/rfr/logo_gmail_lockup_default_1x_r2.png" alt="Gmail Logo" class="gmail-logo">
+                <img src="https://ssl.gstatic.com/ui/v1/icons/mail/rfr/logo_gmail_lockup_default_1x_r2.png" alt="Gmail" class="gmail-logo">
             </div>
-            
             <div class="gb_center">
                 <div class="search-container">
                     <span class="material-icons search-icon">search</span>
@@ -39,153 +32,103 @@
                     <span class="material-icons tune-icon">tune</span>
                 </div>
             </div>
-
             <div class="gb_right">
                 <span class="material-icons action-icon">help_outline</span>
                 <span class="material-icons action-icon">settings</span>
                 <span class="material-icons action-icon">apps</span>
-                <div class="user-avatar">L</div>
+                <div class="user-avatar">J</div>
             </div>
         </header>
 
         <div class="main-container">
-            
-            <aside class="sidebar">
+            <!-- Sidebar Gmail Interne -->
+            <aside class="sidebar hidden lg:block">
                 <div class="compose-btn-container">
                     <button class="btn-compose">
                         <span class="material-icons">edit</span>
-                        Nouveau message
+                        <span>Nouveau</span>
                     </button>
                 </div>
-                
                 <ul class="nav-list">
-                    <li class="active">
-                        <span class="material-icons">inbox</span>
-                        <span class="nav-text">Boîte de réception</span>
-                        <span class="badge">3</span>
-                    </li>
-                    <li>
-                        <span class="material-icons">star_border</span>
-                        <span class="nav-text">Messages suivis</span>
-                    </li>
-                    <li>
-                        <span class="material-icons">watch_later</span>
-                        <span class="nav-text">En attente</span>
-                    </li>
-                    <li>
-                        <span class="material-icons">send</span>
-                        <span class="nav-text">Messages envoyés</span>
-                    </li>
+                    <li class="active"><span class="material-icons">inbox</span> <span class="nav-text">Boîte de réception</span> <span class="badge">3</span></li>
+                    <li><span class="material-icons">star_border</span> <span class="nav-text">Messages suivis</span></li>
+                    <li><span class="material-icons">watch_later</span> <span class="nav-text">En attente</span></li>
+                    <li><span class="material-icons">send</span> <span class="nav-text">Messages envoyés</span></li>
                 </ul>
             </aside>
 
-            <main class="content-area">
-                
-                <div id="inbox-view">
-                    <div class="toolbar">
-                        <div class="checkbox-wrapper">
-                            <span class="material-icons">check_box_outline_blank</span>
-                            <span class="material-icons arrow">arrow_drop_down</span>
-                        </div>
-                        <span class="material-icons tool-icon">refresh</span>
-                        <span class="material-icons tool-icon">more_vert</span>
-                        <div class="pagination">
-                            <span>1 sur 50</span>
-                            <span class="material-icons">chevron_left</span>
-                            <span class="material-icons">chevron_right</span>
-                        </div>
+            <!-- Main Content Area -->
+            <main class="content-area relative">
+                <!-- Toolbar Simulation -->
+                <div class="toolbar">
+                    <div class="checkbox-wrapper">
+                        <span class="material-icons" style="color: #444;">check_box_outline_blank</span>
                     </div>
-
-                    <div class="tabs">
-                        <div class="tab active"><span class="material-icons">inbox</span> Principale</div>
-                        <div class="tab"><span class="material-icons">sell</span> Promotions</div>
-                        <div class="tab"><span class="material-icons">group</span> Réseaux sociaux</div>
-                    </div>
-
-                    <div class="email-list">
-                        <div class="email-row unread" onclick="openScenario('SCENARIO_1')">
-                            <div class="col-check"><span class="material-icons">check_box_outline_blank</span></div>
-                            <div class="col-star"><span class="material-icons">star_border</span></div>
-                            <div class="col-sender">Support Sécurité</div>
-                            <div class="col-content">
-                                <span class="subject">URGENT : Validation de sécurité requise</span>
-                                <span class="separator">-</span>
-                                <span class="snippet">Une tentative de connexion suspecte a été détectée sur votre compte...</span>
-                            </div>
-                            <div class="col-date">10:42</div>
-                        </div>
-
-                        <div class="email-row unread" onclick="openScenario('SCENARIO_2')">
-                            <div class="col-check"><span class="material-icons">check_box_outline_blank</span></div>
-                            <div class="col-star"><span class="material-icons">star_border</span></div>
-                            <div class="col-sender">Équipe RH (Gmail)</div>
-                            <div class="col-content">
-                                <span class="subject">Facture Impayée #9928</span>
-                                <span class="separator">-</span>
-                                <span class="snippet">Veuillez trouver ci-joint la facture pour votre salair de ce mois...</span>
-                            </div>
-                            <div class="col-date">09:15</div>
-                        </div>
-
-                        <div class="email-row read" onclick="openScenario('SCENARIO_3')">
-                            <div class="col-check"><span class="material-icons">check_box_outline_blank</span></div>
-                            <div class="col-star"><span class="material-icons active">star</span></div>
-                            <div class="col-sender">Michel (PDG)</div>
-                            <div class="col-content">
-                                <span class="subject">Virement Urgent - Confidentiel</span>
-                                <span class="separator">-</span>
-                                <span class="snippet">J'ai besoin que tu fasses un virement immédiat au nouveau fournisseur...</span>
-                            </div>
-                            <div class="col-date">Hier</div>
+                    <span class="material-icons tool-icon">refresh</span>
+                    <span class="material-icons tool-icon">more_vert</span>
+                    
+                    <!-- HUD Simulation -->
+                    <div id="simulation-hud" class="ml-auto">
+                        <div id="feedback-alert" class="analysis-alert hidden"></div>
+                        <div class="analysis-hud flex items-center gap-2">
+                            <span class="material-icons text-orange-500" style="font-size: 18px;">bug_report</span>
+                            <span>Pièges : <span id="found-count">0</span> / <span id="total-count">?</span></span>
                         </div>
                     </div>
                 </div>
 
-                <div id="reading-view" class="hidden">
+                <div id="inbox-view" class="email-list text-black">
+                    <!-- Les emails seront injectés ici -->
+                </div>
+                
+                <div id="reading-view" class="hidden text-black">
                     <div class="email-reader-toolbar">
-                        <span class="material-icons tool-icon" onclick="closeEmail()">arrow_back</span>
-                        <div class="analysis-hud">
-                            <span class="material-icons" style="font-size:16px; vertical-align:middle;">policy</span>
-                            Détection : <span id="found-count">0</span> / <span id="total-count">?</span>
-                        </div>
-                        <div>
+                        <button onclick="closeEmail()" class="tool-icon">
+                            <span class="material-icons">arrow_back</span>
+                        </button>
+                        <div class="flex gap-2">
                             <span class="material-icons tool-icon">archive</span>
+                            <span class="material-icons tool-icon">report</span>
                             <span class="material-icons tool-icon">delete</span>
                         </div>
                     </div>
-                    
-                    <div id="feedback-alert" class="analysis-alert hidden"></div>
-                    <div id="email-content-area" class="email-body-content"></div>
+                    <div id="email-content-area" class="email-body-content">
+                        <!-- Le contenu du mail sera injecté ici -->
+                    </div>
                 </div>
-
             </main>
         </div>
-    </div>
 
-    <div id="victory-modal" class="modal hidden">
-        <div class="modal-content">
-            <h2><span class="material-icons" style="color:#1e8e3e; font-size:40px;">check_circle</span> Analyse Terminée !</h2>
-            <p>Vous avez identifié toutes les menaces.</p>
-            <div class="lesson-card">
-                <h3>💡 Leçon à retenir</h3>
-                <p id="lesson-text">...</p>
+        <!-- Overlay : Animation Radar -->
+        <div id="scan-overlay" class="hidden">
+            <div class="radar-container">
+                <div class="radar-sweep"></div>
+                <div class="radar-blip" style="top: 28%; left: 62%;"></div>
+                <div class="radar-blip" style="top: 65%; left: 33%; animation-delay: 0.7s;"></div>
+                <div class="radar-blip" style="top: 42%; left: 74%; animation-delay: 1.4s;"></div>
+                <div class="radar-blip" style="top: 70%; left: 58%; animation-delay: 1.0s;"></div>
             </div>
-            <button class="btn-primary" onclick="closeEmail()">Retour à la liste</button>
+            <p class="scan-text">Analyse de sécurité en cours...</p>
+        </div>
+
+        <!-- Overlay : Modal de victoire -->
+        <div id="victory-modal" class="modal hidden">
+            <div class="modal-content text-white">
+                <div style="font-size: 3rem; margin-bottom: 8px;">🎉</div>
+                <h2 style="color: #3b82f6; margin: 0 0 8px 0; font-size: 1.5rem;">Mission Accomplie !</h2>
+                <p style="color: #94a3b8; margin: 0 0 16px 0; font-size: 0.95rem;">
+                    Vous avez identifié tous les éléments suspects.
+                </p>
+                <div class="lesson-card">
+                    <strong style="font-size: 0.85rem; color: #3b82f6;">📖 Leçon apprise :</strong>
+                    <p id="lesson-text" style="margin: 6px 0 0 0; font-size: 0.9rem;"></p>
+                </div>
+                <button class="btn-primary" onclick="closeEmail()">
+                    RETOUR À LA BOÎTE DE RÉCEPTION
+                </button>
+            </div>
         </div>
     </div>
-
-    <div id="scan-overlay" class="hidden">
-        <div class="radar-container">
-            <div class="radar-sweep"></div>
-            <div class="radar-blip" style="top: 30%; left: 40%; animation-delay: 0.5s;"></div>
-            <div class="radar-blip" style="top: 70%; left: 70%; animation-delay: 1.2s;"></div>
-            <div class="radar-blip" style="top: 50%; left: 20%; animation-delay: 0.8s;"></div>
-        </div>
-        <div class="scan-text">Analyse finale en cours...</div>
-    </div>
-
-    <div id="victory-modal" class="modal hidden">
-       </div>
 
     <script src="js/auth-guard.js"></script>
     <script src="js/phishing.js"></script>

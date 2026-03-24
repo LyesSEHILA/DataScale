@@ -20,6 +20,9 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 
 import io.github.bonigarcia.wdm.WebDriverManager;
 
+import org.junit.jupiter.api.Disabled;
+
+@Disabled("Nécessite Firefox et un environnement graphique")
 public class SeleniumTest {
 
     private WebDriver driver;

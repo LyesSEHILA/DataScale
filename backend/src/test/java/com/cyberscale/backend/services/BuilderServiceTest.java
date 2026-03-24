@@ -9,6 +9,9 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import org.junit.jupiter.api.io.TempDir;
+import java.nio.file.Path;
+
 import java.io.IOException;
 import java.util.List;
 
@@ -25,8 +28,12 @@ class BuilderServiceTest {
     @InjectMocks
     private BuilderService builderService;
 
+    @TempDir
+    Path tempDir;
+
     @Test
     void deployTopologyWithMultipleNodeTypes() throws IOException, InterruptedException {
+        ReflectionTestUtils.setField(builderService, "workspaceDir", tempDir.toString());
         NodeDTO kali = new NodeDTO("1", "kali", "Kali");
         NodeDTO server = new NodeDTO("2", "server", "Server");
         NodeDTO db = new NodeDTO("3", "db", "DB");
@@ -55,6 +62,7 @@ class BuilderServiceTest {
     
     @Test
     void findKaliFallback() throws IOException, InterruptedException {
+        ReflectionTestUtils.setField(builderService, "workspaceDir", tempDir.toString());
         NodeDTO server = new NodeDTO("1", "server", "Srv");
         TopologyRequest req = new TopologyRequest(TEST_USER, List.of(server), List.of());
         
