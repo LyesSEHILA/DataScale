@@ -1,6 +1,6 @@
 # 🛡️ CyberScale v2.0.0
 <p align="center">
-  <img src="docs/images/dashboard.png" alt="CyberScale Dashboard" width="850">
+  <img src="docs/wireframes/dashboard.png" alt="CyberScale Dashboard" width="850">
 </p>
 
 <p align="center">
